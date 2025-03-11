@@ -11,26 +11,26 @@ make sure you have python 3.10.5
 
 Option one: Using peotry
   1. Install Peotry
-    ```
-    curl -sSL https://install.python-poetry.org | python3 -
-    ```
-    ```
-    export PATH="$HOME/.local/bin:$PATH"
-    ```
-    ```
-    poetry --version
-    ```
+  ```
+  curl -sSL https://install.python-poetry.org | python3 -
+  ```
+  ```
+  export PATH="$HOME/.local/bin:$PATH"
+  ```
+  ```
+  poetry --version
+  ```
     
   3. Install requirements
-    ```
-    poetry install --no-root
-    ```
-    ```
-    poetry run pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-    ```
-    ```
-    export PYTHONPATH=./socialjax:$PYTHONPATH
-    ```
+  ```
+  poetry install --no-root
+  ```
+  ```
+  poetry run pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+  ```
+  ```
+  export PYTHONPATH=./socialjax:$PYTHONPATH
+  ```
   5. Run code
     ```
     poetry run python algothrims/IPPO/ippo_cnn_coins.py 
