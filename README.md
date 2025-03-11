@@ -1,4 +1,4 @@
-make sure you have python python 3.10.5
+make sure you have python 3.10.5
 ---
 
 Peotry:
