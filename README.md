@@ -1,6 +1,6 @@
 <h1 align="center">SocialJax</h1>
 
-**A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX**
+*A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
 # Installation
 
