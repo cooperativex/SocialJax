@@ -1,8 +1,0 @@
-{"time":"2025-03-10T03:37:56.013036597+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
-{"time":"2025-03-10T03:37:56.013073473+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJaxProject/wandb/run-20250310_033755-aupvljq5/logs/debug-core.log"}
-{"time":"2025-03-10T03:37:56.23264272+08:00","level":"INFO","msg":"created new stream","id":"aupvljq5"}
-{"time":"2025-03-10T03:37:56.232763406+08:00","level":"INFO","msg":"stream: started","id":"aupvljq5"}
-{"time":"2025-03-10T03:37:56.233872765+08:00","level":"INFO","msg":"sender: started","stream_id":"aupvljq5"}
-{"time":"2025-03-10T03:37:56.233167088+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"aupvljq5"}}
-{"time":"2025-03-10T03:37:56.233868854+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"aupvljq5"}}
-{"time":"2025-03-10T03:37:56.787856581+08:00","level":"INFO","msg":"Starting system monitor"}
