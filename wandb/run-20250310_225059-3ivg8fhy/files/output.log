@@ -1,0 +1,13 @@
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_territory_open.py", line 588, in main
+    single_run(config)
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_territory_open.py", line 445, in single_run
+    train_jit = jax.jit(make_train(config))
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_territory_open.py", line 176, in make_train
+    env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
+  File "/root/autodl-tmp/SocialJaxProject/socialjax/registration.py", line 26, in make
+    raise ValueError(f"{env_id} is not in registered SocialJax environments")
+ValueError: territory_room is not in registered SocialJax environments
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

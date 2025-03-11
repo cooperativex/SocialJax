@@ -1,0 +1,13 @@
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_cleanup.py", line 566, in main
+    single_run(config)
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_cleanup.py", line 421, in single_run
+    train_jit = jax.jit(make_train(config))
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_cleanup.py", line 159, in make_train
+    env = jaxmarl.make(config["ENV_NAME"], **config["ENV_KWARGS"])
+  File "/root/miniconda3/envs/jax/lib/python3.10/site-packages/jaxmarl/registration.py", line 38, in make
+    raise ValueError(f"{env_id} is not in registered jaxmarl environments.")
+ValueError: clean_up is not in registered jaxmarl environments.
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

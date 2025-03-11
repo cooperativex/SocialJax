@@ -1,0 +1,19 @@
+{"time":"2025-03-10T19:54:06.257993786+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-10T19:54:06.258030662+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJaxProject/wandb/run-20250310_195406-orvc8u4v/logs/debug-core.log"}
+{"time":"2025-03-10T19:54:06.483025738+08:00","level":"INFO","msg":"created new stream","id":"orvc8u4v"}
+{"time":"2025-03-10T19:54:06.483122958+08:00","level":"INFO","msg":"stream: started","id":"orvc8u4v"}
+{"time":"2025-03-10T19:54:06.484089561+08:00","level":"INFO","msg":"sender: started","stream_id":"orvc8u4v"}
+{"time":"2025-03-10T19:54:06.484092913+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"orvc8u4v"}}
+{"time":"2025-03-10T19:54:06.484875694+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"orvc8u4v"}}
+{"time":"2025-03-10T19:54:06.928664779+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-03-10T19:59:37.15142769+08:00","level":"INFO","msg":"stream: closing","id":"orvc8u4v"}
+{"time":"2025-03-10T19:59:37.151499767+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-03-10T19:59:37.154233913+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-03-10T19:59:37.532982329+08:00","level":"WARN","msg":"No job ingredients found, not creating job artifact"}
+{"time":"2025-03-10T19:59:37.533015574+08:00","level":"WARN","msg":"No source type found, not creating job artifact"}
+{"time":"2025-03-10T19:59:37.533031218+08:00","level":"INFO","msg":"sender: sendDefer: no job artifact to save"}
+{"time":"2025-03-10T19:59:38.35394896+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-03-10T19:59:38.670311515+08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"orvc8u4v"}}
+{"time":"2025-03-10T19:59:38.670405102+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"orvc8u4v"}}
+{"time":"2025-03-10T19:59:38.670426613+08:00","level":"INFO","msg":"sender: closed","stream_id":"orvc8u4v"}
+{"time":"2025-03-10T19:59:38.670535845+08:00","level":"INFO","msg":"stream: closed","id":"orvc8u4v"}

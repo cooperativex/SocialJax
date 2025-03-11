@@ -1,0 +1,39 @@
+{
+  "os":  "Linux-5.15.0-86-generic-x86_64-with-glibc2.31",
+  "python":  "3.10.16",
+  "startedAt":  "2025-03-10T02:36:45.259660Z",
+  "program":  "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_coins.py",
+  "codePath":  "algothrims/IPPO/ippo_cnn_coins.py",
+  "email":  "hideinpoopoo@gmail.com",
+  "root":  "/root/autodl-tmp/SocialJaxProject",
+  "host":  "autodl-container-fe1242b65f-679d911b",
+  "username":  "root",
+  "executable":  "/root/miniconda3/envs/jax/bin/python",
+  "codePathLocal":  "algothrims/IPPO/ippo_cnn_coins.py",
+  "cpu_count":  40,
+  "cpu_count_logical":  80,
+  "gpu":  "NVIDIA A100-PCIE-40GB",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "32212254720",
+      "used":  "18332356608"
+    }
+  },
+  "memory":  {
+    "total":  "676312506368"
+  },
+  "cpu":  {
+    "count":  40,
+    "countLogical":  80
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA A100-PCIE-40GB",
+      "memoryTotal":  "42949672960",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    }
+  ],
+  "cudaVersion":  "12.4"
+}

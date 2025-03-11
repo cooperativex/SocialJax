@@ -1,0 +1,19 @@
+input_obs_shape (2304, 11, 11, 19)
+/root/miniconda3/envs/jax/lib/python3.10/site-packages/jax/_src/ops/scatter.py:96: FutureWarning: scatter inputs have incompatible types: cannot safely cast value from dtype=int32 to dtype=int16 with jax_numpy_dtype_promotion='standard'. In future JAX releases this will result in an error.
+  warnings.warn(
+/root/miniconda3/envs/jax/lib/python3.10/site-packages/jax/_src/ops/scatter.py:96: FutureWarning: scatter inputs have incompatible types: cannot safely cast value from dtype=int32 to dtype=int16 with jax_numpy_dtype_promotion='standard'. In future JAX releases this will result in an error.
+  warnings.warn(
+/root/miniconda3/envs/jax/lib/python3.10/site-packages/jax/_src/ops/scatter.py:96: FutureWarning: scatter inputs have incompatible types: cannot safely cast value from dtype=int32 to dtype=int16 with jax_numpy_dtype_promotion='standard'. In future JAX releases this will result in an error.
+  warnings.warn(
+** Saving Results **
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_territory_open.py", line 588, in main
+    single_run(config)
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_territory_open.py", line 454, in single_run
+    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path)
+  File "/root/autodl-tmp/SocialJaxProject/algothrims/IPPO/ippo_cnn_territory_open.py", line 486, in evaluate
+    for o_t in range(config["GIF_NUM_FRAMES"]):
+NameError: name 'config' is not defined
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

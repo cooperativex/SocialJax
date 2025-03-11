@@ -1,0 +1,19 @@
+{"time":"2025-03-10T23:47:26.372329656+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-10T23:47:26.373672284+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJaxProject/wandb/run-20250310_234726-bri1mq14/logs/debug-core.log"}
+{"time":"2025-03-10T23:47:26.852026377+08:00","level":"INFO","msg":"created new stream","id":"bri1mq14"}
+{"time":"2025-03-10T23:47:26.85211298+08:00","level":"INFO","msg":"stream: started","id":"bri1mq14"}
+{"time":"2025-03-10T23:47:26.854320523+08:00","level":"INFO","msg":"sender: started","stream_id":"bri1mq14"}
+{"time":"2025-03-10T23:47:26.854317729+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"bri1mq14"}}
+{"time":"2025-03-10T23:47:26.853571266+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"bri1mq14"}}
+{"time":"2025-03-10T23:47:27.507270549+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-03-10T23:59:23.971353193+08:00","level":"INFO","msg":"stream: closing","id":"bri1mq14"}
+{"time":"2025-03-10T23:59:23.971438678+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-03-10T23:59:23.98196767+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-03-10T23:59:24.249571793+08:00","level":"WARN","msg":"No job ingredients found, not creating job artifact"}
+{"time":"2025-03-10T23:59:24.249649736+08:00","level":"WARN","msg":"No source type found, not creating job artifact"}
+{"time":"2025-03-10T23:59:24.249697507+08:00","level":"INFO","msg":"sender: sendDefer: no job artifact to save"}
+{"time":"2025-03-10T23:59:45.15115621+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-03-10T23:59:45.754681239+08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"bri1mq14"}}
+{"time":"2025-03-10T23:59:45.754763931+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"bri1mq14"}}
+{"time":"2025-03-10T23:59:45.754780972+08:00","level":"INFO","msg":"sender: closed","stream_id":"bri1mq14"}
+{"time":"2025-03-10T23:59:45.754939372+08:00","level":"INFO","msg":"stream: closed","id":"bri1mq14"}

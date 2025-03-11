@@ -1,0 +1,8 @@
+{"time":"2025-03-10T09:45:26.968427436+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-10T09:45:26.968472414+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJaxProject/wandb/run-20250310_094526-zeo1k7hk/logs/debug-core.log"}
+{"time":"2025-03-10T09:45:27.078834485+08:00","level":"INFO","msg":"created new stream","id":"zeo1k7hk"}
+{"time":"2025-03-10T09:45:27.078914663+08:00","level":"INFO","msg":"stream: started","id":"zeo1k7hk"}
+{"time":"2025-03-10T09:45:27.079037304+08:00","level":"INFO","msg":"sender: started","stream_id":"zeo1k7hk"}
+{"time":"2025-03-10T09:45:27.078982269+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"zeo1k7hk"}}
+{"time":"2025-03-10T09:45:27.079052949+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"zeo1k7hk"}}
+{"time":"2025-03-10T09:45:27.556372831+08:00","level":"INFO","msg":"Starting system monitor"}

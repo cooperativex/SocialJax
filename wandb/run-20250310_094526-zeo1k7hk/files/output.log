@@ -1,0 +1,562 @@
+input_obs_shape (896, 11, 11, 19)
+/root/miniconda3/envs/jax/lib/python3.10/site-packages/jax/_src/ops/scatter.py:96: FutureWarning: scatter inputs have incompatible types: cannot safely cast value from dtype=int32 to dtype=int16 with jax_numpy_dtype_promotion='standard'. In future JAX releases this will result in an error.
+  warnings.warn(
+/root/miniconda3/envs/jax/lib/python3.10/site-packages/jax/_src/ops/scatter.py:96: FutureWarning: scatter inputs have incompatible types: cannot safely cast value from dtype=int32 to dtype=int16 with jax_numpy_dtype_promotion='standard'. In future JAX releases this will result in an error.
+  warnings.warn(
+** Saving Results **
+0
+/root/miniconda3/envs/jax/lib/python3.10/site-packages/jax/_src/ops/scatter.py:96: FutureWarning: scatter inputs have incompatible types: cannot safely cast value from dtype=int32 to dtype=int16 with jax_numpy_dtype_promotion='standard'. In future JAX releases this will result in an error.
+  warnings.warn(
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(0, dtype=int32), 2: Array(5, dtype=int32), 3: Array(0, dtype=int32), 4: Array(0, dtype=int32), 5: Array(5, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[12 11  1]
+ [ 9  3  1]
+ [ 6 11  1]
+ [ 6  8  1]
+ [13 16  2]
+ [ 5  3  2]
+ [ 7 15  1]]
+###################
+1
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(0, dtype=int32), 2: Array(5, dtype=int32), 3: Array(5, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[12 11  2]
+ [ 9  3  2]
+ [ 5 11  1]
+ [ 5  8  1]
+ [12 16  2]
+ [ 5  3  2]
+ [ 6 15  1]]
+###################
+2
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(5, dtype=int32), 2: Array(5, dtype=int32), 3: Array(7, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[11 11  2]
+ [ 8  3  2]
+ [ 4 11  1]
+ [ 5  8  1]
+ [11 16  2]
+ [ 5  3  2]
+ [ 5 15  1]]
+###################
+3
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(5, dtype=int32), 2: Array(5, dtype=int32), 3: Array(5, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[10 11  2]
+ [ 7  3  2]
+ [ 3 11  1]
+ [ 4  8  1]
+ [10 16  2]
+ [ 5  3  2]
+ [ 4 15  1]]
+###################
+4
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(5, dtype=int32), 2: Array(7, dtype=int32), 3: Array(0, dtype=int32), 4: Array(5, dtype=int32), 5: Array(0, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 9 11  2]
+ [ 6  3  2]
+ [ 3 11  1]
+ [ 4  8  2]
+ [ 9 16  2]
+ [ 5  3  3]
+ [ 3 15  1]]
+###################
+5
+Items.clean_beam
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(3, dtype=int32), 4: Array(5, dtype=int32), 5: Array(0, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 8 11  2]
+ [ 6  3  2]
+ [ 4 11  1]
+ [ 4  7  2]
+ [ 8 16  2]
+ [ 5  3  0]
+ [ 3 15  1]]
+###################
+6
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(5, dtype=int32), 2: Array(5, dtype=int32), 3: Array(0, dtype=int32), 4: Array(5, dtype=int32), 5: Array(0, dtype=int32), 6: Array(4, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 7 11  2]
+ [ 6  3  2]
+ [ 3 11  1]
+ [ 4  7  3]
+ [ 7 16  2]
+ [ 5  3  1]
+ [ 4 15  1]]
+###################
+7
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(5, dtype=int32), 2: Array(0, dtype=int32), 3: Array(0, dtype=int32), 4: Array(5, dtype=int32), 5: Array(5, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 6 11  2]
+ [ 5  3  2]
+ [ 3 11  2]
+ [ 4  7  0]
+ [ 6 16  2]
+ [ 4  3  1]
+ [ 3 15  1]]
+###################
+8
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(0, dtype=int32), 2: Array(8, dtype=int32), 3: Array(0, dtype=int32), 4: Array(3, dtype=int32), 5: Array(5, dtype=int32), 6: Array(4, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  2]
+ [ 5  3  3]
+ [ 3 11  2]
+ [ 4  7  1]
+ [ 6 15  2]
+ [ 3  3  1]
+ [ 4 15  1]]
+###################
+9
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(0, dtype=int32), 2: Array(0, dtype=int32), 3: Array(5, dtype=int32), 4: Array(7, dtype=int32), 5: Array(7, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  3]
+ [ 5  3  0]
+ [ 3 11  3]
+ [ 3  7  1]
+ [ 6 15  2]
+ [ 3  3  1]
+ [ 3 15  1]]
+###################
+10
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(0, dtype=int32), 4: Array(7, dtype=int32), 5: Array(0, dtype=int32), 6: Array(7, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  0]
+ [ 5  3  0]
+ [ 3 11  0]
+ [ 3  7  2]
+ [ 6 15  2]
+ [ 3  3  2]
+ [ 3 15  1]]
+###################
+11
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(8, dtype=int32), 4: Array(0, dtype=int32), 5: Array(0, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  1]
+ [ 5  3  0]
+ [ 3 11  1]
+ [ 3  7  2]
+ [ 6 15  3]
+ [ 3  3  3]
+ [ 3 15  2]]
+###################
+12
+###################
+Actions: {0: Array(5, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(3, dtype=int32), 4: Array(0, dtype=int32), 5: Array(0, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 4 11  1]
+ [ 5  3  0]
+ [ 3 11  2]
+ [ 3  6  2]
+ [ 6 15  0]
+ [ 3  3  0]
+ [ 3 15  3]]
+###################
+13
+###################
+Actions: {0: Array(1, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(7, dtype=int32), 4: Array(0, dtype=int32), 5: Array(0, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 4 11  0]
+ [ 5  3  0]
+ [ 3 11  3]
+ [ 3  6  2]
+ [ 6 15  1]
+ [ 3  3  1]
+ [ 3 15  0]]
+###################
+14
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(7, dtype=int32), 4: Array(8, dtype=int32), 5: Array(0, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 4 11  1]
+ [ 5  3  0]
+ [ 3 11  0]
+ [ 3  6  2]
+ [ 6 15  1]
+ [ 3  3  2]
+ [ 3 15  1]]
+###################
+15
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(6, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(5, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 4 11  2]
+ [ 5  3  0]
+ [ 3 11  1]
+ [ 3  6  2]
+ [ 5 15  1]
+ [ 3  3  2]
+ [ 2 15  1]]
+###################
+16
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(6, dtype=int32), 2: Array(8, dtype=int32), 3: Array(3, dtype=int32), 4: Array(5, dtype=int32), 5: Array(0, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 4 11  3]
+ [ 5  3  0]
+ [ 3 11  1]
+ [ 3  5  2]
+ [ 4 15  1]
+ [ 3  3  3]
+ [ 2 15  1]]
+###################
+17
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(7, dtype=int32), 2: Array(7, dtype=int32), 3: Array(8, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(7, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  3]
+ [ 5  3  0]
+ [ 3 11  1]
+ [ 3  5  2]
+ [ 3 15  1]
+ [ 3  3  3]
+ [ 2 15  1]]
+###################
+18
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(7, dtype=int32), 2: Array(8, dtype=int32), 3: Array(0, dtype=int32), 4: Array(7, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  0]
+ [ 5  3  0]
+ [ 3 11  1]
+ [ 3  5  3]
+ [ 3 15  1]
+ [ 3  3  3]
+ [ 2 15  1]]
+###################
+19
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(7, dtype=int32), 2: Array(4, dtype=int32), 3: Array(0, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  0]
+ [ 5  3  0]
+ [ 4 11  1]
+ [ 3  5  0]
+ [ 3 15  1]
+ [ 3  3  3]
+ [ 2 15  2]]
+###################
+20
+###################
+Actions: {0: Array(0, dtype=int32), 1: Array(7, dtype=int32), 2: Array(0, dtype=int32), 3: Array(0, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(0, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  1]
+ [ 5  3  0]
+ [ 4 11  2]
+ [ 3  5  1]
+ [ 3 15  1]
+ [ 3  3  3]
+ [ 2 15  3]]
+###################
+21
+###################
+Actions: {0: Array(7, dtype=int32), 1: Array(0, dtype=int32), 2: Array(0, dtype=int32), 3: Array(8, dtype=int32), 4: Array(5, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  1]
+ [ 5  3  1]
+ [ 4 11  3]
+ [ 3  5  1]
+ [ 3 15  1]
+ [ 3  3  3]
+ [ 2 15  3]]
+###################
+22
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  1]
+ [ 5  3  1]
+ [ 4 11  3]
+ [ 4  5  1]
+ [ 4 15  1]
+ [ 3  3  3]
+ [ 2 15  3]]
+###################
+23
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(8, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(4, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 5 11  1]
+ [ 5  3  1]
+ [ 4 11  3]
+ [ 4  5  1]
+ [ 5 15  1]
+ [ 3  3  3]
+ [ 3 15  3]]
+###################
+24
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(8, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(4, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 6 11  1]
+ [ 5  3  1]
+ [ 4 11  3]
+ [ 4  5  1]
+ [ 6 15  1]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+25
+###################
+Actions: {0: Array(1, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 6 11  0]
+ [ 5  3  1]
+ [ 4 11  3]
+ [ 5  5  1]
+ [ 7 15  1]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+26
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(4, dtype=int32), 2: Array(8, dtype=int32), 3: Array(4, dtype=int32), 4: Array(8, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 7 11  0]
+ [ 6  3  1]
+ [ 4 11  3]
+ [ 6  5  1]
+ [ 7 15  1]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+27
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(8, dtype=int32), 4: Array(8, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 8 11  0]
+ [ 6  3  1]
+ [ 4 11  3]
+ [ 6  5  1]
+ [ 7 15  1]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+28
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(8, dtype=int32), 4: Array(1, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[ 9 11  0]
+ [ 6  3  1]
+ [ 4 11  3]
+ [ 6  5  1]
+ [ 7 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+29
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(1, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[10 11  0]
+ [ 6  3  1]
+ [ 5 11  3]
+ [ 6  5  0]
+ [ 8 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+30
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(4, dtype=int32), 2: Array(8, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[11 11  0]
+ [ 7  3  1]
+ [ 5 11  3]
+ [ 7  5  0]
+ [ 9 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+31
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[12 11  0]
+ [ 7  3  1]
+ [ 5 11  3]
+ [ 8  5  0]
+ [10 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+32
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(8, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[13 11  0]
+ [ 7  3  1]
+ [ 5 11  3]
+ [ 9  5  0]
+ [11 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+33
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(8, dtype=int32), 2: Array(0, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [ 5 11  0]
+ [10  5  0]
+ [12 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+34
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [ 6 11  0]
+ [11  5  0]
+ [13 15  0]
+ [ 3  3  3]
+ [ 4 15  3]]
+###################
+35
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(4, dtype=int32)}
+Reward: [7. 7. 7. 7. 7. 7. 7.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [ 7 11  0]
+ [12  5  0]
+ [14 15  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+36
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(4, dtype=int32), 4: Array(8, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [ 8 11  0]
+ [13  5  0]
+ [14 15  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+37
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(4, dtype=int32), 4: Array(4, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [ 9 11  0]
+ [14  5  0]
+ [15 15  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+38
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(8, dtype=int32), 4: Array(3, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [7. 7. 7. 7. 7. 7. 7.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [10 11  0]
+ [14  5  0]
+ [15 14  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+39
+###################
+Actions: {0: Array(8, dtype=int32), 1: Array(8, dtype=int32), 2: Array(4, dtype=int32), 3: Array(8, dtype=int32), 4: Array(3, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [7. 7. 7. 7. 7. 7. 7.]
+State: [[14 11  0]
+ [ 7  3  1]
+ [11 11  0]
+ [14  5  0]
+ [15 13  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+40
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(1, dtype=int32), 2: Array(4, dtype=int32), 3: Array(8, dtype=int32), 4: Array(8, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[15 11  0]
+ [ 7  3  0]
+ [12 11  0]
+ [14  5  0]
+ [15 13  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+41
+###################
+Actions: {0: Array(3, dtype=int32), 1: Array(4, dtype=int32), 2: Array(4, dtype=int32), 3: Array(8, dtype=int32), 4: Array(8, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [7. 7. 7. 7. 7. 7. 7.]
+State: [[15 10  0]
+ [ 8  3  0]
+ [13 11  0]
+ [14  5  0]
+ [15 13  0]
+ [ 3  3  3]
+ [ 5 15  3]]
+###################
+42
+###################
+Actions: {0: Array(3, dtype=int32), 1: Array(4, dtype=int32), 2: Array(4, dtype=int32), 3: Array(4, dtype=int32), 4: Array(8, dtype=int32), 5: Array(0, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[15  9  0]
+ [ 9  3  0]
+ [14 11  0]
+ [15  5  0]
+ [15 13  0]
+ [ 3  3  0]
+ [ 5 15  3]]
+###################
+43
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(4, dtype=int32), 2: Array(4, dtype=int32), 3: Array(3, dtype=int32), 4: Array(8, dtype=int32), 5: Array(0, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [0. 0. 0. 0. 0. 0. 0.]
+State: [[16  9  0]
+ [10  3  0]
+ [15 11  0]
+ [15  4  0]
+ [15 13  0]
+ [ 3  3  1]
+ [ 5 15  3]]
+###################
+44
+###################
+Actions: {0: Array(3, dtype=int32), 1: Array(4, dtype=int32), 2: Array(4, dtype=int32), 3: Array(3, dtype=int32), 4: Array(8, dtype=int32), 5: Array(4, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [14. 14. 14. 14. 14. 14. 14.]
+State: [[16  8  0]
+ [11  3  0]
+ [16 11  0]
+ [15  3  0]
+ [15 13  0]
+ [ 4  3  1]
+ [ 5 15  3]]
+###################
+45
+###################
+Actions: {0: Array(4, dtype=int32), 1: Array(4, dtype=int32), 2: Array(3, dtype=int32), 3: Array(3, dtype=int32), 4: Array(8, dtype=int32), 5: Array(8, dtype=int32), 6: Array(8, dtype=int32)}
+Reward: [7. 7. 7. 7. 7. 7. 7.]
+State: [[17  8  0]
+ [12  3  0]
+ [16 10  0]
+ [15  2  0]
+ [15 13  0]
+ [ 4  3  1]
+ [ 5 15  3]]
+###################
+46

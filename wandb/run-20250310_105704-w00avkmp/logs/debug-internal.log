@@ -1,0 +1,19 @@
+{"time":"2025-03-10T10:57:04.699828551+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-10T10:57:04.699864589+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJaxProject/wandb/run-20250310_105704-w00avkmp/logs/debug-core.log"}
+{"time":"2025-03-10T10:57:04.803150622+08:00","level":"INFO","msg":"created new stream","id":"w00avkmp"}
+{"time":"2025-03-10T10:57:04.803247282+08:00","level":"INFO","msg":"stream: started","id":"w00avkmp"}
+{"time":"2025-03-10T10:57:04.80329226+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"w00avkmp"}}
+{"time":"2025-03-10T10:57:04.803391714+08:00","level":"INFO","msg":"sender: started","stream_id":"w00avkmp"}
+{"time":"2025-03-10T10:57:04.803335003+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"w00avkmp"}}
+{"time":"2025-03-10T10:57:05.274820345+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-03-10T10:58:58.699186557+08:00","level":"INFO","msg":"stream: closing","id":"w00avkmp"}
+{"time":"2025-03-10T10:58:58.699319256+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-03-10T10:58:58.700435319+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-03-10T10:58:58.931891831+08:00","level":"WARN","msg":"No job ingredients found, not creating job artifact"}
+{"time":"2025-03-10T10:58:58.931926473+08:00","level":"WARN","msg":"No source type found, not creating job artifact"}
+{"time":"2025-03-10T10:58:58.931941838+08:00","level":"INFO","msg":"sender: sendDefer: no job artifact to save"}
+{"time":"2025-03-10T10:58:59.60759866+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-03-10T10:59:00.00697372+08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"w00avkmp"}}
+{"time":"2025-03-10T10:59:00.007065911+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"w00avkmp"}}
+{"time":"2025-03-10T10:59:00.00708379+08:00","level":"INFO","msg":"sender: closed","stream_id":"w00avkmp"}
+{"time":"2025-03-10T10:59:00.007231295+08:00","level":"INFO","msg":"stream: closed","id":"w00avkmp"}

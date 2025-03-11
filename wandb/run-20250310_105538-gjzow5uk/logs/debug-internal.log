@@ -1,0 +1,19 @@
+{"time":"2025-03-10T10:55:38.777159619+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-10T10:55:38.777661358+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJaxProject/wandb/run-20250310_105538-gjzow5uk/logs/debug-core.log"}
+{"time":"2025-03-10T10:55:38.880545105+08:00","level":"INFO","msg":"created new stream","id":"gjzow5uk"}
+{"time":"2025-03-10T10:55:38.880646235+08:00","level":"INFO","msg":"stream: started","id":"gjzow5uk"}
+{"time":"2025-03-10T10:55:38.880706298+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"gjzow5uk"}}
+{"time":"2025-03-10T10:55:38.880816927+08:00","level":"INFO","msg":"sender: started","stream_id":"gjzow5uk"}
+{"time":"2025-03-10T10:55:38.880759937+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"gjzow5uk"}}
+{"time":"2025-03-10T10:55:39.35642514+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-03-10T10:55:44.815015826+08:00","level":"INFO","msg":"stream: closing","id":"gjzow5uk"}
+{"time":"2025-03-10T10:55:44.81509321+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-03-10T10:55:44.816341972+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-03-10T10:55:45.067445953+08:00","level":"WARN","msg":"No job ingredients found, not creating job artifact"}
+{"time":"2025-03-10T10:55:45.067494842+08:00","level":"WARN","msg":"No source type found, not creating job artifact"}
+{"time":"2025-03-10T10:55:45.06751328+08:00","level":"INFO","msg":"sender: sendDefer: no job artifact to save"}
+{"time":"2025-03-10T10:55:45.741136324+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-03-10T10:55:46.07621718+08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"gjzow5uk"}}
+{"time":"2025-03-10T10:55:46.076286742+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"gjzow5uk"}}
+{"time":"2025-03-10T10:55:46.076344291+08:00","level":"INFO","msg":"sender: closed","stream_id":"gjzow5uk"}
+{"time":"2025-03-10T10:55:46.076396253+08:00","level":"INFO","msg":"stream: closed","id":"gjzow5uk"}
