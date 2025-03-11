@@ -1,3 +1,5 @@
+<h1 align="center">SocialJax</h1>
+
 make sure you have python 3.10.5
 ---
 
