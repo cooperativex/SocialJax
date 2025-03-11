@@ -1,5 +1,6 @@
 <h1 align="center">SocialJax</h1>
 ---
+
 a suite of sequential social dilemma environments in JAX
 
 make sure you have python 3.10.5
