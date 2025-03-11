@@ -14,11 +14,9 @@ Option one: Using peotry
     ```
     curl -sSL https://install.python-poetry.org | python3 -
     ```
-
     ```
     export PATH="$HOME/.local/bin:$PATH"
     ```
-    
     ```
     poetry --version
     ```
@@ -27,11 +25,9 @@ Option one: Using peotry
     ```
     poetry install --no-root
     ```
-
     ```
     poetry run pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
     ```
-    
     ```
     export PYTHONPATH=./socialjax:$PYTHONPATH
     ```
@@ -40,29 +36,26 @@ Option one: Using peotry
     poetry run python algothrims/IPPO/ippo_cnn_coins.py 
     ```
 
----
-
 Option two: Requirements.txt
   1. Create conda environment
     ```
     conda create -n SocialJax python=3.10
     ```
-
     ```
     conda activate SocialJax
     ```
+
   3. Install requirements
     ```
     pip install -r requirements.txt
     ```
-
     ```
     pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
     ```
-    
     ```
     export PYTHONPATH=./socialjax:$PYTHONPATH
     ```
+
   5. Run code
     ```
     python algothrims/IPPO/ippo_cnn_coins.py 
