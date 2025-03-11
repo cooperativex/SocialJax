@@ -6,8 +6,6 @@
 
 # Installation
 
-make sure you have python 3.10.5
-
 Option one: Using peotry
 make sure you have python 3.10
   1. Install Peotry
