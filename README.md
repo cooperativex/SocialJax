@@ -34,7 +34,7 @@ make sure you have python 3.10
        poetry run python algothrims/IPPO/ippo_cnn_coins.py 
        ```
 
-Option two: Requirements.txt
+Option two: requirements.txt
   1. Create conda environment
        ```
        conda create -n SocialJax python=3.10
