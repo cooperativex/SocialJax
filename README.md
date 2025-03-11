@@ -1,6 +1,8 @@
 <h1 align="center">SocialJax</h1>
 
-a suite of sequential social dilemma environments in JAX
+**A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX**
+
+# Installation
 
 make sure you have python 3.10.5
 ---
