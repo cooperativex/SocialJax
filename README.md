@@ -2,7 +2,7 @@
 
 *A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
-Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' strategies and performance.
+Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 # Installation
 
