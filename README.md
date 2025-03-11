@@ -9,9 +9,12 @@
 Option one: Using peotry
 make sure you have python 3.10
   1. Install Peotry
-  ```
-  curl -sSL https://install.python-poetry.org | python3 -
-  ```
+       ```
+       curl -sSL https://install.python-poetry.org | python3 -
+       ```
+       ```
+       curl -sSL https://install.python-poetry.org | python3 -
+       ```
   ```
   export PATH="$HOME/.local/bin:$PATH"
   ```
