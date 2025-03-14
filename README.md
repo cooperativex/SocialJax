@@ -88,7 +88,7 @@ Option two: requirements.txt
 
 We introduce the environments and use Schelling diagrams to demonstrate whether the environments are social dilemmas. More detials about 
 
-### Important Notes:
+#### Important Notes:
 - *Due to algorithmic limitations, agents may not always learn the optimal actions. As a result, Schelling diagrams can prove that the environment is social dilemmas, but they cannot definitively prove that the environment is not social dilemmas*
 
 | Environment                | Description                                                                                      | Schelling Diagrams Proof |
