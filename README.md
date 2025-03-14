@@ -6,7 +6,7 @@
 <div class="collage">
     <div class="column" align="centre">
         <div class="row" align="centre">
-            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_coins.gif?raw=true" alt="Overcooked" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/coins.png?raw=true" alt="Overcooked" width="20%">
             <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_harvestopen.gif?raw=true" alt="mabrax" width="20%">
             <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_closed.gif?raw=true" alt="STORM" width="20%">
             <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_cleanup.gif?raw=true" alt="STORM" width="20%">
