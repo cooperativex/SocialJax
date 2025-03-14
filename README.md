@@ -63,7 +63,7 @@ make sure you have python 3.10
        ```
 
 Option two: requirements.txt
-  1. Conda environment
+  1. Conda
        ```bash
        conda create -n SocialJax python=3.10
        conda activate SocialJax
