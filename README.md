@@ -45,8 +45,6 @@ make sure you have python 3.10
   1. Install Peotry
        ```bash
        curl -sSL https://install.python-poetry.org | python3 -
-       ```
-       ```bash
        export PATH="$HOME/.local/bin:$PATH"
        ```
 
