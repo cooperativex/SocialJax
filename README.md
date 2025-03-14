@@ -16,7 +16,7 @@
             <img src="/docs/images/step_150_reward_individual_coins.gif" alt="coins_individual" width="20%">
             <img src="/docs/images/step_150_reward_individual_harvestopen.gif" alt="harvest_open_individual" width="20%">
             <img src="/docs/images/step_150_reward_individual_closed.gif" alt="harvest_closed_individual" width="20%">
-            <img src="/docs/images/step_150_reward_individual_cleanup.gi" alt="clean_up_individual" width="20%">
+            <img src="/docs/images/step_150_reward_individual_cleanup.gif" alt="clean_up_individual" width="20%">
             <img src="/docs/images/step_250_reward_individual_coop_mining.gif" alt="coop_mining_individual" width="20%">
         </div>
     </div>
