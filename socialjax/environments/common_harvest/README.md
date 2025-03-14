@@ -1,7 +1,6 @@
-# Harvest Commom Open
+# Harvest Commom
 
-Inspired by the "in the Matrix" games in [Melting Pot 2.0](https://arxiv.org/abs/2211.13746),
-## Visualisation
+There are several patches of apples in the room. The players can receive a reward of 1, when they collect one apple. The apples will regrow with probability that is determined by the number of neighborhood apples in radius 2, when the apples are collected by the players. The probability of apple regrowth decreases as the nearby apples diminish. Apples will not regrow, if there are no apples in the neighborhood.
 
-We render each timestep and then create a gif from the collection of images. Further examples are provided [here](https://github.com/cooperativex/meltingpot-jax/blob/main/jaxmarl/tutorials/harvest_common_intro.py).
+
 

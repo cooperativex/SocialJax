@@ -1,0 +1,3 @@
+# Coop Mining
+
+In this environment, two types of ore spawn randomly in empty spaces. Players can extract the ore to get reward. Iron ore (gray) can be mined individually and provides a reward of +1 upon extraction. In contrast, gold ore (yellow) requires coordinated mining by two to four players within a 3-step window, granting a reward of +8 to each participant. When a player begins to mine gold ore, the state of the ore changes to 'partially mined' to indicate readiness for another player to assist. Visually, this is represented by a brighter shade of yellow. If no other player cooperates or too many players attempt to mine simultaneously, the ore reverts to its original state, and no reward is granted.
