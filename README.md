@@ -1,10 +1,19 @@
 <h1 align="center">SocialJax</h1>
 
+
 *A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 # Installation
+
+First: Clone the repository
+```
+git clone https://github.com/cooperativex/SocialJax.git
+```
+
+
+Second: Environment Setup.
 
 Option one: Using peotry
 make sure you have python 3.10
