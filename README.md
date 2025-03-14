@@ -3,6 +3,26 @@
 
 *A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
+<div class="collage">
+    <div class="column" align="centre">
+        <div class="row" align="centre">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_coins.gif?raw=true" alt="Overcooked" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_harvestopen.gif?raw=true" alt="mabrax" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_closed.gif?raw=true" alt="STORM" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_common_cleanup.gif?raw=true" alt="STORM" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_250_reward_common_coop_mining.gif?raw=true" alt="STORM" width="20%">
+        </div>
+        <div class="row" align="centre">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_individual_coins.gif?raw=true" alt="Overcooked" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_individual_harvestopen.gif?raw=true" alt="mabrax" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_individual_closed.gif?raw=true" alt="STORM" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_150_reward_individual_cleanup.gif?raw=true" alt="STORM" width="20%">
+            <img src="https://github.com/cooperativex/SocialJax/tree/main/docs/images/step_250_reward_individual_coop_mining.gif?raw=true" alt="STORM" width="20%">
+        </div>
+    </div>
+</div>
+
+
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 # Installation
