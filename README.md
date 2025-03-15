@@ -119,6 +119,7 @@ Find more fixed policy [examples](https://github.com/cooperativex/SocialJax/tree
 ```python
 import jax
 import socialjax
+from socialjax import make
 
 num_agents = 7
 env = make('clean_up', num_agents=num_agents)
