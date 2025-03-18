@@ -35,6 +35,7 @@ Our [blog](https://sites.google.com/view/socialjax/home) presents more details a
 First: Clone the repository
 ```bash
 git clone https://github.com/cooperativex/SocialJax.git
+cd SocialJax
 ```
 
 
@@ -45,8 +46,6 @@ make sure you have python 3.10
   1. Install Peotry
        ```bash
        curl -sSL https://install.python-poetry.org | python3 -
-       ```
-       ```bash
        export PATH="$HOME/.local/bin:$PATH"
        ```
 
@@ -64,7 +63,7 @@ make sure you have python 3.10
        ```
 
 Option two: requirements.txt
-  1. Create conda environment
+  1. Conda
        ```bash
        conda create -n SocialJax python=3.10
        conda activate SocialJax
@@ -86,19 +85,19 @@ Option two: requirements.txt
 
 ## Environments
 
-We introduce the environments and use Schelling diagrams to demonstrate whether the environments are social dilemmas. More detials about 
-
-### Important Notes:
-- *Due to algorithmic limitations, agents may not always learn the optimal actions. As a result, Schelling diagrams can prove that the environment is social dilemmas, but they cannot definitively prove that the environment is not social dilemmas*
+We introduce the environments and use Schelling diagrams to demonstrate whether the environments are social dilemmas. 
 
 | Environment                | Description                                                                                      | Schelling Diagrams Proof |
-|----------------------------|-------------|:------:|
-| Coins                      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coins)         |&check;|
-| Commons Harvest: Open      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;|
-| Commons Harvest: Closed    | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;|
-| Clean Up                   | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/cleanup)       |&check;|
-| Territory                  | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/territory)     |&cross;|
-| Coop Mining                | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coop_mining)   |&check;|
+|----------------------------|--------------------------------------------------------------------------------------------------|:------------------------:|
+| Coins                      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coins)         |&check;                   |
+| Commons Harvest: Open      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
+| Commons Harvest: Closed    | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
+| Clean Up                   | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/cleanup)       |&check;                   |
+| Territory                  | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/territory)     |&cross;                   |
+| Coop Mining                | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coop_mining)   |&check;                   |
+
+#### Important Notes:
+- *Due to algorithmic limitations, agents may not always learn the optimal actions. As a result, Schelling diagrams can prove that the environment is social dilemmas, but they cannot definitively prove that the environment is not social dilemmas.*
 
 ## Quick Start
 
@@ -120,6 +119,7 @@ Find more fixed policy [examples](https://github.com/cooperativex/SocialJax/tree
 ```python
 import jax
 import socialjax
+from socialjax import make
 
 num_agents = 7
 env = make('clean_up', num_agents=num_agents)
