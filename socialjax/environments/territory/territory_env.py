@@ -2327,9 +2327,6 @@ class Territory_open(MultiAgentEnv):
             dtype=onp.uint8,
         )
 
-        # Draw the grid lines (top and left edges)
-        fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
-        fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
     # class Items(IntEnum):
         claimed_resources_color_array = jnp.arange(1000,1000+self.num_agents)
         if obj in self._agents:
@@ -2483,15 +2480,6 @@ class Territory_open(MultiAgentEnv):
             ],
             2,
         )
-        # Render the inventory
-        # agent_inv = []
-        # for a in range(self.num_agents):
-        #     agent_inv.append(self.render_inventory(state.agent_inventories[a], img.shape[1]))
-
-
-        time = self.render_time(state, img.shape[1])
-        # img = onp.concatenate((img, *agent_inv, time), axis=0)
-        img = onp.concatenate((img, time), axis=0)
         return img
 
     def render_inventory(self, inventory, width_px) -> onp.array:

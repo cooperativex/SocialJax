@@ -121,16 +121,6 @@ STEP_MOVE = jnp.array(
     dtype=jnp.int8,
 )
 
-# STEP = jnp.array(
-#     [
-#         [0, 1, 0],  # up
-#         [1, 0, 0],  # right
-#         [0, -1, 0],  # down
-#         [-1, 0, 0],  # left
-#     ],
-#         dtype=jnp.int8,
-# )
-
 
 
 def ascii_map_to_matrix(map_ASCII, char_to_int):
@@ -1142,9 +1132,6 @@ class Harvest_open(MultiAgentEnv):
                 )
             )
 
-            # state = state.replace(grid=aux_grid)
-
-            # jax.debug.print("state.grid {grid} 🤯", grid=state.grid)
 
             return reborn_players, state
 
@@ -1450,10 +1437,6 @@ class Harvest_open(MultiAgentEnv):
                 apple_pos[:, 1]
             ].set(jnp.int16(Items.apple))
 
-            # grid = grid.at[
-            #     wall_pos[:, 0],
-            #     wall_pos[:, 1]
-            # ].set(jnp.int16(Items.wall))
 
             player_dir = jax.random.randint(
                 subkey, shape=(
@@ -1566,14 +1549,13 @@ class Harvest_open(MultiAgentEnv):
         if key in self.tile_cache:
             return self.tile_cache[key]
 
-        img = onp.zeros(
+        img = onp.full(
             shape=(tile_size * subdivs, tile_size * subdivs, 3),
+            fill_value=(210, 190, 140),
             dtype=onp.uint8,
         )
 
-        # Draw the grid lines (top and left edges)
-        fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
-        fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
+
     # class Items(IntEnum):
 
         if obj in self._agents:
@@ -1729,9 +1711,9 @@ class Harvest_open(MultiAgentEnv):
             2,
         )
 
-        time = self.render_time(state, img.shape[1])
+        # time = self.render_time(state, img.shape[1])
         # img = onp.concatenate((img, *agent_inv, time), axis=0)
-        img = onp.concatenate((img, time), axis=0)
+        # img = onp.concatenate((img, time), axis=0)
         return img
 
     def render_inventory(self, inventory, width_px) -> onp.array:

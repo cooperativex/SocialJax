@@ -66,7 +66,7 @@ class Items(IntEnum):
     
 char_to_int = {
     'W': 1,
-    ' ': 0,  # 空格字符映射为 0
+    ' ': 0,  # space 0
     'C': 3,
     'P': 4,
     'Q': 5
@@ -802,14 +802,12 @@ class CoinGame(MultiAgentEnv):
                 c_matches = jnp.array([
                     state.grid[p[0], p[1]] == Items.red_apple
                     ])
-                # jax.debug.print("🤯 {c_matches} 🤯", c_matches=c_matches)
                 return c_matches
             
             def green_matcher(p: jnp.ndarray) -> jnp.ndarray:
                 c_matches = jnp.array([
                     state.grid[p[0], p[1]] == Items.green_apple
                     ])
-                # jax.debug.print("🤯 {c_matches} 🤯", c_matches=c_matches)
                 return c_matches
 
 
@@ -1081,14 +1079,12 @@ class CoinGame(MultiAgentEnv):
         if key in self.tile_cache:
             return self.tile_cache[key]
 
-        img = onp.zeros(
-            shape=(tile_size * subdivs, tile_size * subdivs, 3),
-            dtype=onp.uint8,
-        )
+        img = onp.full(
+                shape=(tile_size * subdivs, tile_size * subdivs, 3),
+                fill_value=(70, 55, 40),
+                dtype=onp.uint8,
+            )
 
-        # Draw the grid lines (top and left edges)
-        fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
-        fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
     # class Items(IntEnum):
 
         if obj in self._agents:
@@ -1244,9 +1240,9 @@ class CoinGame(MultiAgentEnv):
             2,
         )
 
-        time = self.render_time(state, img.shape[1])
+        # time = self.render_time(state, img.shape[1])
         # img = onp.concatenate((img, *agent_inv, time), axis=0)
-        img = onp.concatenate((img, time), axis=0)
+        # img = onp.concatenate((img, time), axis=0)
         return img
 
 

@@ -1564,14 +1564,12 @@ class Clean_up(MultiAgentEnv):
         if key in self.tile_cache:
             return self.tile_cache[key]
 
-        img = onp.zeros(
-            shape=(tile_size * subdivs, tile_size * subdivs, 3),
-            dtype=onp.uint8,
-        )
+        img = onp.full(
+                shape=(tile_size * subdivs, tile_size * subdivs, 3),
+                fill_value=(190, 170, 120),
+                dtype=onp.uint8,
+            )
 
-        # Draw the grid lines (top and left edges)
-        fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
-        fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
     # class Items(IntEnum):
 
         if obj in self._agents:
@@ -1742,8 +1740,8 @@ class Clean_up(MultiAgentEnv):
             ],
             2,
         )
-        time = self.render_time(state, img.shape[1])
-        img = onp.concatenate((img, time), axis=0)
+        # time = self.render_time(state, img.shape[1])
+        # img = onp.concatenate((img, time), axis=0)
         return img
 
 
