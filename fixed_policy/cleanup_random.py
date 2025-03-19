@@ -42,7 +42,7 @@ for n_a in agent_pop_sizes:
             actions = [jax.random.choice(
                 rngs[a],
                 a=env.action_space(0).n,
-                p=jnp.array([0.1, 0.1, 0.09, 0.09, 0.09, 0.19, 0.05, 0.1, 0.5])
+                p=jnp.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
             ) for a in range(num_agents)]
 
             obs, state, reward, done, info = env.step_env(
