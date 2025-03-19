@@ -321,7 +321,7 @@ def main():
         )
 
         # Prepare a directory for saving images
-        root_dir = f"tests/coop_mining_gold_a{num_agents}_i{num_inner_steps}_o{num_outer_steps}"
+        root_dir = f"Fixed_gifs/coop_mining_gold_a{num_agents}_i{num_inner_steps}_o{num_outer_steps}"
         path = Path(root_dir + "/state_pics")
         path.mkdir(parents=True, exist_ok=True)
 

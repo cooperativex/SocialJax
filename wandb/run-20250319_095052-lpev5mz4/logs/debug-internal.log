@@ -1,0 +1,16 @@
+{"time":"2025-03-19T09:50:52.847205576+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-19T09:50:52.847236026+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJax/wandb/run-20250319_095052-lpev5mz4/logs/debug-core.log"}
+{"time":"2025-03-19T09:50:52.949668877+08:00","level":"INFO","msg":"created new stream","id":"lpev5mz4"}
+{"time":"2025-03-19T09:50:52.949736204+08:00","level":"INFO","msg":"stream: started","id":"lpev5mz4"}
+{"time":"2025-03-19T09:50:52.949823646+08:00","level":"INFO","msg":"sender: started","stream_id":"lpev5mz4"}
+{"time":"2025-03-19T09:50:52.949863595+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"lpev5mz4"}}
+{"time":"2025-03-19T09:50:52.949778109+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"lpev5mz4"}}
+{"time":"2025-03-19T09:50:53.420100734+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-03-19T10:22:39.609790332+08:00","level":"INFO","msg":"stream: closing","id":"lpev5mz4"}
+{"time":"2025-03-19T10:22:39.609861291+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-03-19T10:22:39.61067592+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-03-19T10:22:40.723435223+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-03-19T10:22:41.106236389+08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"lpev5mz4"}}
+{"time":"2025-03-19T10:22:41.106318243+08:00","level":"INFO","msg":"sender: closed","stream_id":"lpev5mz4"}
+{"time":"2025-03-19T10:22:41.106311817+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"lpev5mz4"}}
+{"time":"2025-03-19T10:22:41.106456529+08:00","level":"INFO","msg":"stream: closed","id":"lpev5mz4"}

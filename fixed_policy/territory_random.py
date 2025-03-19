@@ -21,7 +21,7 @@ for n_a in agent_pop_sizes:
         )
     rng, _rng = jax.random.split(rng)
 
-    root_dir = f"tests/a{num_agents}_g{grid_size}_i{num_inner_steps}_o{num_outer_steps}"
+    root_dir = f"Fixed_gifs/a{num_agents}_g{grid_size}_i{num_inner_steps}_o{num_outer_steps}"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -43,7 +43,7 @@ for n_a in agent_pop_sizes:
             actions = [jax.random.choice(
                 rngs[a],
                 a=env.action_space(0).n,
-                p=jnp.array([0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.01, 0.18, 0.01]),
+                p=jnp.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
             ) for a in range(num_agents)]
 
             obs, state, reward, done, info = env.step_env(

@@ -1,0 +1,16 @@
+{"time":"2025-03-19T10:26:39.469138909+08:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2025-03-19T10:26:39.469168522+08:00","level":"INFO","msg":"created symlink","path":"/root/autodl-tmp/SocialJax/wandb/run-20250319_102639-jignk974/logs/debug-core.log"}
+{"time":"2025-03-19T10:26:39.572062884+08:00","level":"INFO","msg":"created new stream","id":"jignk974"}
+{"time":"2025-03-19T10:26:39.572129652+08:00","level":"INFO","msg":"stream: started","id":"jignk974"}
+{"time":"2025-03-19T10:26:39.572181894+08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"jignk974"}}
+{"time":"2025-03-19T10:26:39.572231341+08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"jignk974"}}
+{"time":"2025-03-19T10:26:39.572275202+08:00","level":"INFO","msg":"sender: started","stream_id":"jignk974"}
+{"time":"2025-03-19T10:26:40.053137714+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-03-19T10:38:45.955683066+08:00","level":"INFO","msg":"stream: closing","id":"jignk974"}
+{"time":"2025-03-19T10:38:45.955771066+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-03-19T10:38:45.958336755+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-03-19T10:38:47.820577347+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-03-19T10:38:48.215571962+08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"jignk974"}}
+{"time":"2025-03-19T10:38:48.215676445+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"jignk974"}}
+{"time":"2025-03-19T10:38:48.215735391+08:00","level":"INFO","msg":"sender: closed","stream_id":"jignk974"}
+{"time":"2025-03-19T10:38:48.215892953+08:00","level":"INFO","msg":"stream: closed","id":"jignk974"}

@@ -20,7 +20,7 @@ for n_a in agent_pop_sizes:
         )
     rng, _rng = jax.random.split(rng)
 
-    root_dir = f"tests/a{num_agents}_g{grid_size}_i{num_inner_steps}_o{num_outer_steps}"
+    root_dir = f"Fixed_gifs/a{num_agents}_g{grid_size}_i{num_inner_steps}_o{num_outer_steps}"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 

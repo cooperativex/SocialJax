@@ -1340,8 +1340,10 @@ class Clean_up(MultiAgentEnv):
             state = state.replace(reborn_locs=new_re_locs)
 
             if self.shared_rewards:
+                rewards = jnp.zeros((self.num_agents, 1))
+                rewards = jnp.where(apple_matches, 1, rewards)
+
                 rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
-                rewards = jnp.where(apple_matches, 1, rewards_sum_all_agents)
                 rewards_sum = jnp.sum(rewards)
                 rewards_sum_all_agents += rewards_sum
                 rewards = rewards_sum_all_agents

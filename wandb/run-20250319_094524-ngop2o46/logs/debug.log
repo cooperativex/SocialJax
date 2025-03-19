@@ -1,0 +1,26 @@
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Current SDK version is 0.18.5
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Configure stats pid to 6340
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Loading settings from /root/.config/wandb/settings
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Loading settings from /root/autodl-tmp/SocialJax/wandb/settings
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Loading settings from environment variables: {}
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Applying setup settings: {'mode': 'online', '_disable_service': None}
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Inferring run settings from compute environment: {'program_relpath': 'algothrims/IPPO/ippo_cnn_cleanup.py', 'program_abspath': '/root/autodl-tmp/SocialJax/algothrims/IPPO/ippo_cnn_cleanup.py', 'program': '/root/autodl-tmp/SocialJax/algothrims/IPPO/ippo_cnn_cleanup.py'}
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_setup.py:_flush():79] Applying login settings: {}
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_init.py:_log_setup():534] Logging user logs to /root/autodl-tmp/SocialJax/wandb/run-20250319_094524-ngop2o46/logs/debug.log
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_init.py:_log_setup():535] Logging internal logs to /root/autodl-tmp/SocialJax/wandb/run-20250319_094524-ngop2o46/logs/debug-internal.log
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_init.py:init():621] calling init triggers
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_init.py:init():628] wandb.init called with sweep_config: {}
+config: {'LR': 0.0005, 'NUM_ENVS': 128, 'NUM_STEPS': 1000, 'TOTAL_TIMESTEPS': 1000000000.0, 'UPDATE_EPOCHS': 2, 'NUM_MINIBATCHES': 500, 'GAMMA': 0.99, 'GAE_LAMBDA': 0.95, 'CLIP_EPS': 0.2, 'ENT_COEF': 0.01, 'VF_COEF': 0.5, 'MAX_GRAD_NORM': 0.5, 'ACTIVATION': 'relu', 'ENV_NAME': 'clean_up', 'REW_SHAPING_HORIZON': 2500000.0, 'ENV_KWARGS': {'num_agents': 7, 'num_inner_steps': 1000, 'shared_rewards': False, 'cnn': True, 'jit': True}, 'ANNEAL_LR': True, 'SEED': 30, 'NUM_SEEDS': 1, 'TUNE': False, 'REWARD': 'individual', 'GIF_NUM_FRAMES': 250, 'ENTITY': '', 'PROJECT': 'socialjax', 'WANDB_MODE': 'online', 'WANDB_TAGS': ['INDIVIDUAL_REWARD']}
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_init.py:init():671] starting backend
+2025-03-19 09:45:24,375 INFO    MainThread:6340 [wandb_init.py:init():675] sending inform_init request
+2025-03-19 09:45:24,376 INFO    MainThread:6340 [backend.py:_multiprocessing_setup():104] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2025-03-19 09:45:24,377 INFO    MainThread:6340 [wandb_init.py:init():688] backend started and connected
+2025-03-19 09:45:24,379 INFO    MainThread:6340 [wandb_init.py:init():783] updated telemetry
+2025-03-19 09:45:24,383 INFO    MainThread:6340 [wandb_init.py:init():816] communicating run to backend with 90.0 second timeout
+2025-03-19 09:45:24,894 INFO    MainThread:6340 [wandb_init.py:init():867] starting run threads in backend
+2025-03-19 09:45:25,008 INFO    MainThread:6340 [wandb_run.py:_console_start():2463] atexit reg
+2025-03-19 09:45:25,008 INFO    MainThread:6340 [wandb_run.py:_redirect():2311] redirect: wrap_raw
+2025-03-19 09:45:25,008 INFO    MainThread:6340 [wandb_run.py:_redirect():2376] Wrapping output streams.
+2025-03-19 09:45:25,009 INFO    MainThread:6340 [wandb_run.py:_redirect():2401] Redirects installed.
+2025-03-19 09:45:25,010 INFO    MainThread:6340 [wandb_init.py:init():911] run started, returning control to user process
+2025-03-19 09:49:31,139 WARNING MsgRouterThr:6340 [router.py:message_loop():77] message_loop has been closed

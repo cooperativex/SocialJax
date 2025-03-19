@@ -1959,17 +1959,7 @@ class Territory_open(MultiAgentEnv):
             new_grid = new_grid.at[x, y].set(self._agents)
             state = state.replace(grid=new_grid)
 
-            # update claimed resources locations in grid
-            # if state.claimed_resources[~jnp.all(state.claimed_resources == jnp.array([1000,1000,1000]), axis=1)].shape[0]>0:
-            #     claimed_resources_color_array = jnp.arange(1000,1000+self.num_agents)
-            #     claimed_grid = state.claimed_resources[~jnp.all(state.claimed_resources == jnp.array([1000,1000,1000]), axis=1)]
-            #     new_grid = new_grid.at[  
-            #         claimed_grid[:, 0],
-            #         claimed_grid[:, 1]
-            #     ].set(
-            #         jnp.int16(claimed_resources_color_array[claimed_grid[:, 2]])
-            #     )
-            #     state = state.replace(grid=new_grid)
+
             exists_claimed_resources = ~jnp.all(state.claimed_resources == 1000, axis=1)
             claimed_resources_color_array = jnp.where(
                             state.claimed_resources[:, 2:3] == 1000,
@@ -2030,13 +2020,8 @@ class Territory_open(MultiAgentEnv):
 
             reborn_players_3d = jnp.stack([reborn_players, reborn_players, reborn_players], axis=-1)
 
-            # jax.debug.print("reborn_players_3d {reborn_players_3d} 🤯", reborn_players_3d=reborn_players_3d)
 
             re_agents_pos = jax.random.permutation(subkey, self.SPAWN_PLAYER)[:num_agents]
-            # agent_locs_2d = state.agent_locs[:, :2]
-            # mask = ~jnp.any(jnp.all(re_agents_pos[:, None, :] == agent_locs_2d[None, :, :], axis=-1), axis=1)
-            # re_agents_pos = re_agents_pos[mask]
-            
 
             player_dir = jax.random.randint(
                 subkey, shape=(
@@ -2078,7 +2063,7 @@ class Territory_open(MultiAgentEnv):
 
             if self.shared_rewards:
                 reward_sum = jnp.sum(rewards)
-                rewards = jnp.full_like(rewards, reward_sum)
+                rewards = jnp.full_like(rewards, reward_sum)/self.num_agents
 
             else:
                 rewards = rewards
