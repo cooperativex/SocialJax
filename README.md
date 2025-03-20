@@ -1,11 +1,12 @@
 <h1 align="center">SocialJax</h1>
 
+<p align="center">
+    <a href="https://arxiv.org/abs/2503.14576">
+        <img src="https://img.shields.io/badge/arXiv-2503.14576-B31B1B.svg" alt="arXiv"></a>
+    <a href="https://github.com/cooperativex/SocialJax/blob/main/LICENSE">
+        <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0 License"></a>
 
-<a href="https://arxiv.org/abs/2503.14576">
-    <img src="https://img.shields.io/badge/arXiv-2503.14576-B31B1B.svg" alt="arXiv">
-<a href="https://github.com/cooperativex/SocialJax/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0 License">
-</a>
+</p>
 
     
 
