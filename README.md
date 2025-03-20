@@ -17,14 +17,14 @@
 <div class="collage">
     <div class="column" align="centre">
         <div class="row" align="centre">
-            <img src="/docs/images/step_150_reward_common_coins.gif" alt="coins_common" width="19.3%">
+            <img src="/docs/images/step_150_reward_common_coins.gif" alt="coins_common" width="19.2%">
             <img src="/docs/images/step_150_reward_common_harvestopen.gif" alt="harvest_open_common" width="18.5%">
             <img src="/docs/images/step_150_reward_common_closed.gif" alt="harvest_closed_common" width="18.5%">
             <img src="/docs/images/step_150_reward_common_cleanup.gif" alt="clean_up_common" width="19.8%">
             <img src="/docs/images/step_250_reward_common_coop_mining.gif" alt="coop_mining_common" width="14%">
         </div>
         <div class="row" align="centre">
-            <img src="/docs/images/step_150_reward_individual_coins.gif" alt="coins_individual" width="19.3%">
+            <img src="/docs/images/step_150_reward_individual_coins.gif" alt="coins_individual" width="19.2%">
             <img src="/docs/images/step_150_reward_individual_harvestopen.gif" alt="harvest_open_individual" width="18.5%">
             <img src="/docs/images/step_150_reward_individual_closed.gif" alt="harvest_closed_individual" width="18.5%">
             <img src="/docs/images/step_150_reward_individual_cleanup.gif" alt="clean_up_individual" width="19.8%">
