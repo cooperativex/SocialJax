@@ -141,6 +141,16 @@ for t in range(100):
 
 
 ## Citation
-
+```
+@misc{guo2025socialjaxevaluationsuitemultiagent,
+      title={SocialJax: An Evaluation Suite for Multi-agent Reinforcement Learning in Sequential Social Dilemmas}, 
+      author={Zihao Guo and Richard Willis and Shuqing Shi and Tristan Tomilin and Joel Z. Leibo and Yali Du},
+      year={2025},
+      eprint={2503.14576},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2503.14576}, 
+}
+```
 ## See Also
 
