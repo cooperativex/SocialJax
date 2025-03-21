@@ -172,3 +172,5 @@ for t in range(100):
 ```
 ## See Also
 
+1. [JaxMARL](https://github.com/flairox/jaxmarl): accelerated MARL environments with baselines in JAX.
+2. [PureJaxRL](https://github.com/luchris429/purejaxrl): JAX implementation of PPO, and demonstration of end-to-end JAX-based RL training.
