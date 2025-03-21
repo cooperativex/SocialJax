@@ -23,6 +23,13 @@
             <img src="/docs/images/step_150_reward_common_cleanup.gif" alt="clean_up_common" width="19.8%">
             <img src="/docs/images/step_250_reward_common_coop_mining.gif" alt="coop_mining_common" width="14%">
         </div>
+    </div>
+</div>
+
+**Common Rewards** : a scenario where all agents share a single, unified reward signal. This approach ensures that all agents are aligned towards achieving the same objective, promoting collaboration and coordination among them.
+
+<div class="collage">
+    <div class="column" align="centre">
         <div class="row" align="centre">
             <img src="/docs/images/step_150_reward_individual_coins.gif" alt="coins_individual" width="19.2%">
             <img src="/docs/images/step_150_reward_individual_harvestopen.gif" alt="harvest_open_individual" width="18.5%">
@@ -32,6 +39,8 @@
         </div>
     </div>
 </div>
+
+**Individual Rewards**: indicate that each agent is assigned its own reward, inherently encouraging selfish behavior.
 
 
 SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-agent reinforcement learning in sequential social dilemmas. We are committed to providing a more efficient and diverse suite of environments for studying social dilemmas. We provide JAX implementations of the following environments: Coins, Commons Harvest: Open, Commons Harvest: Closed, Clean Up, Territory, and Coop Mining, which are derived from [Melting Pot 2.0](https://github.com/google-deepmind/meltingpot/) and feature commonly studied mixed incentives.
