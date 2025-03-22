@@ -5,6 +5,8 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ./socialjax:${{ env.PYTHONPATH }}
     strategy:
       matrix:
         python-version: ["3.10"]
@@ -20,7 +22,6 @@ jobs:
         pip install -r requirements.txt
         pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
         pip install pylint
-        export PYTHONPATH=./socialjax:$PYTHONPATH
         
     - name: run test speed code
       run: |
