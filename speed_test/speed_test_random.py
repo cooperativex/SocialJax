@@ -33,9 +33,11 @@ def make_benchmark(config):
 
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
-            rngs = jax.random.split(_rng, config["NUM_ACTORS"]).reshape((env.num_agents, config["NUM_ENVS"], -1))
+            rngs = jax.random.split(_rng, config["NUM_ACTORS"]).reshape(
+                (env.num_agents, config["NUM_ENVS"], -1))
             
-            actions = [jax.vmap(env.action_space(k).sample)(rngs[i]) for i, k in enumerate(env.agents)]
+            actions = [jax.vmap(env.action_space(k).sample)(
+                rngs[i]) for i, k in enumerate(env.agents)]
             # STEP ENV
             rng, _rng = jax.random.split(rng)
             rng_step = jax.random.split(_rng, config["NUM_ENVS"])
@@ -69,19 +71,19 @@ config = {
 num_envs = [1, 128, 1024, 4096]
 sps_list = []
 for num in num_envs:
-  config["NUM_ENVS"] = num
-  benchmark_fn = jax.jit(make_benchmark(config))
-  rng = jax.random.PRNGKey(config["SEED"])
-  rng, _rng = jax.random.split(rng)
-  benchmark_jit = jax.jit(benchmark_fn).lower(_rng).compile()
-  before = time.perf_counter_ns()
-  runner_state = jax.block_until_ready(benchmark_jit(_rng))
-  after = time.perf_counter_ns()
-  total_time = (after - before) / 1e9
+    config["NUM_ENVS"] = num
+    benchmark_fn = jax.jit(make_benchmark(config))
+    rng = jax.random.PRNGKey(config["SEED"])
+    rng, _rng = jax.random.split(rng)
+    benchmark_jit = jax.jit(benchmark_fn).lower(_rng).compile()
+    before = time.perf_counter_ns()
+    runner_state = jax.block_until_ready(benchmark_jit(_rng))
+    after = time.perf_counter_ns()
+    total_time = (after - before) / 1e9
 
-  sps = config['NUM_STEPS'] * config['NUM_ENVS'] / total_time
-  sps_list.append(sps)
-
-  print(f"socialjax, Num Envs: {num}, Total Time (s): {total_time}")
-  print(f"socialjax, Num Envs: {num}, Total Steps: {config['NUM_STEPS'] * config['NUM_ENVS']}")
-  print(f"socialjax, Num Envs: {num}, SPS: {sps}")
+    sps = config['NUM_STEPS'] * config['NUM_ENVS'] / total_time
+    sps_list.append(sps)
+    
+    print(f"socialjax, Num Envs: {num}, Total Time (s): {total_time}")
+    print(f"socialjax, Num Envs: {num}, Total Steps: {config['NUM_STEPS'] * config['NUM_ENVS']}")
+    print(f"socialjax, Num Envs: {num}, SPS: {sps}")
