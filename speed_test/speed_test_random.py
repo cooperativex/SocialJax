@@ -11,6 +11,9 @@ import jax.numpy as jnp
 import socialjax
 
 def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
+    """
+    reshape actions for agents
+    """
     x = x.reshape((num_actors, num_envs, -1))
     return {a: x[i] for i, a in enumerate(agent_list)}
 
@@ -35,7 +38,6 @@ def make_benchmark(config):
             rng, _rng = jax.random.split(rng)
             rngs = jax.random.split(_rng, config["NUM_ACTORS"]).reshape(
                 (env.num_agents, config["NUM_ENVS"], -1))
-            
             actions = [jax.vmap(env.action_space(k).sample)(
                 rngs[i]) for i, k in enumerate(env.agents)]
             # STEP ENV
@@ -83,7 +85,6 @@ for num in num_envs:
 
     sps = config['NUM_STEPS'] * config['NUM_ENVS'] / total_time
     sps_list.append(sps)
-    
     print(f"socialjax, Num Envs: {num}, Total Time (s): {total_time}")
     print(f"socialjax, Num Envs: {num}, Total Steps: {config['NUM_STEPS'] * config['NUM_ENVS']}")
     print(f"socialjax, Num Envs: {num}, SPS: {sps}")
