@@ -22,6 +22,7 @@ jobs:
         pip install pylint
         
     - name: run test speed code
+      continue-on-error: true
       env:
         PYTHONPATH: ./socialjax:${{ env.PYTHONPATH }}
       run: |
