@@ -21,9 +21,16 @@ jobs:
         pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
         pip install pylint
         
-    - name: run test speed code
+    - name: pylink test code
       continue-on-error: true
       env:
         PYTHONPATH: ./socialjax:${{ env.PYTHONPATH }}
       run: |
         pylint speed_test/speed_test_random.py
+    - name: run test speed code
+      continue-on-error: true
+      env:
+        PYTHONPATH: ./socialjax:${{ env.PYTHONPATH }}
+      run: |
+        python speed_test/speed_test_random.py
+
