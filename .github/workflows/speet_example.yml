@@ -1,4 +1,4 @@
-name: Pylint
+name: Speed_example
 
 on: [push]
 
