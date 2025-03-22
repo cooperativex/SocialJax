@@ -70,7 +70,8 @@ config = {
     "SEED": 0,
 }
 
-num_envs = [1, 128, 1024, 4096]
+# num_envs = [1, 128, 1024, 4096]
+num_envs = [1]
 sps_list = []
 for num in num_envs:
     config["NUM_ENVS"] = num
