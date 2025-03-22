@@ -2,13 +2,13 @@
 Based on jaxmarl Implementation of speed test
 """
 
-import os
 import time
 
 import numpy as np
-import socialjax
 import jax
 import jax.numpy as jnp
+
+import socialjax
 
 def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
     x = x.reshape((num_actors, num_envs, -1))
@@ -28,8 +28,8 @@ def make_benchmark(config):
 
             return (env_state, obsv, rng)
 
-        def env_step(runner_state, unused):
-            env_state, last_obs, rng = runner_state
+        def env_step(runner_state, _unused):
+            env_state, _, rng = runner_state
 
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
