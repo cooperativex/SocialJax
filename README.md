@@ -42,7 +42,6 @@
 
 **Individual Rewards**: each agent is assigned its own reward, inherently encouraging selfish behavior.
 
----
 
 SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-agent reinforcement learning in sequential social dilemmas. We are committed to providing a more efficient and diverse suite of environments for studying social dilemmas. We provide JAX implementations of the following environments: Coins, Commons Harvest: Open, Commons Harvest: Closed, Clean Up, Territory, and Coop Mining, which are derived from [Melting Pot 2.0](https://github.com/google-deepmind/meltingpot/) and feature commonly studied mixed incentives.
 
@@ -173,5 +172,5 @@ for t in range(100):
 ```
 ## See Also
 
-1. [JaxMARL](https://github.com/flairox/jaxmarl): accelerated MARL environments with baselines in JAX.
-2. [PureJaxRL](https://github.com/luchris429/purejaxrl): JAX implementation of PPO, and demonstration of end-to-end JAX-based RL training.
+[JaxMARL](https://github.com/flairox/jaxmarl): accelerated MARL environments with baselines in JAX.
+[PureJaxRL](https://github.com/luchris429/purejaxrl): JAX implementation of PPO, and demonstration of end-to-end JAX-based RL training.
