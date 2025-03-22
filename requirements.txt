@@ -35,7 +35,7 @@ idna==3.10
 importlib_resources==6.5.2
 itsdangerous==2.2.0
 jax==0.4.23
-jaxlib==0.4.23+cuda11.cudnn86
+jaxlib==0.4.23
 jaxmarl==0.0.7
 jaxopt==0.8.3
 Jinja2==3.1.5
