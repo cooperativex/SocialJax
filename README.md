@@ -59,8 +59,7 @@ cd SocialJax
 
 Second: Environment Setup.
 
-Option one: Using peotry
-make sure you have python 3.10
+Option one: Using peotry, make sure you have python 3.10
   1. Install Peotry
        ```bash
        curl -sSL https://install.python-poetry.org | python3 -
