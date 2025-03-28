@@ -159,7 +159,7 @@ for t in range(100):
 
 ### Speed test
 
-You can test the speed of our environments by running [speed_test](https://github.com/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.py) or use the [colab](https://colab.research.google.com/github/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.ipynb).
+You can test the speed of our environments by running [speed_test](https://github.com/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.py) or using the [colab](https://colab.research.google.com/github/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.ipynb).
 
 
 ## Citation
