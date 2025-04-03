@@ -100,6 +100,37 @@ class LogWrapper(JaxMARLWrapper):
         info["returned_episode_lengths"] = state.returned_episode_lengths
         info["returned_episode"] = jnp.full((self._env.num_agents,), ep_done)
         return obs, state, reward, done, info
+    
+
+class MAPPOWorldStateWrapper(JaxMARLWrapper):
+    
+    @partial(jax.jit, static_argnums=0)
+    def reset(self,
+              key):
+        obs, env_state = self._env.reset(key)
+        # obs["world_state"] = self.world_state(obs, env_state)
+        return obs, env_state
+    
+    @partial(jax.jit, static_argnums=0)
+    def step(self,
+             key,
+             state,
+             action):
+        obs, env_state, reward, done, info = self._env.step(
+            key, state, action
+        )
+        # obs["world_state"] = self.world_state(obs, state)
+        return obs, env_state, reward, done, info
+
+    @partial(jax.jit, static_argnums=0)
+    def world_state(self, obs, state):
+        """ 
+        For each agent: [agent obs, own hand]
+        """
+        return jnp.array([obs[agent] for agent in self._env.agents])
+        # hands = state.player_hands.reshape((self._env.num_agents, -1))
+        # return jnp.concatenate((all_obs, hands), axis=1)
+        
 
 class MPELogWrapper(LogWrapper):
     """ Times reward signal by number of agents within the environment,
