@@ -111,7 +111,7 @@ class Critic(nn.Module):
 
         value = nn.Dense(
             features=1,
-            kernel_init=orthogonal(1.0),
+            kernel_init=orthogonal(0.01),
             bias_init=constant(0.0),
         )(hidden)
         # squeeze 去除最后一个维度
@@ -250,11 +250,14 @@ def make_train(config):
 
                 #VALUE
                 world_state = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ENVS"], *(env.observation_space()[0]).shape[:-1], -1)
+                world_state = jnp.expand_dims(world_state, axis=0)
+                world_state = jnp.tile(world_state, (env.num_agents, 1, 1, 1, 1))
+                world_state = jnp.reshape(world_state, (-1, *(world_state.shape[2:])))
                 # world_state = last_obs["world_state"].swapaxes(0,1)  
                 # world_state = world_state.reshape((config["NUM_ACTORS"],-1))
                 value = critic_network.apply(train_states[1].params, world_state)
-                expanded_value = jnp.expand_dims(value, axis=0)
-                value = jnp.tile(expanded_value, (env.num_agents, 1))
+                # expanded_value = jnp.expand_dims(value, axis=0)
+                # value = jnp.tile(expanded_value, (env.num_agents, 1))
                 value = value.reshape(config["NUM_ACTORS"])
 
 
@@ -295,7 +298,7 @@ def make_train(config):
             last_val = critic_network.apply(train_states[1].params, last_world_state)
             last_val = jnp.expand_dims(last_val, axis=0)
             last_val = jnp.tile(last_val, (env.num_agents, 1))
-            last_val = last_val.reshape(config["NUM_ACTORS"])
+            last_val = last_val.reshape((config["NUM_ACTORS"],-1))
             last_val = last_val.squeeze()
 
             def _calculate_gae(traj_batch, last_val):
@@ -416,26 +419,45 @@ def make_train(config):
                     rng,
                 ) = update_state
                 rng, _rng = jax.random.split(rng)
-                batch = (
-                    traj_batch,
-                    advantages.squeeze(),
-                    targets.squeeze(),
-                )
-                permutation = jax.random.permutation(_rng, config["NUM_ACTORS"])
 
-                shuffled_batch = jax.tree_util.tree_map(
-                    lambda x: jnp.take(x, permutation, axis=1), batch
-                )
+                # batch = (
+                #     traj_batch,
+                #     advantages.squeeze(),
+                #     targets.squeeze(),
+                # )
+                # permutation = jax.random.permutation(_rng, config["NUM_ACTORS"])
+
+                # shuffled_batch = jax.tree_util.tree_map(
+                #     lambda x: jnp.take(x, permutation, axis=1), batch
+                # )
                 
+                # minibatches = jax.tree_util.tree_map(
+                #     lambda x: jnp.swapaxes(
+                #         jnp.reshape(
+                #             x,
+                #             [x.shape[0], config["NUM_MINIBATCHES"], -1]
+                #             + list(x.shape[2:]),
+                #         ),
+                #         1,
+                #         0,
+                #     ),
+                #     shuffled_batch,
+                # )
+                batch_size = config["MINIBATCH_SIZE"] * config["NUM_MINIBATCHES"]
+                assert (
+                    batch_size == config["NUM_STEPS"] * config["NUM_ACTORS"]
+                ), "batch size must be equal to number of steps * number of actors"
+                permutation = jax.random.permutation(_rng, batch_size)
+                batch = (traj_batch, advantages, targets)
+                batch = jax.tree_util.tree_map(
+                    lambda x: x.reshape((batch_size,) + x.shape[2:]), batch
+                )
+                shuffled_batch = jax.tree_util.tree_map(
+                    lambda x: jnp.take(x, permutation, axis=0), batch
+                )
                 minibatches = jax.tree_util.tree_map(
-                    lambda x: jnp.swapaxes(
-                        jnp.reshape(
-                            x,
-                            [x.shape[0], config["NUM_MINIBATCHES"], -1]
-                            + list(x.shape[2:]),
-                        ),
-                        1,
-                        0,
+                    lambda x: jnp.reshape(
+                        x, [config["NUM_MINIBATCHES"], -1] + list(x.shape[1:])
                     ),
                     shuffled_batch,
                 )
@@ -482,7 +504,9 @@ def make_train(config):
                 )
                 
             metric["update_steps"] = update_steps
-            jax.experimental.io_callback(callback, None, metric)
+            # jax.experimental.io_callback(callback, None, metric)
+
+            jax.debug.callback(callback, metric)
             update_steps = update_steps + 1
             runner_state = (train_states, env_state, last_obs, last_done, rng)
             return (runner_state, update_steps), metric
@@ -515,12 +539,15 @@ def single_run(config):
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
-    train_jit = jax.jit(make_train(config))
+    # train_jit = jax.jit(make_train(config))
+
+    train_jit = make_train(config)
+    
     out = jax.vmap(train_jit)(rngs)
 
     print("** Saving Results **")
     filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}_reward_{config["REWARD"]}'
-    train_state = jax.tree_map(lambda x: x[0], out["runner_state"][0])
+    train_state = jax.tree_map(lambda x: x[0], out["runner_state"][0][0][0])
     save_path = f"./checkpoints/{filename}.pkl"
     save_params(train_state, save_path)
     params = load_params(save_path)
