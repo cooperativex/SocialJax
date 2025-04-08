@@ -1,9 +1,9 @@
 "LR": 0.001
-"NUM_ENVS": 32
+"NUM_ENVS": 4
 "NUM_STEPS": 100
-"TOTAL_TIMESTEPS": 1e9
+"TOTAL_TIMESTEPS": 1e8
 "UPDATE_EPOCHS": 2
-"NUM_MINIBATCHES": 16
+"NUM_MINIBATCHES": 4
 "GAMMA": 0.99
 "GAE_LAMBDA": 0.95
 "CLIP_EPS": 0.2
@@ -29,7 +29,7 @@
 "NUM_SEEDS": 1
 "TUNE": False
 
-"REWARD": "MAPPO_common" # individual; common
+"REWARD": "MAPPO" # individual; common
 "GIF_NUM_FRAMES": 250
 
 # WandB Params

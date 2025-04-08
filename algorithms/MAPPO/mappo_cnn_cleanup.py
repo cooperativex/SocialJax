@@ -1,10 +1,7 @@
 """ 
 Based on PureJaxRL & jaxmarl Implementation of PPO
-There might be some calculations need to be improved:
-1. MAPPO is much slower than IPPO right now
-2. Need to imporve the network of critic.
+Fixed bugs of jaxmarl
 """
-
 
 import jax
 import jax.numpy as jnp
@@ -37,9 +34,16 @@ class CNN(nn.Module):
             activation = nn.relu
         else:
             activation = nn.tanh
+        x = nn.Conv(
+            features=16,
+            kernel_size=(3, 3),
+            kernel_init=orthogonal(np.sqrt(2)),
+            bias_init=constant(0.0),
+        )(x)
+        x = activation(x)
         # x = nn.Conv(
         #     features=32,
-        #     kernel_size=(5, 5),
+        #     kernel_size=(3, 3),
         #     kernel_init=orthogonal(np.sqrt(2)),
         #     bias_init=constant(0.0),
         # )(x)
@@ -51,13 +55,6 @@ class CNN(nn.Module):
         #     bias_init=constant(0.0),
         # )(x)
         # x = activation(x)
-        x = nn.Conv(
-            features=32,
-            kernel_size=(3, 3),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
         x = x.reshape((x.shape[0], -1))  # Flatten
 
         x = nn.Dense(
@@ -186,7 +183,7 @@ def make_train(config):
         actor_network_params = actor_network.init(_rng_actor, ac_init_x)
 
         obs_shape = env.observation_space()[0].shape
-        global_shape = (1, *obs_shape[:-1], obs_shape[-1]) # * env.num_agents)
+        global_shape = (1, *obs_shape[:-1], obs_shape[-1] * env.num_agents)
         cr_init_x = jnp.zeros(global_shape)
         # cr_init_x = jnp.zeros((1, *(env.observation_space()[0]).shape)) 
 
@@ -253,12 +250,10 @@ def make_train(config):
                 env_act = [v for v in env_act.values()]
 
                 #VALUE
-                # world_state = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ENVS"], *(env.observation_space()[0]).shape[:-1], -1)
-                world_state = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
-
-                # world_state = jnp.expand_dims(world_state, axis=0)
-                # world_state = jnp.tile(world_state, (env.num_agents, 1, 1, 1, 1))
-                # world_state = jnp.reshape(world_state, (-1, *(world_state.shape[2:])))
+                world_state = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ENVS"], *(env.observation_space()[0]).shape[:-1], -1)
+                world_state = jnp.expand_dims(world_state, axis=0)
+                world_state = jnp.tile(world_state, (env.num_agents, 1, 1, 1, 1))
+                world_state = jnp.reshape(world_state, (-1, *(world_state.shape[2:])))
                 # world_state = last_obs["world_state"].swapaxes(0,1)  
                 # world_state = world_state.reshape((config["NUM_ACTORS"],-1))
                 value = critic_network.apply(train_states[1].params, world_state)
@@ -300,11 +295,11 @@ def make_train(config):
 
             # last_world_state = last_obs["world_state"].swapaxes(0,1)
             # last_world_state = last_world_state.reshape((config["NUM_ACTORS"],-1))
-            last_world_state = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ACTORS"], *(env.observation_space()[0]).shape[:-1], -1)
+            last_world_state = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ENVS"], *(env.observation_space()[0]).shape[:-1], -1)
             last_val = critic_network.apply(train_states[1].params, last_world_state)
-            # last_val = jnp.expand_dims(last_val, axis=0)
-            # last_val = jnp.tile(last_val, (env.num_agents, 1))
-            # last_val = last_val.reshape((config["NUM_ACTORS"],-1))
+            last_val = jnp.expand_dims(last_val, axis=0)
+            last_val = jnp.tile(last_val, (env.num_agents, 1))
+            last_val = last_val.reshape((config["NUM_ACTORS"],-1))
             last_val = last_val.squeeze()
 
             def _calculate_gae(traj_batch, last_val):
@@ -557,7 +552,7 @@ def single_run(config):
     save_path = f"./checkpoints/{filename}.pkl"
     save_params(train_state, save_path)
     params = load_params(save_path)
-    
+    print("** Evaluating Results **")
     evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
     # state_seq = get_rollout(train_state.params, config)
     # viz = OvercookedVisualizer()
