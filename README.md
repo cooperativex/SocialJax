@@ -49,7 +49,7 @@ SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 ## Update
-**[2025/04/16]**✨ Add [MAPPO](https://github.com/cooperativex/SocialJax/tree/main/algorithms/MAPPO) algorithm for all environments
+**[2025/04/16]**✨ Added [MAPPO](https://github.com/cooperativex/SocialJax/tree/main/algorithms/MAPPO) algorithm for all environments
 
 ## Installation
 
