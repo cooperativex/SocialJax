@@ -26,7 +26,7 @@
     </div>
 </div>
 
-***Common Rewards*** : a scenario where all agents share a single, unified reward signal. This approach ensures that all agents are aligned towards achieving the same objective, promoting collaboration and coordination among them.
+*Common Rewards* : a scenario where all agents share a single, unified reward signal. This approach ensures that all agents are aligned towards achieving the same objective, promoting collaboration and coordination among them.
 
 <div class="collage">
     <div class="column" align="centre">
