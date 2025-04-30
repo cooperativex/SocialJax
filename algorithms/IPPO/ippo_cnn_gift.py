@@ -1,29 +1,29 @@
 """ 
 Based on PureJaxRL & jaxmarl Implementation of PPO
 """
+import os
+import pickle
+import time
+from pathlib import Path
+from typing import Sequence, NamedTuple
 
+import distrax
+import flax.linen as nn
+import hydra
 import jax
 import jax.numpy as jnp
-import flax.linen as nn
 import numpy as np
 import optax
+import wandb
+from PIL import Image
 from flax.linen.initializers import constant, orthogonal
-from typing import Sequence, NamedTuple, Any
 from flax.training.train_state import TrainState
-# from flax.training import checkpoints
-import distrax
-from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper
+from gymnax.wrappers.purerl import LogWrapper
+from omegaconf import OmegaConf
+
 import socialjax
 from socialjax.wrappers.baselines import LogWrapper
-import hydra
-from omegaconf import OmegaConf
-import wandb
-import copy
-import pickle
-import os
-import matplotlib.pyplot as plt
-from PIL import Image
-from pathlib import Path
+
 
 class CNN(nn.Module):
     activation: str = "relu"
@@ -119,11 +119,10 @@ def get_rollout(params, config):
 
     obs, state = env.reset(key_r)
     state_seq = [state]
-    for o in range(config["GIF_NUM_FRAMES"]):
-        print(o)
+    while not done:
         key, key_a0, key_a1, key_s = jax.random.split(key, 4)
 
-        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
+        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *(env.observation_space()[0]).shape)
 
         pi, value = network.apply(params, obs_batch)
         action = pi.sample(seed=key_a0)
@@ -146,6 +145,7 @@ def batchify(x: dict, agent_list, num_actors):
     x = jnp.stack([x[:, a] for a in agent_list])
     return x.reshape((num_actors, -1))
 
+
 def batchify_dict(x: dict, agent_list, num_actors):
     x = jnp.stack([x[str(a)] for a in agent_list])
     return x.reshape((num_actors, -1))
@@ -155,54 +155,31 @@ def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
     x = x.reshape((num_actors, num_envs, -1))
     return {a: x[i] for i, a in enumerate(agent_list)}
 
-def group_and_distribute_sum(array):
-    """
-    每9个值求和，并将和分配给这9个位置
-    
-    Args:
-        array: shape (11304,) 的数组
-    Returns:
-        相同shape的数组，每9个值相同（为原来9个值的和）
-    """
-    group_size = 9
-    # 创建组索引
-    group_indices = jnp.arange(array.shape[0]) // group_size
-    # 使用segment_sum计算每组的和
-    group_sums = jax.ops.segment_sum(array, group_indices, num_segments=array.shape[0] // group_size)
-    # 使用group_indices索引回原数组大小
-    return group_sums[group_indices]
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
 
     config["NUM_ACTORS"] = env.num_agents * config["NUM_ENVS"]
     config["NUM_UPDATES"] = (
-        config["TOTAL_TIMESTEPS"] // config["NUM_STEPS"] // config["NUM_ENVS"]
+            config["TOTAL_TIMESTEPS"] // config["NUM_STEPS"] // config["NUM_ENVS"]
     )
     config["MINIBATCH_SIZE"] = (
-        config["NUM_ACTORS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
+            config["NUM_ACTORS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
     )
 
     env = LogWrapper(env, replace_info=False)
 
     rew_shaping_anneal = optax.linear_schedule(
-        init_value=0.,
-        end_value=1.,
-        transition_steps=config["REW_SHAPING_HORIZON"],
-        transition_begin=config["SHAPING_BEGIN"]
-    )
-
-    rew_shaping_anneal_org = optax.linear_schedule(
         init_value=1.,
         end_value=0.,
-        transition_steps=config["REW_SHAPING_HORIZON"],
-        transition_begin=config["SHAPING_BEGIN"]
+        transition_steps=config["REW_SHAPING_HORIZON"]
     )
+
     def linear_schedule(count):
         frac = (
-            1.0
-            - (count // (config["NUM_MINIBATCHES"] * config["UPDATE_EPOCHS"]))
-            / config["NUM_UPDATES"]
+                1.0
+                - (count // (config["NUM_MINIBATCHES"] * config["UPDATE_EPOCHS"]))
+                / config["NUM_UPDATES"]
         )
         return config["LR"] * frac
 
@@ -241,11 +218,12 @@ def make_train(config):
             def _env_step(runner_state, unused):
                 train_state, env_state, last_obs, update_step, rng = runner_state
 
+                # jax.profiler.start_trace(".", True, True)
+
                 # SELECT ACTION
                 rng, _rng = jax.random.split(rng)
 
-
-                obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
+                obs_batch = jnp.transpose(last_obs, (1, 0, 2, 3, 4)).reshape(-1, *(env.observation_space()[0]).shape)
                 # obs_batch = jnp.stack([last_obs[a] for a in env.agents]).reshape(-1, *env.observation_space().shape)
 
                 print("input_obs_shape", obs_batch.shape)
@@ -268,9 +246,9 @@ def make_train(config):
                     env.step, in_axes=(0, 0, 0)
                 )(rng_step, env_state, env_act)
 
+                # shaped_reward = info.pop("shaped_reward")
                 # current_timestep = update_step*config["NUM_STEPS"]*config["NUM_ENVS"]
-                # shaped_reward = compute_grouped_rewards(reward)
-                # reward = jax.tree_map(lambda x,y: x*rew_shaping_anneal_org(current_timestep)+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
+                # reward = jax.tree_map(lambda x,y: x+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
 
                 info = jax.tree_map(lambda x: x.reshape((config["NUM_ACTORS"])), info)
                 transition = Transition(
@@ -291,7 +269,8 @@ def make_train(config):
 
             # CALCULATE ADVANTAGE
             train_state, env_state, last_obs, update_step, rng = runner_state
-            last_obs_batch = jnp.stack([last_obs[:,a,...] for a in env.agents]).reshape(-1, *(env.observation_space()[0]).shape)
+            last_obs_batch = jnp.stack([last_obs[:, a, ...] for a in env.agents]).reshape(-1, *(
+                env.observation_space()[0]).shape)
             _, last_val = network.apply(train_state.params, last_obs_batch)
 
             def _calculate_gae(traj_batch, last_val):
@@ -302,11 +281,10 @@ def make_train(config):
                         transition.value,
                         transition.reward,
                     )
-                    reward = group_and_distribute_sum(reward) # common and individual reward
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (
-                        delta
-                        + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
+                            delta
+                            + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
                     )
                     return (gae, value), gae
 
@@ -333,12 +311,12 @@ def make_train(config):
 
                         # CALCULATE VALUE LOSS
                         value_pred_clipped = traj_batch.value + (
-                            value - traj_batch.value
+                                value - traj_batch.value
                         ).clip(-config["CLIP_EPS"], config["CLIP_EPS"])
                         value_losses = jnp.square(value - targets)
                         value_losses_clipped = jnp.square(value_pred_clipped - targets)
                         value_loss = (
-                            0.5 * jnp.maximum(value_losses, value_losses_clipped).mean()
+                                0.5 * jnp.maximum(value_losses, value_losses_clipped).mean()
                         )
 
                         # CALCULATE ACTOR LOSS
@@ -346,21 +324,21 @@ def make_train(config):
                         gae = (gae - gae.mean()) / (gae.std() + 1e-8)
                         loss_actor1 = ratio * gae
                         loss_actor2 = (
-                            jnp.clip(
-                                ratio,
-                                1.0 - config["CLIP_EPS"],
-                                1.0 + config["CLIP_EPS"],
-                            )
-                            * gae
+                                jnp.clip(
+                                    ratio,
+                                    1.0 - config["CLIP_EPS"],
+                                    1.0 + config["CLIP_EPS"],
+                                )
+                                * gae
                         )
                         loss_actor = -jnp.minimum(loss_actor1, loss_actor2)
                         loss_actor = loss_actor.mean()
                         entropy = pi.entropy().mean()
 
                         total_loss = (
-                            loss_actor
-                            + config["VF_COEF"] * value_loss
-                            - config["ENT_COEF"] * entropy
+                                loss_actor
+                                + config["VF_COEF"] * value_loss
+                                - config["ENT_COEF"] * entropy
                         )
                         return total_loss, (value_loss, loss_actor, entropy)
 
@@ -375,7 +353,7 @@ def make_train(config):
                 rng, _rng = jax.random.split(rng)
                 batch_size = config["MINIBATCH_SIZE"] * config["NUM_MINIBATCHES"]
                 assert (
-                    batch_size == config["NUM_STEPS"] * config["NUM_ACTORS"]
+                        batch_size == config["NUM_STEPS"] * config["NUM_ACTORS"]
                 ), "batch size must be equal to number of steps * number of actors"
                 permutation = jax.random.permutation(_rng, batch_size)
                 batch = (traj_batch, advantages, targets)
@@ -426,112 +404,134 @@ def make_train(config):
 
     return train
 
+
 def single_run(config):
     config = OmegaConf.to_container(config)
-    # layout_name = copy.deepcopy(config["ENV_KWARGS"]["layout"])
-    # config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
+    n_agents = config["ENV_KWARGS"]["num_agents"]
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    exp_name = f'{config["ENV_NAME"]}_{n_agents}agents_seed{config["SEED"]}_reward_{config["REWARD"]}_{timestamp}'
 
     wandb.init(
+        config=config,
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=["IPPO", "FF"],
-        config=config,
+        tags=config["WANDB_TAGS"],
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_territory_open'
+        group=config["ENV_NAME"],
+        job_type="train",
+        name=exp_name,
+        id=exp_name,
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
     train_jit = jax.jit(make_train(config))
+
+    if config["PROFILING"]:
+        # ---------------
+        # START PROFILING
+        # ---------------
+        trace_dir = f"./jax_traces/train_trace_{exp_name}_{int(time.time())}"
+        os.makedirs(trace_dir, exist_ok=True)
+
+        # Start a JAX trace — only do this for a short portion of your code not to generate massive files.
+        jax.profiler.start_trace(trace_dir, True, True)
+        # ---------------
+
     out = jax.vmap(train_jit)(rngs)
 
+    if config["PROFILING"]:
+        # ---------------
+        # STOP PROFILING
+        # ---------------
+        jax.profiler.stop_trace()
+        # ---------------
+
     print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}'
     train_state = jax.tree_map(lambda x: x[0], out["runner_state"][0])
-    save_path = f"./checkpoints/individual/{filename}.pkl"
+    save_path = f"./checkpoints/{exp_name}.pkl"
     save_params(train_state, save_path)
-    params = load_params(save_path)
-    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
-    # state_seq = get_rollout(train_state.params, config)
-    # viz = OvercookedVisualizer()
-    # agent_view_size is hardcoded as it determines the padding around the layout.
-    # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
+    params = train_state.params
+    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), config)
+
+    if config["PROFILING"]:
+        # Log the trace files to wandb
+        for fn in os.listdir(trace_dir):
+            if "events.out.trace" in fn:
+                wandb.save(os.path.join(trace_dir, fn))
+
 
 def save_params(train_state, save_path):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     params = jax.tree_util.tree_map(lambda x: np.array(x), train_state.params)
-
     with open(save_path, 'wb') as f:
         pickle.dump(params, f)
+
 
 def load_params(load_path):
     with open(load_path, 'rb') as f:
         params = pickle.load(f)
     return jax.tree_util.tree_map(lambda x: jnp.array(x), params)
 
-def evaluate(params, env, save_path, config):
+
+def evaluate(params, env, config):
     rng = jax.random.PRNGKey(0)
-    
+
     rng, _rng = jax.random.split(rng)
     obs, state = env.reset(_rng)
-    done = False
-    
+    returns = 0
+
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/territory_open"
+    root_dir = f"evaluation/{config['ENV_NAME']}/{config['REWARD']}"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
+    network = ActorCritic(action_dim=env.action_space().n, activation=config["ACTIVATION"])
 
     for o_t in range(config["GIF_NUM_FRAMES"]):
-        # 获取所有智能体的观察
-        # print(o_t)
         obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-        
-        # 使用模型选择动作
-        network = ActorCritic(action_dim=env.action_space().n, activation="relu")  # 使用与训练时相同的参数
         pi, _ = network.apply(params, obs_batch)
         rng, _rng = jax.random.split(rng)
         actions = pi.sample(seed=_rng)
-        
-        # 转换动作格式
+
         env_act = {k: v.squeeze() for k, v in unbatchify(
             actions, env.agents, 1, env.num_agents
         ).items()}
-        
-        # 执行动作
+
         rng, _rng = jax.random.split(rng)
         obs, state, reward, done, info = env.step(_rng, state, [v.item() for v in env_act.values()])
-        done = done["__all__"]
-        
-        # 记录结果
-        # episode_reward += sum(reward.values())
-        
-        # 渲染
+
+        returns += reward
         img = env.render(state)
         pics.append(img)
-        
+
         print('###################')
         print(f'Actions: {env_act}')
         print(f'Reward: {reward}')
-        # print(f'State: {state.agent_locs}')
-        # print(f'State: {state.claimed_indicator_time_matrix}')
+        print(f'Returns: {returns}')
+        print(f'State: {state.agent_locs}')
         print("###################")
-    
-    # 保存GIF
+
     print(f"Saving Episode GIF")
-    pics = [Image.fromarray(img) for img in pics]
+    pics = [Image.fromarray(np.array(img)) for img in pics]
+    n_agents = len(env.agents)
+    gif_path = f"{root_dir}/{n_agents}-agents_seed-{config['SEED']}_frames-{o_t + 1}.gif"
     pics[0].save(
-    f"{root_dir}/common_state_outer_step_{o_t+1}.gif",
-    format="GIF",
-    save_all=True,
-    optimize=False,
-    append_images=pics[1:],
-    duration=200,
-    loop=0,
+        gif_path,
+        format="GIF",
+        save_all=True,
+        optimize=False,
+        append_images=pics[1:],
+        duration=200,
+        loop=0,
     )
-        
-        # print(f"Episode {episode} total reward: {episode_reward}")
+
+    # Log the GIF to WandB
+    print("Logging GIF to WandB")
+    wandb.log({"Episode GIF": wandb.Video(gif_path, caption="Evaluation Episode", format="gif")})
+
+
 def tune(default_config):
     """
     Hyperparameter sweep with wandb, including logic to:
@@ -545,7 +545,7 @@ def tune(default_config):
     default_config = OmegaConf.to_container(default_config)
 
     sweep_config = {
-        "name": "territory",
+        "name": "gift",
         "method": "grid",
         "metric": {
             "name": "returned_episode_original_returns",
@@ -600,11 +600,14 @@ def tune(default_config):
 
 
 
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_territory_open")
+
+@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_gift")
 def main(config):
     if config["TUNE"]:
         tune(config)
     else:
         single_run(config)
+
+
 if __name__ == "__main__":
     main()
