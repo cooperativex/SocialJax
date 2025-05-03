@@ -11,12 +11,12 @@
 "VF_COEF": 0.5
 "MAX_GRAD_NORM": 0.5
 "ACTIVATION": "relu"
-"ENV_NAME": "clean_up"
+"ENV_NAME": "harvest_common_open"
 "REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
 "ENV_KWARGS": 
   "num_agents" : 7
   "num_inner_steps" : 1000
-  "shared_rewards" : False  # Attention: switch to False for individual rewards 
+  "shared_rewards" : False  # Attention: switch to False for individual rewards; True for common rewards 
   "cnn" : True
   "jit" : True
   
@@ -26,12 +26,19 @@
 "NUM_SEEDS": 1
 "TUNE": False
 
-"REWARD": "common" # individual; common
+"REWARD": "individual" # individual; common
 "GIF_NUM_FRAMES": 250
+
+
+"INQUITY_AVERSION_ALPHA": 5
+"INQUITY_AVERSION_BETA": 0.05
+"INQUITY_AVERSION_TARGET_AGENTS": None
+"INQUITY_AVERSION_GROUP_SIZE": 7
+
 
 # WandB Params
 "ENTITY": ""
 "PROJECT": "socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
-  - COMMON_REWARD # COMMON_REWARD
+  - COMMON_REWARD # INDIVIDUAL_REWARD

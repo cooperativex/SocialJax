@@ -1,7 +1,6 @@
 """ 
 Based on PureJaxRL & jaxmarl Implementation of PPO
 """
-
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
@@ -95,7 +94,6 @@ class ActorCritic(nn.Module):
         )
 
         return pi, jnp.squeeze(critic, axis=-1)
-
 
 class Transition(NamedTuple):
     done: jnp.ndarray
@@ -277,9 +275,6 @@ def make_train(config):
                         transition.value,
                         transition.reward,
                     )
-                    reward_mean = jnp.mean(reward, axis=0)
-                    # reward_std = jnp.std(reward, axis=0) + 1e-8
-                    reward = (reward - reward_mean)# / reward_std
 
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (
@@ -406,15 +401,16 @@ def make_train(config):
 
 def single_run(config):
     config = OmegaConf.to_container(config)
-
+    # layout_name = copy.deepcopy(config["ENV_KWARGS"]["layout"])
+    # config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
 
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=["IPPO", "FF"],
+        tags=["SVO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_cleanup',
+        name=f'svo_cnn_harvest_common',
         group=f'harvest',
     )
 
@@ -430,7 +426,7 @@ def single_run(config):
     save_params(train_state, save_path)
     params = load_params(save_path)
     
-    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
+    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path)
     # state_seq = get_rollout(train_state.params, config)
     # viz = OvercookedVisualizer()
     # agent_view_size is hardcoded as it determines the padding around the layout.
@@ -448,7 +444,7 @@ def load_params(load_path):
         params = pickle.load(f)
     return jax.tree_util.tree_map(lambda x: jnp.array(x), params)
 
-def evaluate(params, env, save_path, config):
+def evaluate(params, env, save_path):
     rng = jax.random.PRNGKey(0)
     
     rng, _rng = jax.random.split(rng)
@@ -458,7 +454,7 @@ def evaluate(params, env, save_path, config):
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/cleanup"
+    root_dir = f"evaluation/harvest"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -466,9 +462,9 @@ def evaluate(params, env, save_path, config):
         # 获取所有智能体的观察
         print(o_t)
         obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-
+        
         # 使用模型选择动作
-        network = ActorCritic(action_dim=env.action_space().n, activation=config["ACTIVATION"])  # 使用与训练时相同的参数
+        network = ActorCritic(action_dim=env.action_space().n, activation="tanh")  # 使用与训练时相同的参数
         pi, _ = network.apply(params, obs_batch)
         rng, _rng = jax.random.split(rng)
         actions = pi.sample(seed=_rng)
@@ -525,6 +521,7 @@ def tune(default_config):
         config = copy.deepcopy(default_config)
         for k, v in dict(wandb.config).items():
             config[k] = v
+        config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
 
         print("running experiment with params:", config)
 
@@ -559,7 +556,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_cleanup")
+@hydra.main(version_base=None, config_path="config", config_name="svo_cnn_harvest_common")
 def main(config):
     if config["TUNE"]:
         tune(config)

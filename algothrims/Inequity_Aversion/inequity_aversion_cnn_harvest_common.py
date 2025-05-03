@@ -1,6 +1,9 @@
 """ 
 Based on PureJaxRL & jaxmarl Implementation of PPO
 """
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import jax
 import jax.numpy as jnp
@@ -23,6 +26,7 @@ import os
 import matplotlib.pyplot as plt
 from PIL import Image
 from pathlib import Path
+from socialjax.environments import Harvest_open, Clean_up, Territory_open
 
 class CNN(nn.Module):
     activation: str = "relu"
@@ -96,7 +100,6 @@ class ActorCritic(nn.Module):
 
         return pi, jnp.squeeze(critic, axis=-1)
 
-
 class Transition(NamedTuple):
     done: jnp.ndarray
     action: jnp.ndarray
@@ -153,6 +156,55 @@ def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
     x = x.reshape((num_actors, num_envs, -1))
     return {a: x[i] for i, a in enumerate(agent_list)}
 
+# def inequity_aversion(array, target_agents=None, alpha=5, beta=0.05, group_size=7):    
+#     """
+#     Inequity Aversion reward shaping method
+    
+#     Args:
+#         array: shape: [batch_size * num_agents]
+#         target_agents: list of agent indices to apply inequity aversion to, if None, apply to all agents
+#         alpha: inequity aversion coefficient (when others' reward is greater than self's reward)
+#         beta: inequity aversion coefficient (when self's reward is greater than others' reward)
+#         group_size: number of agents in each group
+#     """
+#     # reshape the array to [num_groups, group_size]
+#     num_groups = array.shape[0] // group_size
+#     reshaped_array = array.reshape(num_groups, group_size)
+    
+#     def process_group(rewards):
+#         n = rewards.shape[0]  # group_size
+#         r_i = rewards.reshape(-1, 1)  # [group_size, 1]
+#         r_j = rewards.reshape(1, -1)  # [1, group_size]
+        
+#         # calculate max(r_j - r_i, 0) and max(r_i - r_j, 0)
+#         disadvantageous = jnp.maximum(r_j - r_i, 0)
+#         advantageous = jnp.maximum(r_i - r_j, 0)
+        
+#         # create mask to exclude self-comparison
+#         mask = 1 - jnp.eye(n)
+#         disadvantageous = disadvantageous * mask
+#         advantageous = advantageous * mask
+        
+#         # calculate inequity penalty
+#         n_others = n - 1
+#         inequity_penalty = (alpha * jnp.sum(disadvantageous, axis=1) + 
+#                           beta * jnp.sum(advantageous, axis=1)) / n_others
+        
+#         # if target_agents is specified, only apply inequity aversion to these agents
+#         if target_agents is not None:
+#             target_agents_array = jnp.array(target_agents)
+#             agent_mask = jnp.zeros(n, dtype=bool)
+#             agent_mask = agent_mask.at[target_agents_array].set(True)
+#             # apply penalty only to the target agents, others keep original rewards
+#             return jnp.where(agent_mask, rewards - inequity_penalty, rewards)
+#         else:
+#             return rewards - inequity_penalty
+    
+#     # apply inequity aversion calculation to each group
+#     shaped_rewards = jax.vmap(process_group)(reshaped_array)
+    
+#     # reshape to original shape
+#     return shaped_rewards.reshape(-1)
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -277,10 +329,6 @@ def make_train(config):
                         transition.value,
                         transition.reward,
                     )
-                    reward_mean = jnp.mean(reward, axis=0)
-                    # reward_std = jnp.std(reward, axis=0) + 1e-8
-                    reward = (reward - reward_mean)# / reward_std
-
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (
                         delta
@@ -406,15 +454,16 @@ def make_train(config):
 
 def single_run(config):
     config = OmegaConf.to_container(config)
-
+    # layout_name = copy.deepcopy(config["ENV_KWARGS"]["layout"])
+    # config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
 
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=["IPPO", "FF"],
+        tags=["Inequity_Aversion", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_cleanup',
+        name=f'inequity_aversion_cnn_harvest_common',
         group=f'harvest',
     )
 
@@ -430,7 +479,7 @@ def single_run(config):
     save_params(train_state, save_path)
     params = load_params(save_path)
     
-    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
+    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path)
     # state_seq = get_rollout(train_state.params, config)
     # viz = OvercookedVisualizer()
     # agent_view_size is hardcoded as it determines the padding around the layout.
@@ -448,7 +497,7 @@ def load_params(load_path):
         params = pickle.load(f)
     return jax.tree_util.tree_map(lambda x: jnp.array(x), params)
 
-def evaluate(params, env, save_path, config):
+def evaluate(params, env, save_path):
     rng = jax.random.PRNGKey(0)
     
     rng, _rng = jax.random.split(rng)
@@ -458,7 +507,7 @@ def evaluate(params, env, save_path, config):
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/cleanup"
+    root_dir = f"evaluation/harvest"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -466,9 +515,9 @@ def evaluate(params, env, save_path, config):
         # 获取所有智能体的观察
         print(o_t)
         obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-
+        
         # 使用模型选择动作
-        network = ActorCritic(action_dim=env.action_space().n, activation=config["ACTIVATION"])  # 使用与训练时相同的参数
+        network = ActorCritic(action_dim=env.action_space().n, activation="tanh")  # 使用与训练时相同的参数
         pi, _ = network.apply(params, obs_batch)
         rng, _rng = jax.random.split(rng)
         actions = pi.sample(seed=_rng)
@@ -525,6 +574,7 @@ def tune(default_config):
         config = copy.deepcopy(default_config)
         for k, v in dict(wandb.config).items():
             config[k] = v
+        config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
 
         print("running experiment with params:", config)
 
@@ -559,7 +609,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_cleanup")
+@hydra.main(version_base=None, config_path="config", config_name="inequity_aversion_cnn_harvest_common")
 def main(config):
     if config["TUNE"]:
         tune(config)

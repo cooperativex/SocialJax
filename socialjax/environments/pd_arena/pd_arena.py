@@ -14,7 +14,7 @@ from socialjax.environments.multi_agent_env import MultiAgentEnv
 from socialjax.environments import spaces
 
 
-from socialjax.environments.common_harvest.rendering import (
+from socialjax.environments.cleanup.rendering import (
     downsample,
     fill_coords,
     highlight_img,
@@ -24,10 +24,9 @@ from socialjax.environments.common_harvest.rendering import (
     rotate_fn,
 )
 
-NUM_TYPES = 4  # empty (0), red (1), blue, red coin, blue coin, wall, interact
+NUM_TYPES = 4  # empty (0), wall (1), resource unclaimed (2), resource claimed (3)
 NUM_COIN_TYPES = 1
 INTERACT_THRESHOLD = 0
-
 
 @dataclass
 class State:
@@ -36,10 +35,12 @@ class State:
     inner_t: int
     outer_t: int
     grid: jnp.ndarray
-    apples: jnp.ndarray
+    defect_resources: jnp.ndarray
+    coop_resources: jnp.ndarray
 
     freeze: jnp.ndarray
     reborn_locs: jnp.ndarray
+    stay_time: jnp.ndarray
 
 @chex.dataclass
 class EnvParams:
@@ -53,26 +54,26 @@ class Actions(IntEnum):
     right = 3
     up = 4
     down = 5
-    stay = 6
-    zap_forward = 7
-    # zap_ahead = 8
-    # zap_right = 6
-    # zap_left = 7
+    stay = 6  # Use claim beam
+    interact = 7    # Use zap beam
+
 
 class Items(IntEnum):
     empty = 0
-    wall = 1
-    interact = 2
-    apple = 3
+    defect = 1
+    coop = 2
+    wall = 3
     spawn_point = 4
-    inside_spawn_point=5
-    
+    interact = 5
+
+
 char_to_int = {
-    'W': 1,
-    ' ': 0,  # 空格字符映射为 0
-    'A': 3,
-    'P': 4,
-    'Q': 5
+    " ": 0,
+    "1": 1,
+    "2": 2,
+    "W": 3,
+    "P": 4,
+    "a": 6,  # 添加特殊位置的映射
 }
 
 ROTATIONS = jnp.array(
@@ -158,81 +159,95 @@ def generate_agent_colors(num_agents):
 
 GREEN_COLOUR = (44.0, 160.0, 44.0)
 RED_COLOUR = (214.0, 39.0, 40.0)
-###################################################
 
-class Harvest_open(MultiAgentEnv):
-    """
-    JAX Compatible n-agent version of *inTheMatix environment.
-    """
-
-    # used for caching
+class PD_Arena(MultiAgentEnv):
+    """Territory environment where agents claim resources and can zap each other."""
     tile_cache: Dict[Tuple[Any, ...], Any] = {}
-
     def __init__(
         self,
-        num_inner_steps=1000,
+        num_inner_steps=50,  # 从152减少到50
         num_outer_steps=1,
-        num_agents=7,
-        shared_rewards=True,
-        inequity_aversion=False,
-        inequity_aversion_target_agents=None,
-        inequity_aversion_alpha=5,
-        inequity_aversion_beta=0.05,
-        enable_smooth_rewards=False,
-        svo=False,
-        svo_target_agents=None,
-        svo_w=0.5,
-        svo_ideal_angle_degrees=45,
-        grid_size=(16,22),
+        fixed_coin_location=True,
+        num_agents=2,
+        #payoff_matrix=jnp.array([[[3, -1], [6, 2]], [[3, 6], [-1, 2]]]),  # 修改payoff matrix以更强烈地奖励合作
+        payoff_matrix=jnp.array([[[3, -1], [5, 1]], [[3, 5], [-1, 1]]]),
+        freeze_penalty=5,
+        shared_rewards=False,
         jit=True,
+        grid_size=(24,25),
         obs_size=11,
+        num_coins=6,
         cnn=True,
         map_ASCII = [
-                "AAA    A      A    AAA",
-                "AA    AAA    AAA    AA",
-                "A    AAAAA  AAAAA    A",
-                "      AAA    AAA      ",
-                "       A      A       ",
-                "  A                A  ",
-                " AAA  Q        Q  AAA ",
-                "AAAAA            AAAAA",
-                " AAA              AAA ",
-                "  A                A  ",
-                "                      ",
-                "                      ",
-                "                      ",
-                "  PPPPPPPPPPPPPPPPPP  ",
-                " PPPPPPPPPPPPPPPPPPPP ",
-                "PPPPPPPPPPPPPPPPPPPPPP",
-            ]
-
-
+    "WWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WPPPP      W W      PPPPW",
+    "WPPPP               PPPPW",
+    "WPPPP               PPPPW",
+    "WPPPP               PPPPW",
+    "W                       W",
+    "W                       W",
+    "W                       W",
+    "W                       W",
+    "W    WW     W  111      W",
+    "WW          W  222      W",
+    "WWW       WWWWWWWWW     W",
+    "W           222       WWW",
+    "W           111         W",
+    "W          W            W",
+    "W          W   WW       W",
+    "W              W        W",
+    "W                       W",
+    "W                       W",
+    "WPPPP               PPPPW",
+    "WPPPP               PPPPW",
+    "WPPPP               PPPPW",
+    "WPPPP         W     PPPPW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWW"
+]
+#         map_ASCII = [
+#     "WWWWWWWWWWWWWWWWWWWWWWWWW",
+#     "WPPPP      W W      PPPPW",
+#     "WPPPP               PPPPW",
+#     "WPPPP               PPPPW",
+#     "WPPPP               PPPPW",
+#     "W                       W",
+#     "W        11             W",
+#     "W        11             W",
+#     "W        22             W",
+#     "W    WW     W  222      W",
+#     "WW    12    W  222      W",
+#     "WWW   12  WWWWWWWWW     W",
+#     "W     12    111       WWW",
+#     "W           111         W",
+#     "W       11 W            W",
+#     "W       22 W   WW       W",
+#     "W       22     W111     W",
+#     "W               222     W",
+#     "W                       W",
+#     "WPPPP               PPPPW",
+#     "WPPPP               PPPPW",
+#     "WPPPP               PPPPW",
+#     "WPPPP         W     PPPPW",
+#     "WWWWWWWWWWWWWWWWWWWWWWWWW"
+# ]
     ):
-
         super().__init__(num_agents=num_agents)
         self.agents = list(range(num_agents))#, dtype=jnp.int16)
         self._agents = jnp.array(self.agents, dtype=jnp.int16) + len(Items)
-        self.shared_rewards = shared_rewards
-        self.cnn = cnn
-        self.inequity_aversion = inequity_aversion
-        self.inequity_aversion_target_agents = inequity_aversion_target_agents
-        self.inequity_aversion_alpha = inequity_aversion_alpha
-        self.inequity_aversion_beta = inequity_aversion_beta
-        self.enable_smooth_rewards = enable_smooth_rewards
-        self.svo = svo
-        self.svo_target_agents = svo_target_agents
-        self.svo_w = svo_w
-        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
 
         # self.agents = [str(i) for i in list(range(num_agents))]
-
+        self.freeze_penalty = freeze_penalty
+        self.jit = jit
+        self.shared_rewards = shared_rewards
         self.PLAYER_COLOURS = generate_agent_colors(num_agents)
         self.GRID_SIZE_ROW = grid_size[0]
         self.GRID_SIZE_COL = grid_size[1]
         self.OBS_SIZE = obs_size
         self.PADDING = self.OBS_SIZE - 1
-        self.num_inner_steps = num_inner_steps
-        self.num_outer_steps = num_outer_steps
+        self.NUM_COINS = num_coins  # per type
+        NUM_OBJECTS = (
+            2 + NUM_COIN_TYPES * self.NUM_COINS + 1
+        )  # red, blue, 2 red coin, 2 blue coin
 
         GRID = jnp.zeros(
             (self.GRID_SIZE_ROW + 2 * self.PADDING, self.GRID_SIZE_COL + 2 * self.PADDING),
@@ -250,10 +265,10 @@ class Harvest_open(MultiAgentEnv):
             return a_positions
 
         nums_map = ascii_map_to_matrix(map_ASCII, char_to_int)
-        self.SPAWNS_APPLE = find_positions(nums_map, 3)
-        self.SPAWNS_PLAYER_IN = find_positions(nums_map, 5)
-        self.SPAWNS_PLAYERS = find_positions(nums_map, 4)
-        self.SPAWNS_WALL = find_positions(nums_map, 1)
+        self.SPAWNS_PLAYER = find_positions(nums_map, 4)
+        self.SPAWNS_COOP = find_positions(nums_map, 2)
+        self.SPAWNS_DEFECT = find_positions(nums_map, 1)
+        self.SPAWNS_WALL = find_positions(nums_map, 3)
 
 
         def rand_interaction(
@@ -388,6 +403,240 @@ class Harvest_open(MultiAgentEnv):
                 step_arr
             ), step_arr)
         
+        def fix_interactions(
+            key: jnp.ndarray,
+            all_interacts: jnp.ndarray,
+            actions: jnp.ndarray,
+            state: State,
+            one_step: jnp.ndarray,
+            two_step: jnp.ndarray,
+            right: jnp.ndarray,
+            left: jnp.ndarray
+        ) -> jnp.ndarray:
+            '''
+            Function defining multi-interaction logic.
+            
+            Args:
+                - key: jax key for randomisation
+                - all_interacts: jnp.ndarray of bools, provisional interaction
+                indicators, subject to interaction logic
+                - actions: jnp.ndarray of ints, actions taken by the agents
+                - state: State, env state object
+                - one_step, two_step, right, left: jnp.ndarrays, all of the
+                same length, where each index is the index of an agent, and
+                the element at each index is the item found at that agent's
+                respective target location in the grid.
+
+                
+            Returns:
+                - (jnp.ndarray, jnp.ndarray) - Tuple, where index 0 contains
+                the array of the final agent interactions and index 1 contains
+                a multi-dimensional array of the updated freeze penalty
+                matrix.
+            '''
+            # distance-based priority, else random
+
+            # fix highest priority interactions; 2 one-step zaps on the same
+            # agent - random selection of winner
+            forward = jnp.logical_and(
+                actions == Actions.zap,
+                all_interacts
+            )
+
+            forward = jnp.where(
+                forward,
+                one_step,
+                Items.empty
+            )
+
+            conflicts_matrix = check_interaction_conflict(forward) * (forward != Items.empty)[:, None]
+
+            conflicts = jnp.clip(
+                jnp.sum(conflicts_matrix, axis=-1),
+                0,
+                1
+            )
+
+            k1, k2, k3  = jax.random.split(key, 3)
+            one_step = rand_interaction(
+                k2,
+                conflicts,
+                conflicts_matrix,
+                forward
+            )
+
+            # if an interaction 2 steps away (diagonally or straight ahead)
+            # is simultaneously another agent's one-step interaction, clear
+            # it for the agent that is further:
+
+            # right targets
+            _right = jnp.logical_and(
+                actions == Actions.zap,
+                all_interacts
+            )
+
+            _right = jnp.where(
+                _right,
+                right,
+                Items.empty
+            )
+
+            right = jnp.where(
+                jnp.logical_and(
+                    _right == one_step,
+                    jnp.isin(_right, self._agents)
+                ),
+                Items.empty,
+                _right
+            )
+
+            # left targets
+            _left = jnp.logical_and(
+                actions == Actions.zap_left,
+                all_interacts
+            )
+
+            _left = jnp.where(
+                _left,
+                left,
+                Items.empty
+            )
+
+            left = jnp.where(
+                jnp.logical_and(
+                    _left == one_step,
+                    jnp.isin(_left, self._agents)
+                ),
+                Items.empty,
+                _left
+            )
+
+            # two step targets
+            _ahead = jnp.logical_and(
+                actions == Actions.zap_ahead,
+                all_interacts
+            )
+
+            _ahead = jnp.where(
+                _ahead,
+                two_step,
+                Items.empty
+            )
+            two_step = jnp.where(
+                jnp.logical_and(
+                    _ahead == one_step,
+                    jnp.isin(_ahead, self._agents)
+                ),
+                Items.empty,
+                _ahead
+            )
+
+            # if any interactions occur between equi-distant pairs of agents,
+            # choose randomly:
+            all_two_step = jnp.concatenate(
+                [
+                    jnp.expand_dims(two_step, axis=-1),
+                    jnp.expand_dims(right, axis=-1),
+                    jnp.expand_dims(left, axis=-1),
+                ],
+                axis=-1
+            )
+            same_dist = jnp.logical_and(
+                jnp.isin(
+                    actions,
+                    jnp.array([
+                        Actions.zap_ahead,
+                        Actions.zap_right,
+                        Actions.zap_left
+                    ]),
+                ),
+                all_interacts
+            )
+
+            same_dist_targets = jax.vmap(
+                lambda s, ats, a: jnp.where(
+                    s,
+                    ats[a-Actions.zap_ahead],
+                    Items.empty
+                ).astype(jnp.int16)
+            )(same_dist, all_two_step, actions)
+
+            two_step_conflicts_matrix = check_interaction_conflict(
+                same_dist_targets
+            ) * (same_dist_targets != Items.empty)[:, None]
+
+            two_step_conflicts = jnp.clip(
+                jnp.sum(two_step_conflicts_matrix, axis=-1),
+                0,
+                1
+            )
+
+            k1, k2  = jax.random.split(k3, 2)
+            two_step_interacts = rand_interaction(
+                k2,
+                two_step_conflicts,
+                two_step_conflicts_matrix,
+                same_dist_targets
+            )
+
+            # combine one & two step interactions
+            final_interactions = jnp.where(
+                actions == Actions.zap_forward, # if action was a 1-step zap
+                one_step, # use the one-step item list after it was filtered
+                two_step_interacts # else use two-step item after filtering
+            ) * (state.freeze.max(axis=-1) <= 0)
+            
+            # note, both arrays were
+            # qualified for:
+            # 1. having actually zapped,
+            # 2. zapping an actual agent,
+            # 3. the zapping agent being not-frozen,
+            # 4. the zapping agent meets
+            # the zapping inventory threshold,
+            # 5. the target agent meets the inventory threshold,
+            # 6. agents 2 steps away surrender to agents 1 step away from the
+            # same target
+            # 7. equidistant agents succeed randomly
+
+            # if the zapped agent is frozen, disallow the interaction
+            itx_bool = jnp.isin(final_interactions, self._agents)
+            frzs = state.freeze.max(axis=-1)
+            final_interactions = jax.vmap(lambda i, itx: jnp.where(
+                    jnp.logical_and(
+                        i, frzs[itx-len(Items)] > 0
+                    ),
+                    Items.empty,
+                    itx
+                ).astype(jnp.int16)
+            )(itx_bool, final_interactions)
+
+            # update freeze matrix
+            new_freeze_idx_bool = jnp.isin(
+                    final_interactions,
+                    self._agents
+            )
+
+            new_freeze = jax.vmap(lambda i, i_t, itx: jnp.where(
+                    i_t,
+                    state.freeze[i].at[itx-len(Items)].set(freeze_penalty),
+                    state.freeze[i]
+                ).astype(jnp.int16)
+            )(self._agents-len(Items), new_freeze_idx_bool, final_interactions)
+
+            new_freeze = new_freeze.transpose()
+            new_freeze = jax.vmap(lambda i, i_t, itx: jnp.where(
+                    i_t,
+                    new_freeze[i].at[itx-len(Items)].set(freeze_penalty),
+                    new_freeze[i]
+                ).astype(jnp.int16)
+            )(self._agents-len(Items), new_freeze_idx_bool, final_interactions)
+
+            return jnp.concatenate(
+                [jnp.expand_dims(final_interactions, axis=0),
+                new_freeze.transpose()],
+                axis=0
+            )
+
         # first attempt at func - needs improvement
         # inefficient due to double-checking collisions
         def check_collision(
@@ -586,13 +835,50 @@ class Harvest_open(MultiAgentEnv):
             )
             return ((k2, collided_moved, collision_matrix, agent_locs, new_agent_locs), new_agent_locs)
 
+        def to_dict(
+                agent: int,
+                obs: jnp.ndarray,
+                agent_invs: jnp.ndarray,
+                agent_pickups: jnp.ndarray,
+                inv_to_show: jnp.ndarray
+            ) -> dict:
+            '''
+            Function to produce observation/state dictionaries.
+            
+            Args:
+                - agent: int, number identifying agent
+                - obs: jnp.ndarray, the combined grid observations for each
+                agent
+                - agent_invs: jnp.ndarray of current agents' inventories
+                - agent_pickups: boolean indicators of interaction
+                - inv_to_show: jnp.ndarray inventory to show to other agents
+                
+            Returns:
+                - dictionary of full state observation.
+            '''
+            idx = agent - len(Items)
+            state_dict = {
+                "observation": obs,
+                "inventory": {
+                    "agent_inv": agent_invs,
+                    "agent_pickups": agent_pickups,
+                    "invs_to_show": jnp.delete(
+                        inv_to_show,
+                        idx,
+                        assume_unique_indices=True
+                    )
+                }
+            }
 
+            return state_dict
         
         def combine_channels(
                 grid: jnp.ndarray,
                 agent: int,
                 angles: jnp.ndarray,
-                agent_pickups: jnp.ndarray,
+                # agent_pickups: jnp.ndarray,
+                coop_resources: jnp.ndarray,
+                defect_resources: jnp.ndarray,
                 state: State,
             ):
             '''
@@ -679,16 +965,21 @@ class Harvest_open(MultiAgentEnv):
                 )
 
                 # get pickup/inv info
-                pick_up_idx = jnp.where(
-                    jnp.any(mask),
-                    jnp.nonzero(mask, size=1)[0],
-                    jnp.int8(-1)
-                )
-                picked_up = jnp.where(
-                    pick_up_idx > -1,
-                    agent_pickups[pick_up_idx],
-                    jnp.int8(0)
-                )
+                # pick_up_idx = jnp.where(
+                #     jnp.any(mask),
+                #     jnp.nonzero(mask, size=1)[0],
+                #     jnp.int8(-1)
+                # )
+                # picked_up = jnp.where(
+                #     pick_up_idx > -1,
+                #     agent_pickups[pick_up_idx],
+                #     jnp.int8(0)
+                # )
+
+                # check coop_resources and defect_resources
+                coop_resources = state.coop_resources
+                defect_resources = state.defect_resources
+                    
 
                 # build extension
                 extension = jnp.concatenate(
@@ -696,7 +987,9 @@ class Harvest_open(MultiAgentEnv):
                         agent_element,
                         other_agent,
                         angle,
-                        picked_up,
+                        # picked_up,
+                        coop_resources,
+                        defect_resources,
                         inv_to_show,
                         frozen
                     ],
@@ -812,6 +1105,9 @@ class Harvest_open(MultiAgentEnv):
             y = y - (self.OBS_SIZE // 2)
 
 
+            # x = jnp.where(direction == 3, x - (self.OBS_SIZE // 2), x)
+            # y = jnp.where(direction == 3, y - (self.OBS_SIZE // 2), y)
+
             x = jnp.where(direction == 0, x + (self.OBS_SIZE//2)-1, x)
             y = jnp.where(direction == 0, y, y)
 
@@ -826,7 +1122,18 @@ class Harvest_open(MultiAgentEnv):
             x = jnp.where(direction == 3, x, x)
             y = jnp.where(direction == 3, y - (self.OBS_SIZE//2)+1, y)
 
+            # x = jnp.where(direction == 1, x - (self.OBS_SIZE // 2), x)
+            # y = jnp.where(direction == 1, y - (self.OBS_SIZE - 1), y)
 
+            # x = jnp.where(direction == 2, x - (self.OBS_SIZE - 1), x)
+            # y = jnp.where(direction == 2, y - (self.OBS_SIZE // 2), y)
+
+            # x = jnp.where(direction == 2, x - (self.OBS_SIZE // 2), x)
+            # x = jnp.where(direction == 3, x - (self.OBS_SIZE - 1), x)
+
+            # y = jnp.where(direction == 0, y - (self.OBS_SIZE // 2), y)
+            # y = jnp.where(direction == 2, y - (self.OBS_SIZE - 1), y)
+            # y = jnp.where(direction == 3, y - (self.OBS_SIZE // 2), y)
             return x, y
 
         def _get_obs(state: State) -> jnp.ndarray:
@@ -890,16 +1197,53 @@ class Harvest_open(MultiAgentEnv):
             # and sum all others into an "other" agent
             grids = jax.vmap(
                 combine_channels,
-                in_axes=(0, 0, 0, None, None)
+                in_axes=(0, 0, 0, None, None, None)
             )(
                 grids,
                 self._agents,
                 angles,
-                agent_pickups,
+                # agent_pickups,
+                state.coop_resources,
+                state.defect_resources,
                 state
             )
 
             return grids
+
+        def _get_reward(
+                state: State,
+                agent1: int,
+                agent2: int
+            ) -> jnp.ndarray:
+            '''
+            Obtain the reward for a matrix game.
+
+            Args: 
+                - state: State object of env.
+                - agent1: int of position of first agent in interaction
+                - agent2: int of position of first agent in interaction
+            Returns:
+                - jnp.ndarray of rewards of agents.
+            '''
+            # calc proportion of each coin type
+            inv_sum = jnp.where(
+                state.agent_invs.sum(axis=-1) > 0,
+                state.agent_invs.sum(axis=-1),
+                1)
+            invs = state.agent_invs / jnp.expand_dims(
+                inv_sum,
+                axis=-1
+            )
+
+            # get agent inventory proportions
+            inv1 = invs[agent1]
+            inv2 = invs[agent2]
+
+            # obtain rewards via payoff matrices
+            r1 = inv1 @ jnp.array(payoff_matrix[0]) @ inv2.T
+            r2 = inv1 @ jnp.array(payoff_matrix[1]) @ inv2.T
+
+            return jnp.array([r1, r2])
 
         def _interact(
             key: jnp.ndarray, state: State, actions: jnp.ndarray
@@ -930,8 +1274,11 @@ class Harvest_open(MultiAgentEnv):
 
             # remove old interacts
             state = state.replace(grid=jnp.where(
-                state.grid == interact_idx, jnp.int16(Items.empty), state.grid))
+                state.grid == interact_idx, jnp.int16(Items.empty), state.grid
+            ))
 
+            # calculate pickups
+            # agent_pickups = state.agent_invs.sum(axis=-1) > -100
 
             def check_valid_zap(t, i):
                 '''
@@ -940,7 +1287,7 @@ class Harvest_open(MultiAgentEnv):
                 '''
                 agnt_bool = jnp.isin(state.grid[t[0], t[1]], self._agents)
                 self_bool = state.grid[t[0], t[1]] != i
-            
+
                 return jnp.logical_and(agnt_bool, self_bool)
 
             # check 1 ahead
@@ -1028,14 +1375,54 @@ class Harvest_open(MultiAgentEnv):
 
             zaps_4_locs = jnp.concatenate((zaps, zaps, zaps, zaps), 0)
 
+            resources_zaped = jnp.concatenate((one_step_targets, two_step_targets), 0)
+            zaps_2_resources_locs = jnp.concatenate((zaps,zaps), 0)
+            resources_zaped = resources_zaped.at[:, 2].set(jnp.concatenate([jnp.arange(1000, 1000+self.num_agents), jnp.arange(1000, 1000+self.num_agents)]))
 
+            # resources_zaped = one_step_targets
+            # zaps_2_resources_locs = zaps
+            # resources_zaped = resources_zaped.at[:, 2].set(jnp.arange(1000, 1000+self.num_agents))
+            
             # all_zaped_locs = jax.vmap(filter_zaped_locs)(all_zaped_locs)
+
+            def check_coordinates(search_array, bool_matrix):
+                target_coords = jnp.stack(jnp.where(bool_matrix), axis=1)  # (N, 2)
+                
+                coords_to_check = search_array[:, :2]  # (18, 2)
+                
+                matches = (coords_to_check[:, None, :] == target_coords[None, :, :]).all(axis=-1)
+                return matches.any(axis=1)
+            def check_coordinates(search_array, bool_matrix):
+                return bool_matrix[search_array[:, 0], search_array[:, 1]]
+
+            def update_grid_values(grid, coords, mark_values, set_value):
+                """
+
+                """
+                x, y = coords[:, 0], coords[:, 1]
+                return grid.at[x, y].set(jnp.where(mark_values, set_value, grid[x, y]))
+
+            break_pos = check_coordinates(resources_zaped,state.grid==999)
+            break_pos = jnp.logical_and(break_pos, zaps_2_resources_locs.squeeze())
+            grid = update_grid_values(state.grid, resources_zaped, break_pos,0)
+            # state = state.replace(grid=grid)
+
+
+
+            # exists_claimed_pos = check_coordinates(resources_zaped,state.claimed_coord)
+            # exists_claimed_pos = jnp.logical_and(exists_claimed_pos, zaps_2_resources_locs.squeeze())
+
+
+            # grid = update_grid_values(state.grid, resources_zaped, exists_claimed_pos,999)
+            # state = state.replace(grid=grid)
+            
+
 
             def zaped_gird(a, z):
                 return jnp.where(z, state.grid[a[0], a[1]], -1)
 
             all_zaped_gird = jax.vmap(zaped_gird)(all_zaped_locs, zaps_4_locs)
-            
+            # jax.debug.print("all_zaped_gird {all_zaped_gird} 🤯", all_zaped_gird=all_zaped_gird)
 
             def check_reborn_player(a):
                 return jnp.isin(a, all_zaped_gird)
@@ -1068,7 +1455,7 @@ class Harvest_open(MultiAgentEnv):
 
             # all_interacts = all_interacts[jnp.arange(all_interacts.shape[0]), interact_idxs]# * zaps * agent_pickups * (state.freeze.max(axis=-1) <= 0)
 
-            # update grid with all zaps
+                        # update grid with all zaps
             aux_grid = jnp.copy(state.grid)
 
             o_items = jnp.where(
@@ -1118,7 +1505,40 @@ class Harvest_open(MultiAgentEnv):
                         ],
                         interact_idx
                     )
+            break_items_first = jnp.where(
+                        state.grid[
+                            one_step_targets[:, 0],
+                            one_step_targets[:, 1]
+                        ],
+                        state.grid[
+                            one_step_targets[:, 0],
+                            one_step_targets[:, 1]
+                        ],
+                        jnp.array(999).astype(jnp.int16)
+                    )
+            break_items_second = jnp.where(
+                        state.grid[
+                            two_step_targets[:, 0],
+                            two_step_targets[:, 1]
+                        ],
+                        state.grid[
+                            two_step_targets[:, 0],
+                            two_step_targets[:, 1]
+                        ],
+                        jnp.array(999).astype(jnp.int16)
+                    )
 
+            empty_item = jnp.where(
+                        state.grid[
+                            one_step_targets[:, 0],
+                            one_step_targets[:, 1]
+                        ],
+                        state.grid[
+                            one_step_targets[:, 0],
+                            one_step_targets[:, 1]
+                        ],
+                        jnp.array(Items.empty).astype(jnp.int16)
+                    )
             qualified_to_zap = zaps.squeeze()
             # jax.debug.print("qualified_to_zap {qualified_to_zap} 🤯", qualified_to_zap=qualified_to_zap)
             # update grid
@@ -1140,6 +1560,12 @@ class Harvest_open(MultiAgentEnv):
             aux_grid = update_grid(qualified_to_zap, target_right, r_items, aux_grid)
             aux_grid = update_grid(qualified_to_zap, target_left, l_items, aux_grid)
 
+            # qualified_break_items = ((state.resources[:, None] == resources_zaped[:, :2]).all(axis=2)).any(axis=0)
+            # qualified_break_items = jnp.logical_and(qualified_break_items, qualified_to_zap)
+            # qualified_empty_items = state.grid[resources_zaped[:, 0], resources_zaped[:, 1]] == resources_zaped[:, 2]
+            # aux_grid = update_grid(qualified_break_items, one_step_targets, break_items_first, aux_grid)
+            # aux_grid = update_grid(qualified_break_items, two_step_targets, break_items_second, aux_grid)
+            # aux_grid = update_grid(qualified_empty_items, one_step_targets, empty_item, aux_grid)
             # jax.debug.print("aux_grid {aux_grid} 🤯", aux_grid=aux_grid)
             state = state.replace(
                 grid=jnp.where(
@@ -1149,69 +1575,360 @@ class Harvest_open(MultiAgentEnv):
                 )
             )
 
+            # state = state.replace(grid=aux_grid)
+
+            # jax.debug.print("state.grid {grid} 🤯", grid=state.grid)
 
             return reborn_players, state
+        def _interact_pd(
+            key: jnp.ndarray, state: State, actions: jnp.ndarray
+        ) -> Tuple[jnp.ndarray, jnp.ndarray, State, jnp.ndarray]:
+            '''
+            Main interaction logic entry point.
+
+            Args:
+                - key: jax key for randomisation.
+                - state: State env state object.
+                - actions: jnp.ndarray of actions taken by agents.
+            Returns:
+                - (jnp.ndarray, State, jnp.ndarray) - Tuple where index 0 is
+                the array of rewards obtained, index 2 is the new env State,
+                and index 3 is the new freeze penalty matrix.
+            '''
+            # if interact
+            zaps = jnp.isin(actions,
+                jnp.array(
+                    [
+                        Actions.interact,
+                    ]
+                )
+            )
+            interact_idx = jnp.int16(Items.interact)
+            # remove old interacts
+            state = state.replace(grid=jnp.where(
+                state.grid == interact_idx, jnp.int16(Items.empty), state.grid
+            ))
+
+            one_step_targets = jax.vmap(
+                lambda p: p + STEP[p[2]]
+            )(state.agent_locs)
 
 
+            # check 2 ahead
+            two_step_targets = jax.vmap(
+                lambda p: p + 2*STEP[p[2]]
+            )(state.agent_locs)
+
+
+            # all_zaped_locs = jnp.concatenate((one_step_targets, two_step_targets), 0)
+            all_zaped_locs = one_step_targets
+            # zaps_3d = jnp.stack([zaps, zaps, zaps], axis=-1)
+
+            # zaps_4_locs_judge = jnp.concatenate((zaps, zaps), 0)
+            zaps_4_locs_judge = zaps
+
+            all_zaped_locs = all_zaped_locs.at[:, 2].set(jnp.arange(0, self.num_agents))
+
+            def get_neighbors(coordinates):
+                """
+                Get the up, down, left, right neighbors for each coordinate using JAX.
+                
+                Args:
+                    coordinates: Array of shape (N, 2) containing x,y coordinates
+                
+                Returns:
+                    Array of shape (N, 4, 2) containing [up, down, left, right] coordinates for each point
+                """
+                # Create unit vectors for each direction
+                directions = jnp.array([[0, 1],   # up
+                                    [0, -1],  # down
+                                    [-1, 0],  # left
+                                    [1, 0]])  # right
+                
+                # Broadcast and add directions to each coordinate
+                neighbors = jax.vmap(lambda coord: coord + directions)(coordinates)
+    
+                return neighbors
+
+
+            def check_coords_in_target(coords, target_coords):
+                return jax.vmap(lambda coord: jnp.any(jnp.all(coord[:2] == target_coords[:, :2], axis=1)))(coords)
+                        
+            exists_claimed_pos = check_coords_in_target(all_zaped_locs,state.agent_locs)
+            exists_claimed_pos = jnp.logical_and(exists_claimed_pos, zaps_4_locs_judge.squeeze())
+
+            def find_positions_indices(bool_mask, coords_16x3, positions_8x3):
+                """
+                Find indices of positions in the array.
+                """
+                def find_index(coord):
+                    # Compare only first two columns
+                    matches = jnp.all(coord[:2] == positions_8x3[:, :2], axis=1)
+                    return jnp.where(jnp.any(matches), jnp.argmax(matches), -1)
+                
+                indices = jax.vmap(find_index)(coords_16x3)
+                return jnp.where(bool_mask, indices, -1)
+            being_zaped_indices = find_positions_indices(exists_claimed_pos, all_zaped_locs, state.agent_locs)
+
+            def create_interaction_matrix(indices_16, coords_16x3):
+                """
+
+                """
+                mask = indices_16 != -1
+                source_agents = coords_16x3[:, 2]
+                target_agents = jnp.where(mask, coords_16x3[indices_16, 2], -1)
+                
+                def update_element(i, j):
+                    return jnp.any(
+                        (source_agents == i) & (target_agents == j) & mask
+                    )
+                
+                return jax.vmap(lambda i: jax.vmap(lambda j: update_element(i, j))(jnp.arange(self.num_agents)))(jnp.arange(self.num_agents))
+            interaction_matrix = create_interaction_matrix(being_zaped_indices, all_zaped_locs)
+            
+            def calculate_agent_rewards(interaction_matrix, inventory, payoff_matrix):
+                inv_sum = jnp.where(
+                    inventory.sum(axis=-1) > 0,
+                    inventory.sum(axis=-1),
+                    1
+                )
+                invs = inventory / jnp.expand_dims(inv_sum, axis=-1)
+                
+                def reward_for_position(i, j):
+                    inv1 = invs[i]
+                    inv2 = invs[j]
+                    r1 = inv1 @ jnp.array(payoff_matrix[0]) @ inv2.T  
+                    r2 = inv1 @ jnp.array(payoff_matrix[1]) @ inv2.T  
+                    return jnp.where(interaction_matrix[i,j], 
+                                   jnp.array([r1, r2]), 
+                                   jnp.array([0., 0.]))
+
+                rewards = jax.vmap(lambda i: jax.vmap(lambda j: reward_for_position(i,j))(jnp.arange(self.num_agents)))(jnp.arange(self.num_agents))
+                agent_rewards = rewards[:,:,0].sum(axis=1) + rewards[:,:,1].sum(axis=0)
+                
+                return agent_rewards
+
+            def calculate_total_interaction_rewards(interaction_matrix, inventory, payoff_matrix):
+                inv_sum = jnp.where(
+                    inventory.sum(axis=-1) > 0,
+                    inventory.sum(axis=-1),
+                    1
+                )
+                invs = inventory / jnp.expand_dims(inv_sum, axis=-1)  # shape: (8,2)
+                
+                def reward_for_interaction(i, j):
+                    inv1 = invs[i]  # shape: (2,)
+                    inv2 = invs[j]  # shape: (2,)
+                    r1 = inv1 @ jnp.array(payoff_matrix[0]) @ inv2.T  
+                    r2 = inv1 @ jnp.array(payoff_matrix[1]) @ inv2.T
+                    total_r = r1 + r2  # 计算互动双方的总reward
+                    return jnp.where(interaction_matrix[i,j], 
+                                    total_r,  # 如果有互动，返回总reward
+                                    0.)       # 如果没有互动，返回0
+
+                # 计算所有互动对的总reward
+                interaction_rewards = jax.vmap(
+                    lambda i: jax.vmap(
+                        lambda j: reward_for_interaction(i,j)
+                    )(jnp.arange(self.num_agents))
+                )(jnp.arange(self.num_agents))
+                
+                # 对每个agent，找到它参与的互动的总reward
+                agent_total_rewards = jnp.zeros(self.num_agents)
+                for i in range(self.num_agents):
+                    # 找到agent i参与的所有互动
+                    agent_interactions = interaction_matrix[i] | interaction_matrix[:, i]
+                    # 将这些互动的reward分配给agent i
+                    agent_total_rewards = agent_total_rewards.at[i].set(
+                        jnp.where(agent_interactions, interaction_rewards[i] + interaction_rewards[:, i], 0.).sum() / 2
+                    )
+                
+                return agent_total_rewards
+
+            inventory = jnp.concatenate((jnp.expand_dims(state.coop_resources,axis=1),jnp.expand_dims(state.defect_resources,axis=1)),axis=1)
+            if self.shared_rewards:
+                reward = calculate_total_interaction_rewards(interaction_matrix, inventory, payoff_matrix)  # 新的reward计算
+            else:
+                reward = calculate_agent_rewards(interaction_matrix, inventory, payoff_matrix)  # 原来的reward计算
+
+            # Reset resources for agents that interacted
+            interacted_agents = jnp.any(interaction_matrix + interaction_matrix.T, axis=1)
+            new_coop_resources = jnp.where(interacted_agents, 0, state.coop_resources)
+            new_defect_resources = jnp.where(interacted_agents, 0, state.defect_resources)
+            state = state.replace(
+                coop_resources=new_coop_resources,
+                defect_resources=new_defect_resources
+            )
+            
+            
+            # update grid with all zaps
+            aux_grid = jnp.copy(state.grid)
+
+            o_items = jnp.where(
+                        state.grid[
+                            one_step_targets[:, 0],
+                            one_step_targets[:, 1]
+                        ],
+                        state.grid[
+                            one_step_targets[:, 0],
+                            one_step_targets[:, 1]
+                        ],
+                        interact_idx
+                    )
+
+            t_items = jnp.where(
+                        state.grid[
+                            two_step_targets[:, 0],
+                            two_step_targets[:, 1]
+                        ],
+                        state.grid[
+                            two_step_targets[:, 0],
+                            two_step_targets[:, 1]
+                        ],
+                        interact_idx
+                    )
+            qualified_to_zap = zaps.squeeze()
+
+            def update_grid(a_i, t, i, grid):
+                return grid.at[t[:, 0], t[:, 1]].set(
+                    jax.vmap(jnp.where)(
+                        a_i,
+                        i,
+                        aux_grid[t[:, 0], t[:, 1]]
+                    )
+                )
+            
+            aux_grid = update_grid(qualified_to_zap, one_step_targets, o_items, aux_grid)
+            aux_grid = update_grid(qualified_to_zap, two_step_targets, t_items, aux_grid)
+            
+            state = state.replace(
+                grid=jnp.where(
+                    jnp.any(zaps),
+                    aux_grid,
+                    state.grid
+                )
+            )
+
+            def zaped_gird(a, z):
+                return jnp.where(z, state.grid[a[0], a[1]], -1)
+
+            all_zaped_gird = jax.vmap(zaped_gird)(all_zaped_locs, zaps_4_locs_judge)
+            # jax.debug.print("all_zaped_gird {all_zaped_gird} 🤯", all_zaped_gird=all_zaped_gird)
+
+            def check_reborn_player(a):
+                return jnp.isin(a, all_zaped_gird)
+            
+            reborn_players = jax.vmap(check_reborn_player)(self._agents)
+
+
+            # 更新freeze状态
+            def update_freeze_state(state, interaction_matrix):
+                # 检查每个agent是否参与了互动（作为主动方或被动方）
+                interacted = interaction_matrix.any(axis=1) | interaction_matrix.any(axis=0)
+                
+                # 更新freeze计数器
+                new_freeze = jnp.where(
+                    interacted,
+                    state.freeze + 1,
+                    state.freeze
+                )
+                
+                # 更新stay_time
+                new_stay_time = jnp.where(
+                    interacted,
+                    state.stay_time + self.freeze_penalty,
+                    state.stay_time
+                )
+                
+                return state.replace(
+                    freeze=new_freeze,
+                    stay_time=new_stay_time
+                )
+            
+            # 在_interact_pd调用后更新freeze状态
+            state = update_freeze_state(state, interaction_matrix)
+
+            # 确保主动方和被动方都被freeze
+            active_agents = interaction_matrix.any(axis=1)  # 主动方
+            passive_agents = interaction_matrix.any(axis=0)  # 被动方
+            
+            # 更新freeze状态
+            state = state.replace(
+                freeze=jnp.where(
+                    active_agents | passive_agents,
+                    state.freeze + 1,
+                    state.freeze
+                ),
+                stay_time=jnp.where(
+                    active_agents | passive_agents,
+                    state.stay_time + self.freeze_penalty,
+                    state.stay_time
+                )
+            )
+
+            return reward, state, reborn_players
+        
         def _step(
             key: chex.PRNGKey,
             state: State,
             actions: jnp.ndarray
         ):
             """Step the environment."""
-            # actions = self.action_set.take(indices=jnp.array([actions["0"], actions["agent_1"]]))
             actions = jnp.array(actions)
 
-            # freeze check
-            # actions = jnp.where(
-            #     state.freeze.max(axis=-1) > 0,
-            #     Actions.stay,
-            #     actions
-            # )
+            stay_time = state.stay_time
+            stay_time = jnp.where(stay_time > 0, stay_time - 1, stay_time)
+            state = state.replace(stay_time=stay_time)
 
-            # regrow apple
-            grid_apple = state.grid
-
-            def count_apple(apple_locs):
-
-                apple_nums = jnp.where((grid_apple[apple_locs[0]-1, apple_locs[1]] == 3) & (apple_locs[0]-1 >=0), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0]+1, apple_locs[1]] == 3) & (apple_locs[0]+1 < self.GRID_SIZE_ROW), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0], apple_locs[1]-1] == 3) & (apple_locs[1]-1 >=0), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0], apple_locs[1]+1] == 3) & (apple_locs[1]+1 < self.GRID_SIZE_COL), 1, 0)+ \
-                                jnp.where((grid_apple[apple_locs[0]-2, apple_locs[1]] == 3) & (apple_locs[0]-2 >=0), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0]+2, apple_locs[1]] == 3) & (apple_locs[0]+2 < self.GRID_SIZE_ROW), 1 ,0) + \
-                                jnp.where((grid_apple[apple_locs[0], apple_locs[1]-2] == 3) & (apple_locs[1]-2 >=0), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0], apple_locs[1]+2] == 3) & (apple_locs[1]+2 < self.GRID_SIZE_COL), 1 ,0) + \
-                                jnp.where((grid_apple[apple_locs[0]-1, apple_locs[1]-1] == 3) & (apple_locs[0]-1 >=0) & (apple_locs[1]-1 >=0), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0]-1, apple_locs[1]+1] == 3) & (apple_locs[0]-1 >=0) & (apple_locs[1]+1 < self.GRID_SIZE_COL), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0]+1, apple_locs[1]-1] == 3) & (apple_locs[1]+1 < self.GRID_SIZE_COL) & (apple_locs[1]-1 >=0), 1, 0) + \
-                                jnp.where((grid_apple[apple_locs[0]+1, apple_locs[1]+1] == 3) & (apple_locs[0]+1 < self.GRID_SIZE_ROW) & (apple_locs[1]+1 < self.GRID_SIZE_COL) , 1, 0)
+            def actions_to_stay(stay, action):
+                return jnp.where(stay > 0, Actions.stay, action)
+            
+            actions = jax.vmap(actions_to_stay)(stay_time, actions)
+            actions = jnp.array(actions).squeeze()
+            
+            # 资源生成
+            grid_resources = state.grid
+            
+            def update_grid(grid, coords, items_empty, items_key, key):
+                # 创建掩码
+                grid_shape = grid.shape
+                y, x = jnp.mgrid[0:grid_shape[0], 0:grid_shape[1]]
+                grid_coords = jnp.stack([y.flatten(), x.flatten()], axis=1)
                 
-                return apple_nums
-
-            near_apple_nums = jax.vmap(count_apple)(self.SPAWNS_APPLE)
+                def check_point(p):
+                    point_matches = jnp.any(jnp.all(p == coords, axis=1))
+                    is_empty = grid[p[0], p[1]] == items_empty
+                    return point_matches & is_empty
+                
+                base_mask = jax.vmap(check_point)(grid_coords).reshape(grid_shape)
+                random_mask = jax.random.uniform(key, grid_shape) < 0.1  # 10%的概率生成资源
+                final_mask = base_mask & random_mask
+                
+                return jnp.where(final_mask, items_key, grid)
             
-            # grid_apple = state.grid
-
-            def regrow_apple(apple_locs, near_apple, prob):
-                new_apple = jnp.where((((grid_apple[apple_locs[0], apple_locs[1]] == Items.empty) & (near_apple == 0) & (prob > 1)) |
-                                       (grid_apple[apple_locs[0], apple_locs[1]] == Items.apple) |
-                                      ((grid_apple[apple_locs[0], apple_locs[1]] == Items.empty) & (near_apple >= 3) & (prob < 0.025)) |
-                                      ((grid_apple[apple_locs[0], apple_locs[1]] == Items.empty) & (near_apple == 2) & (prob < 0.005)) |
-                                      ((grid_apple[apple_locs[0], apple_locs[1]] == Items.empty) & (near_apple == 1) & (prob < 0.001)))
-                                      ,  Items.apple, Items.empty)
-
-                # grid_apple = grid_apple.at[apple_locs[0], apple_locs[1]].set(new_apple)
-
-                return new_apple
+            # 为合作和背叛资源分别生成随机key
+            key, key_coop, key_defect = jax.random.split(key, 3)
             
-            prob = jax.random.uniform(key, shape=(len(self.SPAWNS_APPLE),))
-            new_apple = jax.vmap(regrow_apple)(self.SPAWNS_APPLE, near_apple_nums, prob)
-
-
-            new_apple_grid = grid_apple.at[self.SPAWNS_APPLE[:, 0], self.SPAWNS_APPLE[:, 1]].set(new_apple[:])
-            state = state.replace(grid=new_apple_grid)
-
+            # 更新合作资源位置
+            grid_resources = update_grid(
+                grid_resources,
+                self.SPAWNS_COOP,
+                Items.empty,
+                Items.coop,
+                key_coop
+            )
+            
+            # 更新背叛资源位置
+            grid_resources = update_grid(
+                grid_resources,
+                self.SPAWNS_DEFECT,
+                Items.empty,
+                Items.defect,
+                key_defect
+            )
+            
+            state = state.replace(grid=grid_resources)
+            
             # moving all agents
 
             new_grid = state.grid.at[
@@ -1280,36 +1997,45 @@ class Harvest_open(MultiAgentEnv):
                 lambda: all_new_locs
             )
 
-            # update inventories
-            def coin_matcher(p: jnp.ndarray) -> jnp.ndarray:
-                c_matches = jnp.array([
-                    state.grid[p[0], p[1]] == Items.apple
-                    ])
-                # jax.debug.print("🤯 {c_matches} 🤯", c_matches=c_matches)
-                return c_matches
+            # fix collision with the resources
+            def check_wall_positions(grid, positions):
+                def check_single_position(pos):
+                    is_wall = grid[pos[0], pos[1]] != Items.empty
+                    return jnp.where(is_wall, pos, jnp.array([-1, -1]))
+                return jax.vmap(check_single_position)(positions)
+
+            wall_position = check_wall_positions(state.grid, self.SPAWNS_WALL)
+            def handle_wall_collisions(original_positions, agent_positions, wall_positions):
+                """
+                agent_positions: shape (n_agents, 3) - (x, y, angle)
+                wall_positions: shape (n_walls, 2) - (x, y)
+                """
+                def check_single_agent(original_pos,agent_pos):
+
+                    agent_xy = agent_pos[:2]
+
+                    collisions = jnp.all(agent_xy == wall_positions, axis=1)
+                    any_collision = jnp.any(collisions)
+                    
+                    return jax.lax.cond(
+                        any_collision,
+                        lambda _: original_pos, 
+                        lambda _: agent_pos,
+                        operand=None
+                    )
+                return jax.vmap(check_single_agent)(original_positions, agent_positions)
+
+            new_locs = handle_wall_collisions(state.agent_locs, new_locs, wall_position)
+            # new_locs = handle_wall_collisions(all_new_locs, new_locs, wall_position)
+
+            def get_resources_values(grid, coords, items_type):
+                return jax.vmap(lambda coord: (grid[coord[0], coord[1]] == items_type).astype(jnp.int16))(coords[:, :2])
+
+            coop_matches = get_resources_values(state.grid,new_locs,Items.coop) + state.coop_resources
+            defect_matches = get_resources_values(state.grid,new_locs,Items.defect) + state.defect_resources
+            state = state.replace(defect_resources=defect_matches, coop_resources=coop_matches)
+
             
-
-
-            apple_matches = jax.vmap(coin_matcher)(p=new_locs)
-
-            
-            # rewards = jnp.zeros((self.num_agents, 1))
-            # rewards = jnp.where(apple_matches, 1, rewards)
-
-            # single reward or sum reward
-
-            # rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
-            # rewards_sum = jnp.sum(rewards)
-            # rewards_sum_all_agents += rewards_sum
-            # rewards = rewards_sum_all_agents
-
-            new_invs = state.agent_invs + apple_matches
-
-            state = state.replace(
-                agent_invs=new_invs
-            )
-
-            # update grid
             old_grid = state.grid
 
             new_grid = old_grid.at[
@@ -1322,16 +2048,41 @@ class Harvest_open(MultiAgentEnv):
             new_grid = new_grid.at[x, y].set(self._agents)
             state = state.replace(grid=new_grid)
 
+
+            def update_close_grid(search_array, exists, grid):
+                def scan_fn(g, inputs):
+                    coord, flag = inputs
+                    return (
+                        jax.lax.select(
+                            flag,
+                            g.at[coord[0], coord[1]].set(coord[2]),
+                            g
+                        ),
+                        None
+                    )
+                return jax.lax.scan(scan_fn, grid, (search_array, exists))[0]
+            
+
             # update agent locations
             state = state.replace(agent_locs=new_locs)
+            
+            
+            rewards, state, reborn_players = _interact_pd(key, state, actions)
+            info = {
+                "original_rewards": rewards.squeeze(),
+                "shaped_rewards": rewards.squeeze(),
+            }
+            p = jax.random.randint(key, shape=(self.num_agents,), minval=10, maxval=101)
 
-            reborn_players, state = _interact(key, state, actions)
+            stay_time = jnp.where(reborn_players == True , p, stay_time)
+            state = state.replace(stay_time=stay_time)
+
+
+            # state = state.replace(reborn_locs=state.agent_locs)
 
             reborn_players_3d = jnp.stack([reborn_players, reborn_players, reborn_players], axis=-1)
 
-            # jax.debug.print("reborn_players_3d {reborn_players_3d} 🤯", reborn_players_3d=reborn_players_3d)
-
-            re_agents_pos = jax.random.permutation(subkey, self.SPAWNS_PLAYERS)[:num_agents]
+            re_agents_pos = jax.random.permutation(subkey, self.SPAWNS_PLAYER)[:num_agents]
             # agent_locs_2d = state.agent_locs[:, :2]
             # mask = ~jnp.any(jnp.all(re_agents_pos[:, None, :] == agent_locs_2d[None, :, :], axis=-1), axis=1)
             # re_agents_pos = re_agents_pos[mask]
@@ -1353,7 +2104,7 @@ class Harvest_open(MultiAgentEnv):
             # jax.debug.print("new_locs {new_locs} 🤯", new_locs=new_locs)
 
             new_re_locs = jnp.where(reborn_players_3d == False, new_locs, re_agent_locs)
-            # new_re_locs = jnp.where(reborn_players_3d == False, new_locs, re_agent_locs)
+            new_re_locs = jnp.where(reborn_players_3d == False, new_locs, re_agent_locs)
             # jax.debug.print("new_re_locs {new_re_locs} 🤯", new_re_locs=new_re_locs)
 
             # new_grid = state.grid.at[
@@ -1371,38 +2122,19 @@ class Harvest_open(MultiAgentEnv):
             # jax.debug.print("reborn_players.all() {reborn_players} 🤯", reborn_players=reborn_players.any())
             # jax.debug.print("new_re_locs111111111 {new_re_locs} 🤯", new_re_locs=new_re_locs)
             state = state.replace(reborn_locs=new_re_locs)
-
-            if self.shared_rewards:
-                rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
-                rewards = jnp.where(apple_matches, 1, rewards_sum_all_agents)
-                rewards_sum = jnp.sum(rewards)
-                rewards_sum_all_agents += rewards_sum
-                rewards = rewards_sum_all_agents
-            elif self.inequity_aversion:
-                rewards = self.get_inequity_aversion_rewards(rewards, self.inequity_aversion_target_agents, self.inequity_aversion_alpha, self.inequity_aversion_beta)
-            elif self.svo:
-                rewards = jnp.zeros((self.num_agents, 1))
-                original_rewards = jnp.where(apple_matches, 1, rewards) * self.num_agents
-                rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
-                info = {
-                    "original_rewards": original_rewards,
-                    "svo_theta": theta,
-                    "shaped_rewards": rewards,
-                }
-            else:
-                rewards = jnp.zeros((self.num_agents, 1))
-                rewards = jnp.where(apple_matches, 1, rewards) * self.num_agents
- 
-            
+            stay_time = state.stay_time.astype(jnp.int16)
             state_nxt = State(
                 agent_locs=state.agent_locs,
                 agent_invs=state.agent_invs,
                 inner_t=state.inner_t + 1,
                 outer_t=state.outer_t,
-                grid=state.grid,
-                apples=state.apples,
+                grid=state.grid.astype(jnp.int16),
+                defect_resources=state.defect_resources,
+                coop_resources=state.coop_resources,
+
                 freeze=state.freeze,
-                reborn_locs=state.reborn_locs
+                reborn_locs=state.reborn_locs,
+                stay_time=stay_time
             )
 
             # now calculate if done for inner or outer episode
@@ -1432,7 +2164,7 @@ class Harvest_open(MultiAgentEnv):
                 rewards
             )
 
-
+            mean_inv = state.agent_invs.mean(axis=0)
             return (
                 obs,
                 state,
@@ -1445,26 +2177,26 @@ class Harvest_open(MultiAgentEnv):
             key: jnp.ndarray
         ) -> State:
             key, subkey = jax.random.split(key)
-
-            # Find the free spaces in the grid
             grid = jnp.zeros((self.GRID_SIZE_ROW, self.GRID_SIZE_COL), jnp.int16)
+            player_positions = self.SPAWNS_PLAYER
+            agent_pos = jax.random.permutation(subkey, player_positions)[:num_agents]
+            
 
-            # all_positions = jax.random.permutation(subkey, self.SPAWNS)
-            # player_reborn_pos = 
-            # total_items = num_agents + NUM_COIN_TYPES * self.NUM_COINS
-
-            inside_players_pos = jax.random.permutation(subkey, self.SPAWNS_PLAYER_IN)
-            player_positions = jnp.concatenate((inside_players_pos, self.SPAWNS_PLAYERS))
-            agent_pos = jnp.concatenate((inside_players_pos, jax.random.permutation(subkey, player_positions)[:num_agents-2]))
-            wall_pos = self.SPAWNS_WALL
-
-            apple_pos = self.SPAWNS_APPLE
+            # 设置其他位置
+            grid = grid.at[
+                self.SPAWNS_DEFECT[:, 0],
+                self.SPAWNS_DEFECT[:, 1]
+            ].set(jnp.int16(Items.defect))
 
             grid = grid.at[
-                apple_pos[:, 0],
-                apple_pos[:, 1]
-            ].set(jnp.int16(Items.apple))
+                self.SPAWNS_COOP[:, 0],
+                self.SPAWNS_COOP[:, 1]
+            ].set(jnp.int16(Items.coop))
 
+            grid = grid.at[
+                self.SPAWNS_WALL[:, 0],
+                self.SPAWNS_WALL[:, 1]
+            ].set(jnp.int16(Items.wall))
 
             player_dir = jax.random.randint(
                 subkey, shape=(
@@ -1486,18 +2218,21 @@ class Harvest_open(MultiAgentEnv):
                 [[-1]*num_agents]*num_agents,
             dtype=jnp.int16
             )
-
+            stay_time = jnp.array([0]*num_agents, dtype=jnp.int16)
             return State(
                 agent_locs=agent_locs,
-                agent_invs=jnp.array([(0,0)]*num_agents, dtype=jnp.int8),
-                inner_t=0,
-                outer_t=0,
+                agent_invs=jnp.array([(0,0)]*num_agents, dtype=jnp.int16),
+                inner_t=jnp.array(0, dtype=jnp.int16),
+                outer_t=jnp.array(0, dtype=jnp.int16),
                 grid=grid,
-                apples=apple_pos,
+                defect_resources=jnp.array([0]*num_agents, dtype=jnp.int16),
+                coop_resources=jnp.array([0]*num_agents, dtype=jnp.int16),
 
                 freeze=freeze,
-                reborn_locs = agent_locs
+                reborn_locs = agent_locs,
+                stay_time=stay_time,
             )
+
 
         def reset(
             key: jnp.ndarray
@@ -1506,18 +2241,26 @@ class Harvest_open(MultiAgentEnv):
             obs = _get_obs(state)
             return obs, state
         ################################################################################
-        # if you want to test whether it can run on gpu, activate following code
         # overwrite Gymnax as it makes single-agent assumptions
-        if jit:
+        if self.jit:
             self.step_env = jax.jit(_step)
             self.reset = jax.jit(reset)
             self.get_obs_point = jax.jit(_get_obs_point)
+            self.get_reward = jax.jit(_get_reward)
+        ################################################################################
         else:
-            # if you want to see values whilst debugging, don't jit
             self.step_env = _step
             self.reset = reset
             self.get_obs_point = _get_obs_point
+            self.get_reward = _get_reward
         ################################################################################
+
+        # for debugging
+        self.get_obs = jax.jit(_get_obs)
+        self.cnn = cnn
+
+        self.num_inner_steps = num_inner_steps
+        self.num_outer_steps = num_outer_steps
 
     @property
     def name(self) -> str:
@@ -1538,7 +2281,7 @@ class Harvest_open(MultiAgentEnv):
     def observation_space(self) -> spaces.Dict:
         """Observation space of the environment."""
         _shape_obs = (
-            (self.OBS_SIZE, self.OBS_SIZE, (len(Items)-1) + 10)
+            (self.OBS_SIZE, self.OBS_SIZE, (len(Items)-1) + 17)
             if self.cnn
             else (self.OBS_SIZE**2 * ((len(Items)-1) + 10),)
         )
@@ -1577,31 +2320,36 @@ class Harvest_open(MultiAgentEnv):
         if key in self.tile_cache:
             return self.tile_cache[key]
 
-        img = onp.full(
+        img = onp.zeros(
             shape=(tile_size * subdivs, tile_size * subdivs, 3),
-            fill_value=(210, 190, 140),
             dtype=onp.uint8,
         )
 
-
+        # Draw the grid lines (top and left edges)
+        # fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
+        # fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
     # class Items(IntEnum):
-
+        claimed_resources_color_array = jnp.arange(1000,1000+self.num_agents)
         if obj in self._agents:
             # Draw the agent
             agent_color = self.PLAYER_COLOURS[obj-len(Items)]
-        elif obj == Items.apple:
+        elif obj == Items.wall:
+            fill_coords(img, point_in_rect(0, 1, 0, 1), (200.0, 200.0, 200.0))
+        elif obj in claimed_resources_color_array:
+            color_index = jnp.where(obj==claimed_resources_color_array)[0]
+            fill_coords(img, point_in_rect(0, 1, 0, 1), self.PLAYER_COLOURS[int(color_index)])
+        elif obj == Items.coop:
             # Draw the red coin as GREEN COOPERATE
             fill_coords(
-                img, point_in_circle(0.5, 0.5, 0.31), (214.0, 39.0, 40.0)
+                img, point_in_rect(0, 1, 0, 1), (30.0, 225.0, 185.0)
             )
-        # elif obj == Items.blue_coin:
-        #     # Draw the blue coin as DEFECT/ RED COIN
-        #     fill_coords(
-        #         img, point_in_circle(0.5, 0.5, 0.31), (214.0, 39.0, 40.0)
-        #     )
-        elif obj == Items.wall:
-            fill_coords(img, point_in_rect(0, 1, 0, 1), (127.0, 127.0, 127.0))
-
+        elif obj == Items.defect:
+            # Draw the blue coin as RED DEFECT
+            fill_coords(
+                img, point_in_rect(0, 1, 0, 1), (225, 30, 70)
+            )
+        elif obj == 999:
+            fill_coords(img, point_in_rect(0.1, 0.9, 0.3, 0.9), (117, 88, 71))
         elif obj == Items.interact:
             fill_coords(img, point_in_rect(0, 1, 0, 1), (188.0, 189.0, 34.0))
 
@@ -1676,7 +2424,6 @@ class Harvest_open(MultiAgentEnv):
 
         img = onp.zeros(shape=(height_px, width_px, 3), dtype=onp.uint8)
         grid = onp.array(state.grid)
-        
         grid = onp.pad(
             grid, ((self.PADDING, self.PADDING), (self.PADDING, self.PADDING)), constant_values=Items.wall
         )
@@ -1716,7 +2463,10 @@ class Harvest_open(MultiAgentEnv):
                 #         if agent_here[a]
                 #         else agent_hat
                 #     )
-
+                # if jnp.any(jnp.all(jnp.array([i,j]) == state.claimed_resources[:, :2], axis=1)):
+                #     claimed_resources_array = jnp.arange(1000,1000+self.num_agents)
+                #     agent_index = state.claimed_resources[jnp.where(jnp.all(jnp.array([i,j]) == state.claimed_resources[:, :2], axis=1))][0][-1]
+                #     cell = claimed_resources_array[agent_index].item()
                 tile_img = self.render_tile(
                     cell,
                     agent_dir=agent_dir,
@@ -1738,10 +2488,15 @@ class Harvest_open(MultiAgentEnv):
             ],
             2,
         )
+        # Render the inventory
+        # agent_inv = []
+        # for a in range(self.num_agents):
+        #     agent_inv.append(self.render_inventory(state.agent_inventories[a], img.shape[1]))
 
-        # time = self.render_time(state, img.shape[1])
+
+        time = self.render_time(state, img.shape[1])
         # img = onp.concatenate((img, *agent_inv, time), axis=0)
-        # img = onp.concatenate((img, time), axis=0)
+        img = onp.concatenate((img, time), axis=0)
         return img
 
     def render_inventory(self, inventory, width_px) -> onp.array:
@@ -1789,53 +2544,3 @@ class Harvest_open(MultiAgentEnv):
             xmax = (i + 1) * tile_width
             img[ymin:ymax, xmin:xmax, :] = onp.int8(255)
         return img
-    
-    def get_svo_rewards(self, array, w=0.5, ideal_angle_degrees=45, target_agents=None):
-        """
-        Social Value Orientation reward shaping function
-        
-        Args:
-            array: shape: [num_agents, 1] Immediate reward r_i for each agent
-            w: SVO weight, used to balance self-reward and social value (0 <= w <= 1)
-            w=0 means completely selfish, w=1 means completely altruistic
-            ideal_angle_degrees: Ideal angle (in degrees)
-            - 45 degrees means complete equality
-            - 0 degrees means completely selfish
-            - 90 degrees means completely altruistic
-            target_agents: List of agent indices to apply SVO
-        
-        Returns:
-            shaped_rewards: Rewards adjusted by SVO
-            theta: Reward angle (in radians)
-        """
-        # Ensure the input shape is correct
-        assert array.shape == (self.num_agents, 1), f"Expected shape ({self.num_agents}, 1), got {array.shape}"
-        
-        # Convert ideal angle from degrees to radians
-        ideal_angle = (ideal_angle_degrees * jnp.pi) / 180.0
-        
-        # Calculate the group average reward r_j (excluding self)
-        mask = 1 - jnp.eye(self.num_agents)  # [num_agents, num_agents]
-        # Modify here: Use matrix multiplication to calculate other agents' rewards
-        others_rewards = jnp.matmul(mask, array)  # [num_agents, 1]
-        mean_others = others_rewards / (self.num_agents - 1)  # Divide by the number of other agents
-        
-        # Calculate reward angle θ(R) = arctan(r_j / r_i)
-        r_i = array  # [num_agents, 1]
-        r_j = mean_others  # [num_agents, 1]
-        theta = jnp.arctan2(r_j, r_i)
-        
-        # Calculate social value orientation utility
-        # U(r_i, r_j) = r_i - w * |θ(R) - ideal_angle|
-        angle_deviation = jnp.abs(theta - ideal_angle)
-        svo_utility = r_i - w * angle_deviation
-        
-        # If target agents are specified, apply SVO only to those agents
-        if target_agents is not None:
-            target_agents_array = jnp.array(target_agents)
-            agent_mask = jnp.zeros(self.num_agents, dtype=bool)
-            agent_mask = agent_mask.at[target_agents_array].set(True)
-            agent_mask = agent_mask.reshape(-1, 1)  # [num_agents, 1]
-            return jnp.where(agent_mask, svo_utility, array), theta
-        else:
-            return svo_utility, theta

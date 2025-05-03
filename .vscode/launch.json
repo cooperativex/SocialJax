@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: main",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "python": "/home/shuqing/.conda/envs/melting-jax/bin/python",
+            "justMyCode": false,
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            // "program": "baselines/evaluation.py",
+            // "program": "jaxmarl/tutorials/ippo_pd_arena.py"
+            // "program": "algothrims/IPPO/ippo_cnn_harvest_common.py"
+            "program": "algothrims/IPPO/ippo_cnn_pd_arena.py"
+        }
+    ]
+}
+

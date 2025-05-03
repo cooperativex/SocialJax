@@ -13,7 +13,7 @@ from flax.training.train_state import TrainState
 import distrax
 from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper
 import socialjax
-from socialjax.wrappers.baselines import LogWrapper
+from socialjax.wrappers.baselines import SVOLogWrapper
 import hydra
 from omegaconf import OmegaConf
 import wandb
@@ -153,6 +153,22 @@ def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
     x = x.reshape((num_actors, num_envs, -1))
     return {a: x[i] for i, a in enumerate(agent_list)}
 
+def group_and_distribute_sum(array):
+    """
+    每9个值求和，并将和分配给这9个位置
+    
+    Args:
+        array: shape (11304,) 的数组
+    Returns:
+        相同shape的数组，每9个值相同（为原来9个值的和）
+    """
+    group_size = 7
+    # 创建组索引
+    group_indices = jnp.arange(array.shape[0]) // group_size
+    # 使用segment_sum计算每组的和
+    group_sums = jax.ops.segment_sum(array, group_indices, num_segments=array.shape[0] // group_size)
+    # 使用group_indices索引回原数组大小
+    return group_sums[group_indices]
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -165,7 +181,7 @@ def make_train(config):
         config["NUM_ACTORS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
     )
 
-    env = LogWrapper(env, replace_info=False)
+    env = SVOLogWrapper(env, replace_info=False)
 
     rew_shaping_anneal = optax.linear_schedule(
         init_value=1.,
@@ -247,6 +263,8 @@ def make_train(config):
                 # current_timestep = update_step*config["NUM_STEPS"]*config["NUM_ENVS"]
                 # reward = jax.tree_map(lambda x,y: x+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
 
+                info["value"] = value
+                # info["returned_episode_original_returns"] = jnp.mean(info["returned_episode_original_returns"],axis=-1)
                 info = jax.tree_map(lambda x: x.reshape((config["NUM_ACTORS"])), info)
                 transition = Transition(
                     batchify_dict(done, env.agents, config["NUM_ACTORS"]).squeeze(),
@@ -277,6 +295,7 @@ def make_train(config):
                         transition.value,
                         transition.reward,
                     )
+
                     reward_mean = jnp.mean(reward, axis=0)
                     # reward_std = jnp.std(reward, axis=0) + 1e-8
                     reward = (reward - reward_mean)# / reward_std
@@ -286,6 +305,11 @@ def make_train(config):
                         delta
                         + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
                     )
+
+                    # gae_mean = jnp.mean(gae)
+                    # gae_std = jnp.std(gae, axis=0) + 1e-8
+                    # gae = (gae - gae_mean) / gae_std
+
                     return (gae, value), gae
 
                 _, advantages = jax.lax.scan(
@@ -295,7 +319,21 @@ def make_train(config):
                     reverse=True,
                     unroll=16,
                 )
-                return advantages, advantages + traj_batch.value
+
+
+
+                # adv_mean = jnp.mean(advantages, axis=0)
+                # adv_std = jnp.std(advantages, axis=0) + 1e-8
+                # advantages = (advantages - adv_mean)
+
+                # value_mean = jnp.mean(traj_batch.value, axis=0)
+                # value_std = jnp.std(traj_batch.value, axis=0) + 1e-8
+                # value=(traj_batch.value - value_mean) / value_std
+
+
+                return advantages, advantages + traj_batch.value  # traj.value; value
+            
+            
 
             advantages, targets = _calculate_gae(traj_batch, last_val)
 
@@ -390,6 +428,9 @@ def make_train(config):
             metric = jax.tree_map(lambda x: x.mean(), metric)
             metric["update_step"] = update_step
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
+            metric["advantages"] = advantages.mean()
+            # metric["original_rewards"] = metric["original_rewards"].mean() * config["NUM_STEPS"] 
+            # metric["shaped_rewards"] = metric["shaped_rewards"].mean() * config["NUM_STEPS"] 
             jax.debug.callback(callback, metric)
 
             runner_state = (train_state, env_state, last_obs, update_step, rng)
@@ -411,11 +452,11 @@ def single_run(config):
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=["IPPO", "FF"],
+        tags=["SVO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_cleanup',
-        group=f'harvest',
+        name=f'svo_cnn_cleanup',
+        group=f'cleanup',
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -511,46 +552,67 @@ def evaluate(params, env, save_path, config):
         
         # print(f"Episode {episode} total reward: {episode_reward}")
 def tune(default_config):
-    """Hyperparameter sweep with wandb."""
+    """
+    Hyperparameter sweep with wandb, including logic to:
+    - Initialize wandb
+    - Train for each hyperparameter set
+    - Save checkpoint
+    - Evaluate and log GIF
+    """
     import copy
 
     default_config = OmegaConf.to_container(default_config)
 
-    layout_name = default_config["ENV_KWARGS"]["layout"]
+    sweep_config = {
+        "name": "cleanup",
+        "method": "grid",
+        "metric": {
+            "name": "returned_episode_original_returns",
+            "goal": "maximize",
+        },
+        "parameters": {
+            # "LR": {"values": [0.001, 0.0005, 0.0001, 0.00005]},
+            # "ACTIVATION": {"values": ["relu", "tanh"]},
+            # "UPDATE_EPOCHS": {"values": [2, 4, 8]},
+            # "NUM_MINIBATCHES": {"values": [4, 8, 16, 32]},
+            # "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
+            # "ENT_COEF": {"values": [0.001, 0.01, 0.1]},
+            # "NUM_STEPS": {"values": [64, 128, 256]},
+            "ENV_KWARGS.svo_w": {"values": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]},
+            # "ENV_KWARGS.svo_ideal_angle_degrees": {"values": [0, 45, 90]},
+
+        },
+    }
 
     def wrapped_make_train():
 
-        wandb.init(project=default_config["PROJECT"])
-        # update the default params
-        config = copy.deepcopy(default_config)
-        for k, v in dict(wandb.config).items():
-            config[k] = v
 
-        print("running experiment with params:", config)
+        wandb.init(project=default_config["PROJECT"])
+        config = copy.deepcopy(default_config)
+        # only overwrite the single nested key we're sweeping
+        for k, v in dict(wandb.config).items():
+            if "." in k:
+                parent, child = k.split(".", 1)
+                config[parent][child] = v
+            else:
+                config[k] = v
+
+
+        # Rename the run for clarity
+        run_name = f"sweep_{config['ENV_NAME']}_seed{config['SEED']}"
+        wandb.run.name = run_name
+        print("Running experiment:", run_name)
 
         rng = jax.random.PRNGKey(config["SEED"])
         rngs = jax.random.split(rng, config["NUM_SEEDS"])
         train_vjit = jax.jit(jax.vmap(make_train(config)))
         outs = jax.block_until_ready(train_vjit(rngs))
+        train_state = jax.tree_map(lambda x: x[0], outs["runner_state"][0])
 
-    sweep_config = {
-        "name": "ppo_overcooked",
-        "method": "bayes",
-        "metric": {
-            "name": "returned_episode_returns",
-            "goal": "maximize",
-        },
-        "parameters": {
-            "NUM_ENVS": {"values": [32, 64, 128, 256]},
-            "LR": {"values": [0.0005, 0.0001, 0.00005, 0.00001]},
-            "ACTIVATION": {"values": ["relu", "tanh"]},
-            "UPDATE_EPOCHS": {"values": [2, 4, 8]},
-            "NUM_MINIBATCHES": {"values": [2, 4, 8, 16]},
-            "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
-            "ENT_COEF": {"values": [0.0001, 0.001, 0.01]},
-            "NUM_STEPS": {"values": [64, 128, 256]},
-        },
-    }
+        # Evaluate and log
+        # params = load_params(train_state.params)
+        # test_env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        # evaluate(params, test_env, config)
 
     wandb.login()
     sweep_id = wandb.sweep(
@@ -559,7 +621,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_cleanup")
+@hydra.main(version_base=None, config_path="config", config_name="svo_cnn_cleanup")
 def main(config):
     if config["TUNE"]:
         tune(config)
