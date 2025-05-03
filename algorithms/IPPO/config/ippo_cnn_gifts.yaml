@@ -1,0 +1,41 @@
+"LR": 0.0005
+"NUM_ENVS": 780
+"NUM_STEPS": 1000
+"TOTAL_TIMESTEPS": 1e9
+"UPDATE_EPOCHS": 2
+"NUM_MINIBATCHES": 500
+"GAMMA": 0.99
+"GAE_LAMBDA": 0.95
+"CLIP_EPS": 0.2
+"ENT_COEF": 0.01
+"VF_COEF": 0.5
+"MAX_GRAD_NORM": 0.5
+"ACTIVATION": "relu"
+"ENV_NAME": "gift"
+"REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
+"ENV_KWARGS": 
+  "num_agents" : 5
+  "num_inner_steps" : 1000
+  "shared_rewards" : True  # Attention: switch to False for individual rewards; True for common rewards 
+  "cnn" : True
+  "jit" : True
+  
+
+"ANNEAL_LR": True
+"SEED": 30
+"NUM_SEEDS": 1
+"TUNE": False
+
+"REWARD": "common" # individual; common    --only worked for saved models name.
+"GIF_NUM_FRAMES": 300
+"EVAL_STEPS": 5
+
+"PROFILING": False
+
+
+# WandB Params
+"ENTITY": ""
+"PROJECT": "socialjax"
+"WANDB_MODE" : "online"
+"WANDB_TAGS":
+  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD    --only worked for the name of wandb.

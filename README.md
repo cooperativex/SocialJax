@@ -26,7 +26,7 @@
     </div>
 </div>
 
-***Common Rewards*** : a scenario where all agents share a single, unified reward signal. This approach ensures that all agents are aligned towards achieving the same objective, promoting collaboration and coordination among them.
+*Common Rewards* : a scenario where all agents share a single, unified reward signal. This approach ensures that all agents are aligned towards achieving the same objective, promoting collaboration and coordination among them.
 
 <div class="collage">
     <div class="column" align="centre">
@@ -47,6 +47,14 @@ SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-
 
 
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
+
+## Update
+***[2025/04/29]*** 🚀 Updated [Mushrooms](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/mushrooms) environment.
+
+***[2025/04/28]*** 🚀 Updated [Gift Refinement](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/gift) environment.
+
+***[2025/04/16]*** ✨ Added [MAPPO](https://github.com/cooperativex/SocialJax/tree/main/algorithms/MAPPO) algorithm for all environments.
+
 
 ## Installation
 
@@ -116,6 +124,8 @@ We introduce the environments and use Schelling diagrams to demonstrate whether 
 #### Important Notes:
 - *Due to algorithmic limitations, agents may not always learn the optimal actions. As a result, Schelling diagrams can prove that the environment is social dilemmas, but they cannot definitively prove that the environment is not social dilemmas.*
 
+- *Territory might not be Social diagram, but as long as the agents' behaviors are interesting, Territory holds intrinsic value.*
+  
 ## Quick Start
 
 SocialJax interfaces follow [JaxMARL](https://github.com/FLAIROx/JaxMARL/) which takes inspiration from the [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) and [Gymnax](https://github.com/RobertTLange/gymnax).
