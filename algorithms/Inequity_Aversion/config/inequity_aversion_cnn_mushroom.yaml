@@ -1,7 +1,7 @@
 "LR": 0.0005
-"NUM_ENVS": 128
+"NUM_ENVS": 430
 "NUM_STEPS": 1000
-"TOTAL_TIMESTEPS": 1e9
+"TOTAL_TIMESTEPS": 2e8
 "UPDATE_EPOCHS": 2
 "NUM_MINIBATCHES": 500
 "GAMMA": 0.99
@@ -11,21 +11,21 @@
 "VF_COEF": 0.5
 "MAX_GRAD_NORM": 0.5
 "ACTIVATION": "relu"
-"ENV_NAME": "harvest_common_open"
+"ENV_NAME": "mushroom"
 "REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
 "ENV_KWARGS": 
-  "num_agents" : 7
+  "num_agents" : 5
   "num_inner_steps" : 1000
-  "shared_rewards" : False  # Attention: switch to False for individual rewards; True for common rewards 
+  "shared_rewards" : False  # Attention: switch to False for individual rewards 
   "cnn" : True
-  "jit" : True
+  "jit" : True 
   "inequity_aversion" : True
   "inequity_aversion_target_agents": [0, 1, 2, 3, 4, 5, 6]
   "inequity_aversion_alpha": 0.0
   "inequity_aversion_beta": 0.0
   "enable_smooth_rewards": False
 
-"ANNEAL_LR": True
+"ANNEAL_LR": False
 "SEED": 30
 "NUM_SEEDS": 1
 "TUNE": False
@@ -33,16 +33,9 @@
 "REWARD": "individual" # individual; common
 "GIF_NUM_FRAMES": 250
 
-
-"INQUITY_AVERSION_ALPHA": 5
-"INQUITY_AVERSION_BETA": 0.05
-"INQUITY_AVERSION_TARGET_AGENTS": None
-"INQUITY_AVERSION_GROUP_SIZE": 7
-
-
 # WandB Params
 "ENTITY": ""
-"PROJECT": "socialjax"
+"PROJECT": "svo_socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
-  - COMMON_REWARD # INDIVIDUAL_REWARD
+  - INDIVIDUAL_REWARD # COMMON_REWARD

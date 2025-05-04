@@ -18,7 +18,7 @@
   "num_inner_steps" : 1000
   "shared_rewards" : False  # Attention: switch to False for individual rewards 
   "cnn" : True
-  "jit" : False 
+  "jit" : True 
   "inequity_aversion" : True
   "inequity_aversion_target_agents": [0, 1, 2, 3, 4, 5, 6]
   "inequity_aversion_alpha": 0.0

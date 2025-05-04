@@ -1,7 +1,7 @@
 "LR": 0.0005
-"NUM_ENVS": 128
+"NUM_ENVS": 430
 "NUM_STEPS": 1000
-"TOTAL_TIMESTEPS": 1e9
+"TOTAL_TIMESTEPS": 2e8
 "UPDATE_EPOCHS": 2
 "NUM_MINIBATCHES": 500
 "GAMMA": 0.99
@@ -16,21 +16,15 @@
 "ENV_KWARGS": 
   "num_agents" : 7
   "num_inner_steps" : 1000
-  "shared_rewards" : False  # Attention: switch to False for individual rewards; True for common rewards 
+  "shared_rewards" : False  # Attention: switch to False for individual rewards 
   "cnn" : True
-  "jit" : True
-  "inequity_aversion" : False
-  "inequity_aversion_target_agents": [0, 1, 2, 3, 4, 5, 6]
-  "inequity_aversion_alpha": 10
-  "inequity_aversion_beta": 0.01
-  "enable_smooth_rewards": False
+  "jit" : True 
   "svo" : True
   "svo_target_agents": [0, 1, 2, 3, 4, 5, 6]
   "svo_w": 0.5
-  "svo_ideal_angle_degrees": 75
-  
+  "svo_ideal_angle_degrees": 90
 
-"ANNEAL_LR": True
+"ANNEAL_LR": False
 "SEED": 30
 "NUM_SEEDS": 1
 "TUNE": False
@@ -40,7 +34,7 @@
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "socialjax"
+"PROJECT": "svo_socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
   - INDIVIDUAL_REWARD # COMMON_REWARD

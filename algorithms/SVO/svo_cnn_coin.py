@@ -454,8 +454,8 @@ def single_run(config):
         tags=["SVO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'svo_cnn_cleanup',
-        group=f'cleanup',
+        name=f'svo_cnn_coin',
+        group=f'coin',
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -498,7 +498,7 @@ def evaluate(params, env, save_path, config):
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/cleanup"
+    root_dir = f"evaluation/coin"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -563,7 +563,7 @@ def tune(default_config):
     default_config = OmegaConf.to_container(default_config)
 
     sweep_config = {
-        "name": "cleanup_angle",
+        "name": "coin_angle",
         "method": "grid",
         "metric": {
             "name": "returned_episode_original_returns",
@@ -620,7 +620,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="svo_cnn_cleanup")
+@hydra.main(version_base=None, config_path="config", config_name="svo_cnn_coin")
 def main(config):
     if config["TUNE"]:
         tune(config)

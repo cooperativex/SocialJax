@@ -11,10 +11,10 @@
 "VF_COEF": 0.5
 "MAX_GRAD_NORM": 0.5
 "ACTIVATION": "relu"
-"ENV_NAME": "clean_up"
-"REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
+"ENV_NAME": "pd_arena"
+"REW_SHAPING_HORIZON": 5e6 # for how many timesteps add a shaping reward
 "ENV_KWARGS": 
-  "num_agents" : 7
+  "num_agents" : 4
   "num_inner_steps" : 1000
   "shared_rewards" : False  # Attention: switch to False for individual rewards 
   "cnn" : True
