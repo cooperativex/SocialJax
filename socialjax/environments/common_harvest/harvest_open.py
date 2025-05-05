@@ -1281,6 +1281,14 @@ class Harvest_open(MultiAgentEnv):
                 lambda: all_new_locs
             )
 
+            # fix collisions
+            # TODO - fix this to be more efficient; agents moving would be less efficient.
+            condition = jnp.where((state.grid[new_locs[:, 0], new_locs[:, 1]] != Items.empty) & 
+                                  (state.grid[new_locs[:, 0], new_locs[:, 1]] != Items.apple), True, False)
+            condition_3d = jnp.stack([condition, condition, condition], axis=-1)
+
+            new_locs = jnp.where(condition_3d == True, state.agent_locs, new_locs)
+
             # update inventories
             def coin_matcher(p: jnp.ndarray) -> jnp.ndarray:
                 c_matches = jnp.array([
@@ -1420,6 +1428,7 @@ class Harvest_open(MultiAgentEnv):
             
             AppleCount = jnp.sum(state.grid == Items.apple)
             info["AppleCount_info"] = jnp.zeros((self.num_agents, 1)).squeeze() + AppleCount
+            
             
             state_nxt = State(
                 agent_locs=state.agent_locs,
