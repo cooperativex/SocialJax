@@ -223,6 +223,7 @@ class Harvest_open(MultiAgentEnv):
         self.svo_target_agents = svo_target_agents
         self.svo_w = svo_w
         self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
 
         # self.agents = [str(i) for i in list(range(num_agents))]
 
@@ -1416,7 +1417,9 @@ class Harvest_open(MultiAgentEnv):
                 rewards = jnp.zeros((self.num_agents, 1))
                 rewards = jnp.where(apple_matches, 1, rewards) * self.num_agents
                 info = {}
- 
+            
+            AppleCount = jnp.sum(state.grid == Items.apple)
+            info["AppleCount_info"] = jnp.zeros((self.num_agents, 1)).squeeze() + AppleCount
             
             state_nxt = State(
                 agent_locs=state.agent_locs,

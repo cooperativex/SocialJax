@@ -40,6 +40,7 @@ class State:
 
     freeze: jnp.ndarray
     reborn_locs: jnp.ndarray
+    smooth_rewards: jnp.ndarray
 
 @chex.dataclass
 class EnvParams:
@@ -160,6 +161,15 @@ class CoinGame(MultiAgentEnv):
         shared_rewards=True,
         payoff_matrix=[[1, 1, -2], [1, 1, -2]],
         regrow_rate=0.0005,
+        inequity_aversion=False,
+        inequity_aversion_target_agents=None,
+        inequity_aversion_alpha=5,
+        inequity_aversion_beta=0.05,
+        enable_smooth_rewards=False,
+        svo=False,
+        svo_target_agents=None,
+        svo_w=0.5,
+        svo_ideal_angle_degrees=45,
         jit=True,
         
         grid_size=(16,11),
@@ -196,6 +206,16 @@ class CoinGame(MultiAgentEnv):
         self.payoff_matrix = payoff_matrix
         self.shared_rewards = shared_rewards
         self.cnn = cnn
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
 
         self.PLAYER_COLOURS = generate_agent_colors(num_agents)
         self.GRID_SIZE_ROW = grid_size[0]
@@ -911,7 +931,7 @@ class CoinGame(MultiAgentEnv):
                 rewards = jnp.zeros((2, 1))
                 rewards = rewards.at[0, 0].set(red_reward[0])
                 rewards = rewards.at[1, 0].set(green_reward[0])
-                rewards = rewards * self.num_agents
+                original_rewards = rewards * self.num_agents
                 if self.smooth_rewards:
                     should_smooth = (state.inner_t % 1) == 0
                     new_smooth_rewards = 0.99 * 0.01* state.smooth_rewards + original_rewards
@@ -944,6 +964,21 @@ class CoinGame(MultiAgentEnv):
                 rewards = rewards.at[0, 0].set(red_reward[0])
                 rewards = rewards.at[1, 0].set(green_reward[0])
                 rewards = rewards * self.num_agents
+                info = {}
+            
+            eat_own_coins = jnp.zeros((2, 1))
+            red_reward, green_reward = 0, 0
+            red_reward = jnp.where(
+                red_red_matches, red_reward + red_red_reward, red_reward
+            )
+
+            green_reward = jnp.where(
+                green_green_matches, green_reward + green_green_reward, green_reward
+            )
+
+            eat_own_coins = eat_own_coins.at[0, 0].set(red_reward[0])
+            eat_own_coins = eat_own_coins.at[1, 0].set(green_reward[0])
+            info["eat_own_coins"] = eat_own_coins.squeeze() * self.num_agents
 
             # if self.shared_rewards:
             #     rewards = jnp.zeros((2, 1))
@@ -968,7 +1003,8 @@ class CoinGame(MultiAgentEnv):
                 grid=state.grid,
                 apples=state.apples,
                 freeze=state.freeze,
-                reborn_locs=state.reborn_locs
+                reborn_locs=state.reborn_locs,
+                smooth_rewards=state.smooth_rewards
             )
 
             # now calculate if done for inner or outer episode
@@ -1049,7 +1085,8 @@ class CoinGame(MultiAgentEnv):
                 apples=apple_pos,
 
                 freeze=freeze,
-                reborn_locs = agent_locs
+                reborn_locs = agent_locs,
+                smooth_rewards=jnp.zeros((self.num_agents, 1))
             )
 
         def reset(

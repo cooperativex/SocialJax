@@ -502,13 +502,17 @@ def make_train(config):
             if config["PARAMETER_SHARING"]:
                 metric["update_step"] = update_step
                 metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
-                jax.debug.callback(callback, metric)
+                # jax.debug.callback(callback, metric)
             else:
                 for i in range(env.num_agents):
                     metric[i]["update_step"] = update_step
                     metric[i]["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
                 metric = metric[0]
-                jax.debug.callback(callback, metric)
+                # jax.debug.callback(callback, metric)
+            metric["update_step"] = update_step
+            metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
+            metric["mining_gold"] = metric["mining_gold"] * config["ENV_KWARGS"]["num_inner_steps"]
+            jax.debug.callback(callback, metric)
 
             runner_state = (train_state, env_state, last_obs, update_step, rng)
             return runner_state, metric

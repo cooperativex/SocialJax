@@ -429,8 +429,11 @@ def make_train(config):
             metric["update_step"] = update_step
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
             metric["advantages"] = advantages.mean()
+            metric["clean_action_info"] = metric["clean_action_info"] * config["ENV_KWARGS"]["num_inner_steps"]
             # metric["original_rewards"] = metric["original_rewards"].mean() * config["NUM_STEPS"]
             # metric["shaped_rewards"] = metric["shaped_rewards"].mean() * config["NUM_STEPS"]
+            metric["clean_action_info"] = metric["clean_action_info"] * config["ENV_KWARGS"]["num_inner_steps"]
+
             jax.debug.callback(callback, metric)
  
             runner_state = (train_state, env_state, last_obs, update_step, rng)

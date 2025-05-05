@@ -129,6 +129,7 @@ class State:
     outer_t: int
     last_mined_positions: jnp.ndarray  # shape (num_agents, 2), positions mined in last step
     actions_last_step: jnp.ndarray  # shape (num_agents,) last actions taken
+    smooth_rewards: jnp.ndarray
 
 
 @dataclass
@@ -415,6 +416,15 @@ class CoopMining(MultiAgentEnv):
             num_outer_steps=1,
             num_agents=4,
             shared_rewards=True,
+            inequity_aversion=False,
+            inequity_aversion_target_agents=None,
+            inequity_aversion_alpha=5,
+            inequity_aversion_beta=0.05,
+            enable_smooth_rewards=False,
+            svo=False,
+            svo_target_agents=None,
+            svo_w=0.5,
+            svo_ideal_angle_degrees=45,
             max_miners=4,  # how many miners can we store per gold cell
             min_gold_miners=2,  # how many distinct miners needed to finalize gold
             mining_range=3,
@@ -428,6 +438,17 @@ class CoopMining(MultiAgentEnv):
             view_config=ViewConfig(forward=9, backward=1, left=5, right=5),
     ):
         super().__init__(num_agents=num_agents)
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
+
         self.view_config = view_config
         self.num_inner_steps = num_inner_steps
         self.num_outer_steps = num_outer_steps
@@ -572,6 +593,7 @@ class CoopMining(MultiAgentEnv):
             outer_t=0,
             last_mined_positions=last_mined_positions,
             actions_last_step=last_actions,
+            smooth_rewards=jnp.zeros((self.num_agents, 1)),
         )
 
     def step_env(self, key: jnp.ndarray, state: State, actions: jnp.ndarray):
@@ -652,7 +674,7 @@ class CoopMining(MultiAgentEnv):
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
             if self.smooth_rewards:
                 should_smooth = (state.inner_t % 1) == 0
-                new_smooth_rewards = 0.99 * 0.01* state.smooth_rewards + final_rewards
+                new_smooth_rewards = 0.99 * 0.99 * state.smooth_rewards + final_rewards
                 rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(new_smooth_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
                 state = state.replace(smooth_rewards=new_smooth_rewards)
                 info = {
@@ -678,7 +700,7 @@ class CoopMining(MultiAgentEnv):
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
             info = {}
 
-
+        info["mining_gold"] = rewards_gold * self.num_agents
 
         # if self.shared_rewards:
         #     total_rewards = jnp.sum(rewards_iron + rewards_gold)  # Scalar
@@ -697,6 +719,7 @@ class CoopMining(MultiAgentEnv):
             outer_t=state.outer_t,
             last_mined_positions=positions,  # Record mined positions
             actions_last_step=actions,
+            smooth_rewards=state.smooth_rewards,
         )
 
         # 10) Check if done

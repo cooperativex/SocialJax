@@ -41,6 +41,7 @@ class State:
     freeze: jnp.ndarray
     coins_position: jnp.ndarray
     agents_bag: jnp.ndarray
+    smooth_rewards: jnp.ndarray
 
 @chex.dataclass
 class EnvParams:
@@ -164,6 +165,15 @@ class Gift(MultiAgentEnv):
         num_outer_steps=1,
         num_agents=6,
         shared_rewards=True,
+        inequity_aversion=False,
+        inequity_aversion_target_agents=None,
+        inequity_aversion_alpha=5,
+        inequity_aversion_beta=0.05,
+        enable_smooth_rewards=False,
+        svo=False,
+        svo_target_agents=None,
+        svo_w=0.5,
+        svo_ideal_angle_degrees=45,
         payoff_matrix=[[1, 1, -2], [1, 1, -2]],
         regrow_rate_red=0.5,  # 0.25
         regrow_rate_green=0.4,  # 0.4
@@ -214,6 +224,17 @@ class Gift(MultiAgentEnv):
         self.payoff_matrix = payoff_matrix
         self.shared_rewards = shared_rewards
         self.cnn = cnn
+
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
 
         self.PLAYER_COLOURS = generate_agent_colors(num_agents)
         self.GRID_SIZE_ROW = grid_size[0]
@@ -1084,6 +1105,9 @@ class Gift(MultiAgentEnv):
 
             state = _interact(key, state, actions)
 
+            level_two_and_three_tokens = jnp.zeros((self.num_agents, 1))
+            level_two_and_three_tokens = jnp.where(True, jnp.sum(state.agents_bag[1:, :]), level_two_and_three_tokens).squeeze()
+
             comsume_bag = state.agents_bag.transpose()
 
             def renew_reward(single_bag, action):
@@ -1112,7 +1136,7 @@ class Gift(MultiAgentEnv):
                 original_rewards = rewards * self.num_agents
                 if self.smooth_rewards:
                     should_smooth = (state.inner_t % 1) == 0
-                    new_smooth_rewards = 0.99 * 0.01* state.smooth_rewards + original_rewards
+                    new_smooth_rewards = 0.99 * 0.99* state.smooth_rewards + original_rewards
                     rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(new_smooth_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
                     state = state.replace(smooth_rewards=new_smooth_rewards)
                     info = {
@@ -1138,6 +1162,9 @@ class Gift(MultiAgentEnv):
                 rewards = rewards * self.num_agents
                 info = {}
 
+            info["give_actions"] = jnp.where(actions == Actions.zap_forward, 1, 0).squeeze()
+            info["level_two_and_three_tokens"] = level_two_and_three_tokens.squeeze()
+
             # if self.shared_rewards:
             #     rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
             #     rewards = jnp.sum(rewards)
@@ -1156,6 +1183,7 @@ class Gift(MultiAgentEnv):
                 freeze=state.freeze,
                 coins_position=state.coins_position,
                 agents_bag=state.agents_bag,
+                smooth_rewards=state.smooth_rewards,
 
 
             )
@@ -1256,6 +1284,7 @@ class Gift(MultiAgentEnv):
                 freeze=freeze,
                 coins_position=self.SPAWNS_PLAYERS,
                 agents_bag=agents_bag,
+                smooth_rewards = jnp.zeros((num_agents, 1), dtype=jnp.float32),
             )
 
         def reset(

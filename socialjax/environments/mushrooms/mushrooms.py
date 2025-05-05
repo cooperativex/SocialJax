@@ -45,6 +45,7 @@ class State:
     potential_empty_labels: jnp.ndarray
 
     stay_time: jnp.ndarray
+    smooth_rewards: jnp.ndarray
 
 @chex.dataclass
 class EnvParams:
@@ -166,6 +167,16 @@ class Mushrooms(MultiAgentEnv):
         num_outer_steps=1,
         num_agents=6,
         shared_rewards=True,
+        inequity_aversion=False,
+        inequity_aversion_target_agents=None,
+        inequity_aversion_alpha=5,
+        inequity_aversion_beta=0.05,
+        enable_smooth_rewards=False,
+        svo=False,
+        svo_target_agents=None,
+        svo_w=0.5,
+        svo_ideal_angle_degrees=45,
+        
         payoff_matrix=[[1, 1, -2], [1, 1, -2]],
         regrow_rate_red=0.25,  # 0.25
         regrow_rate_green=0.4,  # 0.4
@@ -197,6 +208,17 @@ class Mushrooms(MultiAgentEnv):
         self._agents = jnp.array(self.agents, dtype=jnp.int16) + len(Items)
         self.num_inner_steps = num_inner_steps
         self.num_outer_steps = num_outer_steps
+
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
 
         # self.agents = [str(i) for i in list(range(num_agents))]
 
@@ -1313,16 +1335,11 @@ class Mushrooms(MultiAgentEnv):
             else:
                 rewards = rewards
                 info = {}
+            
+            blue_reward  = jnp.where(blue_matches, 1, 0)
+            info["eat_blue_mushrooms"] = blue_reward.squeeze()
 
 
-            if self.shared_rewards:
-                rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
-                rewards = jnp.sum(rewards)
-                rewards_sum_all_agents += rewards
-                rewards = rewards_sum_all_agents
-
-            else:
-                rewards = rewards  #* self.num_agents
  
             state_nxt = State(
                 agent_locs=state.agent_locs,
@@ -1336,7 +1353,7 @@ class Mushrooms(MultiAgentEnv):
                 potential_empty_locs=state.potential_empty_locs,
                 potential_empty_labels=state.potential_empty_labels,
                 stay_time=state.stay_time,
-
+                smooth_rewards=state.smooth_rewards,
             )
 
             # now calculate if done for inner or outer episode
@@ -1471,6 +1488,7 @@ class Mushrooms(MultiAgentEnv):
                 potential_empty_locs=self.SPAWNS_PLAYERS,
                 potential_empty_labels=potential_empty_labels,
                 stay_time=stay_time,
+                smooth_rewards = jnp.zeros((num_agents, 1), dtype=jnp.float32),
             )
 
         def reset(
