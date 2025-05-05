@@ -504,6 +504,8 @@ def make_train(config):
                 )
                 
             metric["update_steps"] = update_steps
+            metric["eat_own_coins"] = metric["eat_own_coins"] * config["ENV_KWARGS"]["num_inner_steps"]
+
             # jax.experimental.io_callback(callback, None, metric)
 
             jax.debug.callback(callback, metric)

@@ -503,7 +503,8 @@ def make_train(config):
                         **metric["loss"],
                     }
                 )
-                
+            
+            metric["eat_blue_mushrooms"] = metric["eat_blue_mushrooms"] * config["ENV_KWARGS"]["num_inner_steps"]    
             metric["update_steps"] = update_steps
             # jax.experimental.io_callback(callback, None, metric)
 

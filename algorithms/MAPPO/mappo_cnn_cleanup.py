@@ -505,6 +505,8 @@ def make_train(config):
                 )
                 
             metric["update_steps"] = update_steps
+            metric["clean_action_info"] = metric["clean_action_info"] * config["ENV_KWARGS"]["num_inner_steps"]
+
             # jax.experimental.io_callback(callback, None, metric)
 
             jax.debug.callback(callback, metric)

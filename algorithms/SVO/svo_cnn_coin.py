@@ -428,6 +428,8 @@ def make_train(config):
             metric["update_step"] = update_step
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
             metric["advantages"] = advantages.mean()
+            metric["eat_own_coins"] = metric["eat_own_coins"] * config["ENV_KWARGS"]["num_inner_steps"]
+
             # metric["original_rewards"] = metric["original_rewards"].mean() * config["NUM_STEPS"] 
             # metric["shaped_rewards"] = metric["shaped_rewards"].mean() * config["NUM_STEPS"] 
             jax.debug.callback(callback, metric)
