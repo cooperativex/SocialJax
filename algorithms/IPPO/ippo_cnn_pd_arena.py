@@ -634,16 +634,22 @@ def evaluate(params, env, save_path, config):
     
     # 保存GIF
     print(f"Saving Episode GIF")
-    pics = [Image.fromarray(img) for img in pics]
+    pics = [Image.fromarray(np.array(img)) for img in pics]
+    n_agents = len(env.agents)
+    gif_path = f"{root_dir}/{n_agents}-agents_seed-{config['SEED']}_frames-{o_t + 1}.gif"
     pics[0].save(
-    f"{root_dir}/individual_state_outer_step_{o_t+1}.gif",
-    format="GIF",
-    save_all=True,
-    optimize=False,
-    append_images=pics[1:],
-    duration=200,
-    loop=0,
+        gif_path,
+        format="GIF",
+        save_all=True,
+        optimize=False,
+        append_images=pics[1:],
+        duration=200,
+        loop=0,
     )
+
+    # Log the GIF to WandB
+    print("Logging GIF to WandB")
+    wandb.log({"Episode GIF": wandb.Video(gif_path, caption="Evaluation Episode", format="gif")})
         
         # print(f"Episode {episode} total reward: {episode_reward}")
 def tune(default_config):

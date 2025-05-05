@@ -29,6 +29,7 @@
 "REWARD": "common" # individual; common    --only worked for saved models name.
 "GIF_NUM_FRAMES": 250
 "EVAL_STEPS": 5
+"PARAMETER_SHARING": False
 
 "PROFILING": False
 

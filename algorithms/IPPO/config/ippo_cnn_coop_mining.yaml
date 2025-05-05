@@ -37,6 +37,7 @@
 "GIF_NUM_FRAMES": 250
 "EVAL_STEPS": 5
 "PROFILING": False
+"PARAMETER_SHARING": False
 
 # WandB Params
 "ENTITY": ""

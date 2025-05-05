@@ -28,6 +28,7 @@
 
 "REWARD": "common" # individual; common
 "GIF_NUM_FRAMES": 250
+"PARAMETER_SHARING": False
 
 # WandB Params
 "ENTITY": ""
