@@ -1501,6 +1501,11 @@ class Harvest_open(MultiAgentEnv):
                 apple_pos[:, 1]
             ].set(jnp.int16(Items.apple))
 
+            grid = grid.at[
+                wall_pos[:, 0],
+                wall_pos[:, 1]
+            ].set(jnp.int16(Items.wall))
+
 
             player_dir = jax.random.randint(
                 subkey, shape=(
@@ -1637,6 +1642,7 @@ class Harvest_open(MultiAgentEnv):
         #     )
         elif obj == Items.wall:
             fill_coords(img, point_in_rect(0, 1, 0, 1), (127.0, 127.0, 127.0))
+        
 
         elif obj == Items.interact:
             fill_coords(img, point_in_rect(0, 1, 0, 1), (188.0, 189.0, 34.0))
