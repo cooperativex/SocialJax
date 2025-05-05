@@ -13,6 +13,8 @@
 "ACTIVATION": "relu"
 "ENV_NAME": "coop_mining"
 "REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
+"SHAPING_BEGIN": 1e6
+
 "ENV_KWARGS":
   "num_agents" : 6
   "num_inner_steps" : 1000

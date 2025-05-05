@@ -181,7 +181,7 @@ def make_train(config):
         config["NUM_ACTORS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
     )
 
-    env = SVOLogWrapper(env, replace_info=False)
+    env = LogWrapper(env, replace_info=False)
 
     rew_shaping_anneal = optax.linear_schedule(
         init_value=0.,
@@ -499,7 +499,6 @@ def make_train(config):
 
             update_step = update_step + 1
             metric = jax.tree_map(lambda x: x.mean(), metric)
-<<<<<<< HEAD
             if config["PARAMETER_SHARING"]:
                 metric["update_step"] = update_step
                 metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
@@ -510,12 +509,10 @@ def make_train(config):
                     metric[i]["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
                 metric = metric[0]
                 jax.debug.callback(callback, metric)
-=======
             metric["update_step"] = update_step
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
             metric["give_actions"] = metric["give_actions"] * config["ENV_KWARGS"]["num_inner_steps"]
             jax.debug.callback(callback, metric)
->>>>>>> 9d76362 (metrics)
 
             runner_state = (train_state, env_state, last_obs, update_step, rng)
             return runner_state, metric

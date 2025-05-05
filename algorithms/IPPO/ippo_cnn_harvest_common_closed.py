@@ -502,17 +502,13 @@ def make_train(config):
             if config["PARAMETER_SHARING"]:
                 metric["update_step"] = update_step
                 metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
-                # jax.debug.callback(callback, metric)
+                jax.debug.callback(callback, metric)
             else:
                 for i in range(env.num_agents):
                     metric[i]["update_step"] = update_step
                     metric[i]["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
                 metric = metric[0]
-                # jax.debug.callback(callback, metric)
-            metric["update_step"] = update_step
-            metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
-            metric["mining_gold"] = metric["mining_gold"] * config["ENV_KWARGS"]["num_inner_steps"]
-            jax.debug.callback(callback, metric)
+                jax.debug.callback(callback, metric)
 
             runner_state = (train_state, env_state, last_obs, update_step, rng)
             return runner_state, metric
@@ -537,7 +533,7 @@ def single_run(config):
         tags=["IPPO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_coop_mining'
+        name=f'ippo_cnn_harvest_common'
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -587,7 +583,7 @@ def evaluate(params, env, save_path, config):
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/coop_mining"
+    root_dir = f"evaluation/harvest_common"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -704,7 +700,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_coop_mining")
+@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_harvest_common_closed")
 def main(config):
     if config["TUNE"]:
         tune(config)

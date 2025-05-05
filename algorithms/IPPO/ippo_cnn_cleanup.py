@@ -181,7 +181,7 @@ def make_train(config):
         config["NUM_ACTORS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
     )
 
-    env = SVOLogWrapper(env, replace_info=False)
+    env = LogWrapper(env, replace_info=False)
 
     rew_shaping_anneal = optax.linear_schedule(
         init_value=0.,
