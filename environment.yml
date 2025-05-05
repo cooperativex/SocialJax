@@ -1,6 +1,5 @@
-name: SocialJax2
+name: SocialJax
 channels:
-  # - nvidia
   - conda-forge
 dependencies:
   - python=3.10
@@ -18,7 +17,6 @@ dependencies:
   - safetensors==0.5.2
   - hydra-core==1.3.2
   - wandb==0.18.5
-
 
   - pip
   - pip:

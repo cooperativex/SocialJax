@@ -87,7 +87,7 @@ Option one: Using peotry, make sure you have python 3.10
        poetry run python algothrims/IPPO/ippo_cnn_coins.py 
        ```
 
-Option two: requirements.txt
+Option two: conda with requirements.txt
   1. Conda
        ```bash
        conda create -n SocialJax python=3.10
@@ -104,6 +104,21 @@ Option two: requirements.txt
        ```
 
   3. Run code
+       ```bash
+       python algothrims/IPPO/ippo_cnn_coins.py 
+       ```
+
+Option three: conda with environments.yml
+
+  1. Install requirements
+       ```bash
+       conda env create -f environment.yml
+       ```
+       ```bash
+       export PYTHONPATH=./socialjax:$PYTHONPATH
+       ```
+
+  2. Run code
        ```bash
        python algothrims/IPPO/ippo_cnn_coins.py 
        ```
