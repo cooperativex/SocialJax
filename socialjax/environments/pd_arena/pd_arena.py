@@ -173,6 +173,17 @@ class PD_Arena(MultiAgentEnv):
         payoff_matrix=jnp.array([[[3, -1], [5, 1]], [[3, 5], [-1, 1]]]),
         freeze_penalty=5,
         shared_rewards=False,
+
+        inequity_aversion=False,
+        inequity_aversion_target_agents=None,
+        inequity_aversion_alpha=5,
+        inequity_aversion_beta=0.05,
+        enable_smooth_rewards=False,
+        svo=False,
+        svo_target_agents=None,
+        svo_w=0.5,
+        svo_ideal_angle_degrees=45,
+
         jit=True,
         grid_size=(24,25),
         obs_size=11,
@@ -190,11 +201,11 @@ class PD_Arena(MultiAgentEnv):
     "W                       W",
     "W    WW     W  111      W",
     "WW          W  222      W",
-    "WWW       WWWWWWWWW     W",
+    "WWW                     W",
     "W           222       WWW",
     "W           111         W",
-    "W          W            W",
-    "W          W   WW       W",
+    "W                       W",
+    "W              WW       W",
     "W              W        W",
     "W                       W",
     "W                       W",
@@ -239,6 +250,18 @@ class PD_Arena(MultiAgentEnv):
         self.freeze_penalty = freeze_penalty
         self.jit = jit
         self.shared_rewards = shared_rewards
+
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
+
         self.PLAYER_COLOURS = generate_agent_colors(num_agents)
         self.GRID_SIZE_ROW = grid_size[0]
         self.GRID_SIZE_COL = grid_size[1]
@@ -1746,10 +1769,10 @@ class PD_Arena(MultiAgentEnv):
                 return agent_total_rewards
 
             inventory = jnp.concatenate((jnp.expand_dims(state.coop_resources,axis=1),jnp.expand_dims(state.defect_resources,axis=1)),axis=1)
-            if self.shared_rewards:
-                reward = calculate_total_interaction_rewards(interaction_matrix, inventory, payoff_matrix)  # 新的reward计算
-            else:
-                reward = calculate_agent_rewards(interaction_matrix, inventory, payoff_matrix)  # 原来的reward计算
+            # if self.shared_rewards:
+            #     reward = calculate_total_interaction_rewards(interaction_matrix, inventory, payoff_matrix)  # 新的reward计算
+            # else:
+            reward = calculate_agent_rewards(interaction_matrix, inventory, payoff_matrix)  # 原来的reward计算
 
             # Reset resources for agents that interacted
             interacted_agents = jnp.any(interaction_matrix + interaction_matrix.T, axis=1)
@@ -1997,6 +2020,16 @@ class PD_Arena(MultiAgentEnv):
                 lambda: all_new_locs
             )
 
+            # TODO - fix this to be more efficient; agents moving would be less efficient.
+            # ind_agent_label = jnp.array([False] * self.num_agents, dtype=jnp.bool_)
+            # ind_agent_label = ind_agent_label.at[0].set(True)
+            # ind_agent_label = ind_agent_label.at[1].set(True)
+            # ind_agent_label = ind_agent_label.at[2].set(True)
+            # condition = jnp.where((state.grid[new_locs[:, 0], new_locs[:, 1]]==Items.coop) & (ind_agent_label == True), True, False)
+            # condition_3d = jnp.stack([condition, condition, condition], axis=-1)
+
+            # new_locs = jnp.where(condition_3d == True, state.agent_locs, new_locs)
+
             # fix collision with the resources
             def check_wall_positions(grid, positions):
                 def check_single_position(pos):
@@ -2068,40 +2101,30 @@ class PD_Arena(MultiAgentEnv):
             
             if self.shared_rewards:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
-                info = {
-                    "original_rewards": original_rewards.squeeze(),
-                    "shaped_rewards": rewards.squeeze(),
-                }
-            elif self.inequity_aversion:
-                rewards, state, reborn_players = _interact_pd(key, state, actions)
-                original_rewards = rewards
-                if self.smooth_rewards:
-                    should_smooth = (state.inner_t % 1) == 0
-                    new_smooth_rewards = 0.99 * 0.01* state.smooth_rewards + original_rewards
-                    rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(new_smooth_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
-                    state = state.replace(smooth_rewards=new_smooth_rewards)
-                    info = {
-                    "original_rewards": original_rewards.squeeze(),
-                    "smooth_rewards": state.smooth_rewards.squeeze(),
-                    "shaped_rewards": rewards.squeeze(),
-                }
-                else:
-                    rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(original_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
-                    info = {
-                    "original_rewards": original_rewards.squeeze(),
-                    "shaped_rewards": rewards.squeeze(),
-                }
-            elif self.svo:
-                rewards, state, reborn_players = _interact_pd(key, state, actions)
-                original_rewards = rewards
-                rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
-                info = {
-                    "original_rewards": original_rewards.squeeze(),
-                    "svo_theta": theta.squeeze(),
-                    "shaped_rewards": rewards.squeeze(),
-                }
+                rewards_output = jnp.array([0]* self.num_agents)
+                rewards = rewards.squeeze()
+                common_reward = rewards.mean()
+                rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
+                rewards = rewards_output    
+
+                # rewards = jnp.array([common_reward] * self.num_agents)
+                info = {}
+
             else:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
+                # rewards_output = jnp.array([0]* self.num_agents)
+                # rewards = rewards.squeeze()
+                # common_reward = rewards.mean()
+                # ind_reward = rewards[:3].mean()
+                # rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
+                # rewards_output = rewards_output.at[0].set(ind_reward)
+                # rewards = rewards_output    
+
+                # rewards = jnp.array([common_reward] * self.num_agents)
+                # info = {
+                #     "common_reward": jnp.array([common_reward]* self.num_agents)* 1000,
+                #     "ind_reward": jnp.array([ind_reward]* self.num_agents)* 1000,
+                # }
                 info = {}
                 
             # rewards, state, reborn_players = _interact_pd(key, state, actions)
