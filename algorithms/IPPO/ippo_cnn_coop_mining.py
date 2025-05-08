@@ -657,45 +657,68 @@ def evaluate(params, env, save_path, config):
         
         # print(f"Episode {episode} total reward: {episode_reward}")
 def tune(default_config):
-    """Hyperparameter sweep with wandb."""
+    """
+    Hyperparameter sweep with wandb, including logic to:
+    - Initialize wandb
+    - Train for each hyperparameter set
+    - Save checkpoint
+    - Evaluate and log GIF
+    """
     import copy
 
     default_config = OmegaConf.to_container(default_config)
 
-    layout_name = default_config["ENV_KWARGS"]["layout"]
-
-    def wrapped_make_train():
-
-        wandb.init(project=default_config["PROJECT"])
-        # update the default params
-        config = copy.deepcopy(default_config)
-        for k, v in dict(wandb.config).items():
-            config[k] = v
-        print("running experiment with params:", config)
-
-        rng = jax.random.PRNGKey(config["SEED"])
-        rngs = jax.random.split(rng, config["NUM_SEEDS"])
-        train_vjit = jax.jit(jax.vmap(make_train(config)))
-        outs = jax.block_until_ready(train_vjit(rngs))
-
     sweep_config = {
-        "name": "ppo_overcooked",
-        "method": "bayes",
+        "name": "coop mining",
+        "method": "grid",
         "metric": {
             "name": "returned_episode_returns",
             "goal": "maximize",
         },
         "parameters": {
-            "NUM_ENVS": {"values": [32, 64, 128, 256]},
-            "LR": {"values": [0.0005, 0.0001, 0.00005, 0.00001]},
-            "ACTIVATION": {"values": ["relu", "tanh"]},
-            "UPDATE_EPOCHS": {"values": [2, 4, 8]},
-            "NUM_MINIBATCHES": {"values": [2, 4, 8, 16]},
-            "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
-            "ENT_COEF": {"values": [0.0001, 0.001, 0.01]},
-            "NUM_STEPS": {"values": [64, 128, 256]},
+            # "LR": {"values": [0.001, 0.0005, 0.0001, 0.00005]},
+            # "ACTIVATION": {"values": ["relu", "tanh"]},
+            # "UPDATE_EPOCHS": {"values": [2, 4, 8]},
+            # "NUM_MINIBATCHES": {"values": [4, 8, 16, 32]},
+            # "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
+            # "ENT_COEF": {"values": [0.001, 0.01, 0.1]},
+            # "NUM_STEPS": {"values": [64, 128, 256]},
+            # "ENV_KWARGS.svo_w": {"values": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]},
+            # "ENV_KWARGS.svo_ideal_angle_degrees": {"values": [0, 45, 90]},
+            "SEED": {"values": [42, 52, 62]},
+
         },
     }
+
+    def wrapped_make_train():
+
+
+        wandb.init(project=default_config["PROJECT"])
+        config = copy.deepcopy(default_config)
+        # only overwrite the single nested key we're sweeping
+        for k, v in dict(wandb.config).items():
+            if "." in k:
+                parent, child = k.split(".", 1)
+                config[parent][child] = v
+            else:
+                config[k] = v
+
+
+        # Rename the run for clarity
+        run_name = f"sweep_{config['ENV_NAME']}_seed{config['SEED']}"
+        wandb.run.name = run_name
+        print("Running experiment:", run_name)
+
+        rng = jax.random.PRNGKey(config["SEED"])
+        rngs = jax.random.split(rng, config["NUM_SEEDS"])
+        train_vjit = jax.jit(jax.vmap(make_train(config)))
+        outs = jax.block_until_ready(train_vjit(rngs))
+        train_state = jax.tree_map(lambda x: x[0], outs["runner_state"][0])
+
+        # Evaluate and log
+        # params = load_params(train_state.params)
+        # test_env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        # evaluate(params, test_env, config)
 
     wandb.login()
     sweep_id = wandb.sweep(
