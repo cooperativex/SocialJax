@@ -2020,6 +2020,8 @@ class PD_Arena(MultiAgentEnv):
                 lambda: all_new_locs
             )
 
+            condition_coop = jnp.where((state.grid[new_locs[:, 0], new_locs[:, 1]]==Items.coop), 1, 0)
+
             # TODO - fix this to be more efficient; agents moving would be less efficient.
             # ind_agent_label = jnp.array([False] * self.num_agents, dtype=jnp.bool_)
             # ind_agent_label = ind_agent_label.at[0].set(True)
@@ -2136,6 +2138,8 @@ class PD_Arena(MultiAgentEnv):
                 #     "ind_reward": jnp.array([ind_reward]* self.num_agents)* 1000,
                 # }
                 info = {}
+            
+            info['eat_coop_tokens_number'] = jnp.array([condition_coop] * self.num_agents).squeeze() * self.num_inner_steps
                 
             # rewards, state, reborn_players = _interact_pd(key, state, actions)
             # info = {
