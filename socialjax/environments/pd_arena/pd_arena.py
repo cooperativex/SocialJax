@@ -2109,6 +2109,16 @@ class PD_Arena(MultiAgentEnv):
 
                 # rewards = jnp.array([common_reward] * self.num_agents)
                 info = {}
+            
+            elif self.svo:
+                rewards, state, reborn_players = _interact_pd(key, state, actions)
+                original_rewards =  rewards
+                rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "svo_theta": theta.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                }
 
             else:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
