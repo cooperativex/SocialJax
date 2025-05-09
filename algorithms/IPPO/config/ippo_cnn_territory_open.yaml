@@ -1,7 +1,7 @@
 "LR": 0.0005
 "NUM_ENVS": 256
 "NUM_STEPS": 500
-"TOTAL_TIMESTEPS": 1e9
+"TOTAL_TIMESTEPS": 3e8
 "UPDATE_EPOCHS": 2
 "NUM_MINIBATCHES": 500
 "GAMMA": 0.99
@@ -17,7 +17,7 @@
 "ENV_KWARGS": 
   "num_agents" : 9
   "num_inner_steps" : 1000
-  "shared_rewards" : True  # Attention: switch to False for individual rewards; True for common rewards 
+  "shared_rewards" : False  # Attention: switch to False for individual rewards; True for common rewards 
   "cnn" : True
   "jit" : True
   
@@ -25,11 +25,11 @@
 "ANNEAL_LR": True
 "SEED": 30
 "NUM_SEEDS": 1
-"TUNE": False
+"TUNE": True
 
 "REWARD": "individual" # individual; common
 "GIF_NUM_FRAMES": 250
-"PARAMETER_SHARING": False
+"PARAMETER_SHARING": True
 
 # WandB Params
 "ENTITY": ""
