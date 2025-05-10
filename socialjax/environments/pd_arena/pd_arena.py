@@ -2139,7 +2139,7 @@ class PD_Arena(MultiAgentEnv):
                 # }
                 info = {}
             
-            info['eat_coop_tokens_number'] = jnp.array([condition_coop] * self.num_agents).squeeze() * self.num_inner_steps
+            info['eat_coop_tokens_number'] = jnp.array([jnp.sum(condition_coop)] * self.num_agents).squeeze() * self.num_inner_steps
                 
             # rewards, state, reborn_players = _interact_pd(key, state, actions)
             # info = {
