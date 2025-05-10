@@ -43,7 +43,7 @@
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "jaxpot"
+"PROJECT": "socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
   - INDIVIDUAL_REWARD
