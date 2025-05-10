@@ -493,23 +493,19 @@ def make_train(config):
             rng = update_state[-1]
 
             def callback(metric):
-                
-                wandb.log(
-                    {
-                        "returns": metric["returned_episode_returns"][-1, :].mean(),
-                        "env_step": metric["update_steps"]
-                        * config["NUM_ENVS"]
-                        * config["NUM_STEPS"],
-                        **metric["loss"],
-                    }
-                )
+                wandb.log(metric)
+            update_steps = update_steps + 1
+            metric = jax.tree_map(lambda x: x.mean(), metric)
+
+
             
             # metric["eat_blue_mushrooms"] = metric["eat_blue_mushrooms"] * config["ENV_KWARGS"]["num_inner_steps"]    
-            metric["update_steps"] = update_steps
+            metric["update_steps"] = update_step
+            metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
+
             # jax.experimental.io_callback(callback, None, metric)
 
             jax.debug.callback(callback, metric)
-            update_steps = update_steps + 1
             runner_state = (train_states, env_state, last_obs, last_done, rng)
             return (runner_state, update_steps), metric
 
