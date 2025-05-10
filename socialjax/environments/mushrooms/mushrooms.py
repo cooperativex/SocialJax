@@ -1297,9 +1297,11 @@ class Mushrooms(MultiAgentEnv):
             # jax.debug.print("new_re_locs111111111 {new_re_locs} 🤯", new_re_locs=new_re_locs)
             state = state.replace(reborn_locs=new_re_locs)
 
+            rewards = rewards * self.num_agents
+
             if self.shared_rewards:
                 rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
-                rewards = jnp.sum(rewards)
+                rewards = jnp.mean(rewards)
                 rewards_sum_all_agents += rewards
                 rewards = rewards_sum_all_agents
                 info = {
