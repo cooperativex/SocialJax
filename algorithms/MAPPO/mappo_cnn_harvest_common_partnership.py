@@ -492,7 +492,7 @@ def make_train(config):
             rng = update_state[-1]
 
             def callback(metric):
-                wandb.log()
+                wandb.log(metric)
             update_steps = update_steps + 1
             metric = jax.tree_map(lambda x: x.mean(), metric)
             metric["update_steps"] = update_steps
