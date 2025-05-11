@@ -17,7 +17,7 @@
 "REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
 
 "ENV_KWARGS": 
-  "num_agents" : 5
+  "num_agents" : 4
   "num_inner_steps" : 1000
   "shared_rewards" : True  # Attention: switch to False for individual rewards 
   "cnn" : True
