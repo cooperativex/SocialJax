@@ -486,9 +486,9 @@ def make_train(config):
             )
             train_states = update_state[0]
             metric = traj_batch.info
-            loss_info["ratio_0"] = loss_info["ratio"].at[0,0].get()
-            loss_info = jax.tree_map(lambda x: x.mean(), loss_info)
-            metric["loss"] = loss_info
+            # loss_info["ratio_0"] = loss_info["ratio"].at[0,0].get()
+            # loss_info = jax.tree_map(lambda x: x.mean(), loss_info)
+            # metric["loss"] = loss_info
             rng = update_state[-1]
 
             def callback(metric):
