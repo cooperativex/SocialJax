@@ -2685,6 +2685,7 @@ class PD_Arena(MultiAgentEnv):
             shaped_rewards: rewards adjusted by SVO
             theta: reward angle in radians
         """
+        array = array.reshape((self.num_agents, 1))
         # Ensure correct input shape
         assert array.shape == (self.num_agents, 1), f"Expected shape ({self.num_agents}, 1), got {array.shape}"
         
