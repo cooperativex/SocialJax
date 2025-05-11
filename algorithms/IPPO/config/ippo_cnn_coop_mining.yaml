@@ -24,8 +24,8 @@
   "reward_iron" : 1.0
   "reward_gold" : 8.0
   "gold_mining_window" : 3
-  "regrowth_prob_iron" : 0.001 # 0.0002
-  "regrowth_prob_gold" : 0.0004 # 0.00008
+  "regrowth_prob_iron" : 0.0004 # 0.0002
+  "regrowth_prob_gold" : 0.00016 # 0.00008
   "cnn" : True
   "jit" : True
 
