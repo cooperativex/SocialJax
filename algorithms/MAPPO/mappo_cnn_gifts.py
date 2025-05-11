@@ -498,7 +498,7 @@ def make_train(config):
 
                 
             metric["update_steps"] = update_steps
-            metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
+            metric["env_step"] = update_steps * config["NUM_STEPS"] * config["NUM_ENVS"]
 
             metric["give_actions"] = metric["give_actions"] * config["ENV_KWARGS"]["num_inner_steps"]
 
