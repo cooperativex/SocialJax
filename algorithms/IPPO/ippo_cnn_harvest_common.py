@@ -353,9 +353,9 @@ def make_train(config):
                         transition.value,
                         transition.reward,
                     )
-                    reward_mean = jnp.mean(reward, axis=0)
-                    # reward_std = jnp.std(reward, axis=0) + 1e-8
-                    reward = (reward - reward_mean)# / reward_std
+                    # reward_mean = jnp.mean(reward, axis=0)
+                    # # reward_std = jnp.std(reward, axis=0) + 1e-8
+                    # reward = (reward - reward_mean)# / reward_std
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (
                         delta
