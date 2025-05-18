@@ -47,3 +47,4 @@
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
   - INDIVIDUAL_REWARD
+
