@@ -6,7 +6,8 @@ from socialjax.environments import (
     CoopMining,
     CoinGame,
     Mushrooms,
-    Gift
+    Gift,
+    PD_Arena,
 )
 
 # Registry of all available environments
@@ -18,7 +19,7 @@ REGISTERED_ENVS = [
     "clean_up",
     "coop_mining",
     "territory_open",
-    # "pd_arena",
+    "pd_arena",
     "mushrooms",
     "gift",
 ]
@@ -39,8 +40,8 @@ def make(env_id: str, **env_kwargs):
         env = CoopMining(**env_kwargs)
     elif env_id == "territory_open":
         env = Territory_open(**env_kwargs)
-    # elif env_id == "pd_arena":
-    #     env = PD_Arena(**env_kwargs)
+    elif env_id == "pd_arena":
+        env = PD_Arena(**env_kwargs)
     elif env_id == "coin_game":
         env = CoinGame(**env_kwargs)
     elif env_id == "mushrooms":

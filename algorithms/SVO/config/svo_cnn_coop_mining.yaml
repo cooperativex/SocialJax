@@ -1,0 +1,49 @@
+"LR": 0.0005
+"NUM_ENVS": 430
+"NUM_STEPS": 1000
+"TOTAL_TIMESTEPS": 2e8
+"UPDATE_EPOCHS": 2
+"NUM_MINIBATCHES": 500
+"GAMMA": 0.99
+"GAE_LAMBDA": 0.95
+"CLIP_EPS": 0.2
+"ENT_COEF": 0.01
+"VF_COEF": 0.5
+"MAX_GRAD_NORM": 0.5
+"ACTIVATION": "relu"
+"ENV_NAME": "coop_mining"
+"REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
+"ENV_KWARGS": 
+  "num_agents" : 6
+  "num_inner_steps" : 1000
+  "shared_rewards" : False
+  "num_outer_steps" : 1
+  "max_miners" : 4  # how many miners can we store per gold cell
+  "min_gold_miners" : 2  # how many distinct miners needed to finalize gold
+  "mining_range" : 3
+  "reward_iron" : 1.0
+  "reward_gold" : 8.0
+  "gold_mining_window" : 3
+  "regrowth_prob_iron" : 0.0004 # 0.0002
+  "regrowth_prob_gold" : 0.00016 # 0.00008
+  "cnn" : True
+  "jit" : True
+  "svo" : True
+  "svo_target_agents": [0, 1, 2, 3, 4, 5, 6]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+
+"ANNEAL_LR": False
+"SEED": 30
+"NUM_SEEDS": 1
+"TUNE": False
+
+"REWARD": "individual" # individual; common
+"GIF_NUM_FRAMES": 250
+
+# WandB Params
+"ENTITY": ""
+"PROJECT": "svo_socialjax"
+"WANDB_MODE" : "online"
+"WANDB_TAGS":
+  - INDIVIDUAL_REWARD # COMMON_REWARD

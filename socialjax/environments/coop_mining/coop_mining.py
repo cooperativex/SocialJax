@@ -129,6 +129,7 @@ class State:
     outer_t: int
     last_mined_positions: jnp.ndarray  # shape (num_agents, 2), positions mined in last step
     actions_last_step: jnp.ndarray  # shape (num_agents,) last actions taken
+    smooth_rewards: jnp.ndarray
 
 
 @dataclass
@@ -415,6 +416,15 @@ class CoopMining(MultiAgentEnv):
             num_outer_steps=1,
             num_agents=4,
             shared_rewards=True,
+            inequity_aversion=False,
+            inequity_aversion_target_agents=None,
+            inequity_aversion_alpha=5,
+            inequity_aversion_beta=0.05,
+            enable_smooth_rewards=False,
+            svo=False,
+            svo_target_agents=None,
+            svo_w=0.5,
+            svo_ideal_angle_degrees=45,
             max_miners=4,  # how many miners can we store per gold cell
             min_gold_miners=2,  # how many distinct miners needed to finalize gold
             mining_range=3,
@@ -428,6 +438,17 @@ class CoopMining(MultiAgentEnv):
             view_config=ViewConfig(forward=9, backward=1, left=5, right=5),
     ):
         super().__init__(num_agents=num_agents)
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
+
         self.view_config = view_config
         self.num_inner_steps = num_inner_steps
         self.num_outer_steps = num_outer_steps
@@ -572,6 +593,7 @@ class CoopMining(MultiAgentEnv):
             outer_t=0,
             last_mined_positions=last_mined_positions,
             actions_last_step=last_actions,
+            smooth_rewards=jnp.zeros((self.num_agents, 1)),
         )
 
     def step_env(self, key: jnp.ndarray, state: State, actions: jnp.ndarray):
@@ -644,8 +666,47 @@ class CoopMining(MultiAgentEnv):
         if self.shared_rewards:
             total_rewards = jnp.sum(rewards_iron + rewards_gold)  # Scalar
             final_rewards = jnp.full((self.num_agents,), total_rewards)
+            info = {
+                "original_rewards": final_rewards.squeeze(),
+                "shaped_rewards": final_rewards.squeeze(),
+            }
+        elif self.inequity_aversion:
+            final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
+            if self.smooth_rewards:
+                should_smooth = (state.inner_t % 1) == 0
+                new_smooth_rewards = 0.99 * 0.99 * state.smooth_rewards + final_rewards
+                rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(new_smooth_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
+                state = state.replace(smooth_rewards=new_smooth_rewards)
+                info = {
+                "original_rewards": final_rewards.squeeze(),
+                "smooth_rewards": state.smooth_rewards.squeeze(),
+                "shaped_rewards": rewards.squeeze(),
+            }
+            else:
+                rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(final_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
+                info = {
+                "original_rewards": final_rewards.squeeze(),
+                "shaped_rewards": rewards.squeeze(),
+            }
+        elif self.svo:
+            final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
+            rewards, theta = self.get_svo_rewards(final_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
+            info = {
+                "original_rewards": final_rewards.squeeze(),
+                "svo_theta": theta.squeeze(),
+                "shaped_rewards": rewards.squeeze(),
+            }
         else:
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
+            info = {}
+
+        info["mining_gold"] = rewards_gold * self.num_agents
+
+        # if self.shared_rewards:
+        #     total_rewards = jnp.sum(rewards_iron + rewards_gold)  # Scalar
+        #     final_rewards = jnp.full((self.num_agents,), total_rewards)
+        # else:
+        #     final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
 
         # 9) Build next_state
         new_state = State(
@@ -658,6 +719,7 @@ class CoopMining(MultiAgentEnv):
             outer_t=state.outer_t,
             last_mined_positions=positions,  # Record mined positions
             actions_last_step=actions,
+            smooth_rewards=state.smooth_rewards,
         )
 
         # 10) Check if done
@@ -671,7 +733,7 @@ class CoopMining(MultiAgentEnv):
         obs = self._get_obs(new_state)
 
         # 12) Info
-        info = {}
+        # info = {}
 
         return obs, new_state, final_rewards, done_dict, info
 
@@ -1018,6 +1080,145 @@ class CoopMining(MultiAgentEnv):
         # 4) Stack vertically
         final_img = jnp.concatenate([main_img, bar], axis=0)
         return final_img
+
+    def get_inequity_aversion_rewards_immediate(self, array, inner_t, target_agents=None, alpha=5, beta=0.05):
+        """
+        Calculate inequity aversion rewards using immediate rewards, based on equation (3) in the paper
+        
+        Args:
+            array: shape: [num_agents, 1] immediate rewards r_i^t for each agent
+            target_agents: list of agent indices to apply inequity aversion
+            alpha: inequity aversion coefficient (when other agents' rewards are greater than self)
+            beta: inequity aversion coefficient (when self's rewards are greater than others)
+        Returns:
+            subjective_rewards: adjusted subjective rewards u_i^t after inequity aversion
+        """
+        # Ensure correct input shape
+        assert array.shape == (self.num_agents, 1), f"Expected shape ({self.num_agents}, 1), got {array.shape}"
+        
+        # Calculate inequality using immediate rewards
+        r_i = array  # [num_agents, 1]
+        r_j = jnp.transpose(array)  # [1, num_agents]
+        
+        # Calculate inequality
+        disadvantageous = jnp.maximum(r_j - r_i, 0)  # when other agents' rewards are higher
+        advantageous = jnp.maximum(r_i - r_j, 0)     # when self's rewards are higher
+        
+        # Create mask to exclude self-comparison
+        mask = 1 - jnp.eye(self.num_agents)
+        disadvantageous = disadvantageous * mask
+        advantageous = advantageous * mask
+        
+        # Calculate inequality penalty
+        n_others = self.num_agents - 1
+        inequity_penalty = (alpha * jnp.sum(disadvantageous, axis=1, keepdims=True) +
+                           beta * jnp.sum(advantageous, axis=1, keepdims=True)) / n_others
+
+        # Calculate subjective rewards u_i^t = r_i^t - inequality penalty
+        subjective_rewards = array - inequity_penalty
+
+        subjective_rewards = jnp.where(jnp.all(array == 0), -(alpha + beta) * n_others, subjective_rewards)
+        
+        # Apply inequity aversion only to target agents if specified
+        if target_agents is not None:
+            target_agents_array = jnp.array(target_agents)
+            agent_mask = jnp.zeros(self.num_agents, dtype=bool)
+            agent_mask = agent_mask.at[target_agents_array].set(True)
+            agent_mask = agent_mask.reshape(-1, 1)  # [num_agents, 1]
+            return jnp.where(agent_mask, subjective_rewards, array),jnp.sum(disadvantageous, axis=1, keepdims=True),jnp.sum(advantageous, axis=1, keepdims=True)
+        else:
+            return subjective_rewards,jnp.sum(disadvantageous, axis=1, keepdims=True),jnp.sum(advantageous, axis=1, keepdims=True)
+
+    def get_svo_rewards(self, array, w=0.5, ideal_angle_degrees=45, target_agents=None):
+        """
+        Reward shaping function based on Social Value Orientation (SVO)
+        
+        Args:
+            array: shape: [num_agents, 1] immediate rewards r_i for each agent
+            w: SVO weight to balance self-reward and social value (0 <= w <= 1)
+               w=0 means completely selfish, w=1 means completely altruistic
+            ideal_angle_degrees: ideal angle in degrees
+               - 45 degrees means complete equality
+               - 0 degrees means completely selfish
+               - 90 degrees means completely altruistic
+            target_agents: list of agent indices to apply SVO
+        
+        Returns:
+            shaped_rewards: rewards adjusted by SVO
+            theta: reward angle in radians
+        """
+        # Ensure correct input shape
+        assert array.shape == (self.num_agents, 1), f"Expected shape ({self.num_agents}, 1), got {array.shape}"
+        
+        # Convert ideal angle from degrees to radians
+        ideal_angle = (ideal_angle_degrees * jnp.pi) / 180.0
+        
+        # Calculate group average reward r_j (excluding self)
+        mask = 1 - jnp.eye(self.num_agents)  # [num_agents, num_agents]
+        # Modified: use matrix multiplication to calculate other agents' rewards
+        others_rewards = jnp.matmul(mask, array)  # [num_agents, 1]
+        mean_others = others_rewards / (self.num_agents - 1)  # divide by number of other agents
+        
+        # Calculate reward angle θ(R) = arctan(r_j / r_i)
+        r_i = array  # [num_agents, 1]
+        r_j = mean_others  # [num_agents, 1]
+        theta = jnp.arctan2(r_j, r_i)
+        
+        # Calculate social value oriented utility
+        # U(r_i, r_j) = r_i - w * |θ(R) - ideal_angle|
+        angle_deviation = jnp.abs(theta - ideal_angle)
+        svo_utility = r_i - self.num_agents * w * angle_deviation
+
+        # Apply SVO only to target agents if specified
+        if target_agents is not None:
+            target_agents_array = jnp.array(target_agents)
+            agent_mask = jnp.zeros(self.num_agents, dtype=bool)
+            agent_mask = agent_mask.at[target_agents_array].set(True)
+            agent_mask = agent_mask.reshape(-1, 1)  # [num_agents, 1]
+            return jnp.where(agent_mask, svo_utility, array), theta
+        else:
+            return svo_utility, theta
+
+    def get_standardized_svo_rewards(self, array, w=0.5, ideal_angle_degrees=45, target_agents=None):
+        """
+        Reward shaping function based on Social Value Orientation (SVO)
+        """
+        # Ensure correct input shape
+        assert array.shape == (self.num_agents, 1), f"Expected shape ({self.num_agents}, 1), got {array.shape}"
+        
+        # Convert ideal angle from degrees to radians
+        ideal_angle = (ideal_angle_degrees * jnp.pi) / 180.0
+        
+        # Calculate group average reward r_j (excluding self)
+        mask = 1 - jnp.eye(self.num_agents)
+        others_rewards = jnp.matmul(mask, array)
+        mean_others = others_rewards / (self.num_agents - 1)
+        
+        # Calculate reward angle θ(R) = arctan(r_j / r_i)
+        r_i = array
+        r_j = mean_others
+        theta = jnp.arctan2(r_j, r_i)
+        
+        # Convert angle to [0, 2π] range
+        theta = (theta + 2 * jnp.pi) % (2 * jnp.pi)
+        
+        # Calculate angle deviation and normalize to [0, 1] range
+        angle_deviation = jnp.abs(theta - ideal_angle)
+        angle_deviation = jnp.minimum(angle_deviation, 2 * jnp.pi - angle_deviation)  # take minimum deviation
+        normalized_deviation = angle_deviation / jnp.pi  # normalize to [0, 1]
+        
+        # Use multiplicative form of penalty instead of subtraction
+        svo_utility = r_i * (1 - w * normalized_deviation)
+        
+        # Apply SVO only to target agents if specified
+        if target_agents is not None:
+            target_agents_array = jnp.array(target_agents)
+            agent_mask = jnp.zeros(self.num_agents, dtype=bool)
+            agent_mask = agent_mask.at[target_agents_array].set(True)
+            agent_mask = agent_mask.reshape(-1, 1)
+            return jnp.where(agent_mask, svo_utility, array), theta
+        else:
+            return svo_utility, theta
 
 
 def build_masks_jax(state: State,
