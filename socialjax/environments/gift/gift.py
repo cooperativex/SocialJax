@@ -1163,7 +1163,7 @@ class Gift(MultiAgentEnv):
                 info = {}
 
             info["give_actions"] = jnp.where(actions == Actions.zap_forward, 1, 0).squeeze()
-            info["level_two_and_three_tokens"] = level_two_and_three_tokens.squeeze()
+            info["level_two_and_three_tokens"] = level_two_and_three_tokens.squeeze() * 10
 
             # if self.shared_rewards:
             #     rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
