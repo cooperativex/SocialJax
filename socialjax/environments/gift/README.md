@@ -1,0 +1,3 @@
+# Gift Refinement
+
+In this environment, tokens spawn on the map with probability \(p = 0.0002\).  When tokens are collected, they are stored in the agent's inventory. These stored tokens can be gifted to other agents, in which case they are refined to a higher level and their quantity is tripled. Tokens exist in three levels, with only the lowest level spawning naturally in the environment. Each token can be refined at most twice to reach the highest level. Each agent can hold up to 15 tokens of each level. When agents execute the \texttt{consume} action, all tokens in the agent’s inventory are converted into reward, with each token providing +1 reward regardless of refinement level.
