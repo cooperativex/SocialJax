@@ -1,0 +1,5 @@
+# Mushrooms
+
+There are four types of mushrooms spread across the map, each offering different rewards when consumed. Eating a red mushroom gives a reward of 1 to the player who consumed it, while eating a green mushroom gives a reward of 2, which is divided equally among all players. Consuming a blue mushroom grants a reward of 3, but the reward is shared among all players except the one who ate it. Additionally, eating an orange mushroom causes every agent to get a -0.2 reward.
+
+Mushroom regrowth depends on the type of mushroom eaten by players. Red mushrooms regrow with a probability of 0.25 when any type of mushroom is eaten. Green mushrooms regrow with a probability of 0.4 when either a green or blue mushroom is eaten. Blue mushrooms regrow with a probability of 0.6 when a blue mushroom is eaten. Orange mushrooms always regrow with a probability of 1 when eaten. Each mushroom has a digestion time, and a agent who consumes a mushroom becomes frozen during the digestion process. Red mushrooms take 10 steps to digest, while green mushrooms take 15 steps to digest, and blue mushrooms take 20 steps to digest.
