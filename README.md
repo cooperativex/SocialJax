@@ -199,7 +199,7 @@ You can test the speed of our environments by running [speed_test_random.py](htt
 ```
 @article{guo2025socialjax,
   title={SocialJax: An Evaluation Suite for Multi-agent Reinforcement Learning in Sequential Social Dilemmas},
-  author={Guo, Zihao and Willis, Richard and Shi, Shuqing and Tomilin, Tristan and Leibo, Joel Z and Du, Yali},
+  author={Guo, Zihao and Shi, Shuqing and Willis, Richard and Tomilin, Tristan and Leibo, Joel Z and Du, Yali},
   journal={arXiv preprint arXiv:2503.14576},
   year={2025}
 }
