@@ -3,7 +3,7 @@ name = "socialjaxproject"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Zihao Guo",email = "hideinpoopoo@gmail.com"}
+    {name = "",email = ""}
 ]
 readme = "README.md"
 requires-python = ">=3.10"
