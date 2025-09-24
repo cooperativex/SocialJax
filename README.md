@@ -62,10 +62,6 @@ Our [blog](https://sites.google.com/view/socialjax/home) presents more details a
 ## Installation
 
 First: Clone the repository
-```bash
-git clone https://github.com/cooperativex/SocialJax.git
-cd SocialJax
-```
 
 
 Second: Environment Setup.
