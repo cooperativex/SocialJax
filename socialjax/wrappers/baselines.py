@@ -141,9 +141,11 @@ class SVOLogWrapper(JaxMARLWrapper):
         key: chex.PRNGKey,
         state: SVOLogEnvState,
         action: Union[int, float],
+        *args,
+        **kwargs,
     ) -> Tuple[chex.Array, SVOLogEnvState, float, bool, dict]:
         obs, env_state, reward, done, info = self._env.step(
-            key, state.env_state, action
+            key, state.env_state, action, *args, **kwargs
         )
         ep_done = done["__all__"]
         new_episode_return = state.episode_returns + self._batchify_floats(reward)

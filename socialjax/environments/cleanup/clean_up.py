@@ -196,6 +196,12 @@ class Clean_up(MultiAgentEnv):
         svo_w=0.5,
         svo_ideal_angle_degrees=45,
         enable_smooth_rewards=False,
+        interest=False,
+        s_interest = 0.5,
+        s_interest_schedule=None,
+        s_interest_change_every=30000000,
+        cf=False,
+        cf_alpha=1,
         maxAppleGrowthRate=0.05, 
         thresholdDepletion=0.4,  # 0.4
         thresholdRestoration=0.0,
@@ -246,10 +252,19 @@ class Clean_up(MultiAgentEnv):
         self.svo_w = svo_w
         self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
         self.smooth_rewards = enable_smooth_rewards
+        self.interest = interest
+        self.s_interest = s_interest
+        # Convert schedule to JAX array for JIT compatibility
+        if s_interest_schedule is not None:
+            self.s_interest_schedule = jnp.array(s_interest_schedule)
+        else:
+            self.s_interest_schedule = None
+        self.s_interest_change_every = s_interest_change_every
         self.cnn = cnn
         self.num_inner_steps = num_inner_steps
         self.num_outer_steps = num_outer_steps
-
+        self.cf = cf
+        self.cf_alpha = cf_alpha
         self.agents = list(range(num_agents))#, dtype=jnp.int16)
         self._agents = jnp.array(self.agents, dtype=jnp.int16) + len(Items)
 
@@ -784,6 +799,15 @@ class Clean_up(MultiAgentEnv):
 
             return grids
 
+        def get_current_s_interest(timestep):
+            """Calculate current s_interest based on timestep and schedule."""
+            if self.s_interest_schedule is None:
+                return self.s_interest
+
+            # Calculate which phase we're in using JAX operations
+            phase = timestep // self.s_interest_change_every
+            phase_idx = phase % self.s_interest_schedule.shape[0]
+            return self.s_interest_schedule[phase_idx]
 
         def _interact_fire_zapping(
             key: jnp.ndarray, state: State, actions: jnp.ndarray
@@ -1166,7 +1190,8 @@ class Clean_up(MultiAgentEnv):
         def _step(
             key: chex.PRNGKey,
             state: State,
-            actions: jnp.ndarray
+            actions: jnp.ndarray,
+            timestep: int = 0
         ):
             """Step the environment."""
 
@@ -1397,13 +1422,46 @@ class Clean_up(MultiAgentEnv):
                     "svo_theta": theta.squeeze(),
                     "shaped_rewards": rewards.squeeze(),
                 }
+            elif self.interest:
+                rewards = jnp.zeros((self.num_agents, 1))
+                original_rewards = jnp.where(apple_matches, 1, rewards) * self.num_agents
+                original_flat = original_rewards.squeeze()
+
+                # Calculate current s_interest based on timestep
+                current_s_interest = get_current_s_interest(timestep)
+
+                # Each agent gets s * their_reward + (1-s)/(n-1) * sum_of_others
+                total_reward = jnp.sum(original_flat)
+                others_reward = total_reward - original_flat  # sum of all other agents' rewards
+
+                rewards = (current_s_interest * original_flat +
+                        (1 - current_s_interest) / (self.num_agents - 1) * others_reward).reshape(-1, 1)
+
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                    "s_interest": current_s_interest,
+                }
+            elif self.cf:
+                rewards = jnp.zeros((self.num_agents, 1))
+                original_rewards = jnp.where(apple_matches, 1, rewards) * self.num_agents
+                rewards, theta = self.get_cf_rewards(original_rewards, self.cf_w, self.cf_ideal_angle_degrees, self.cf_target_agents)
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "cf_theta": theta.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                }
             else:
                 rewards = jnp.zeros((self.num_agents, 1))
                 rewards = jnp.where(apple_matches, 1, rewards) * self.num_agents
-                info = {}
+                info = {
+                    "original_rewards": rewards.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                }
             
             info["clean_action_info"] = jnp.where(actions == Actions.zap_clean, 1, 0).squeeze()
-            info["cleaned_water"] = jnp.array([len(state.potential_dirt_and_dirt_label) - dirtCount] * self.num_agents).squeeze() 
+            info["cleaned_water"] = jnp.array([len(state.potential_dirt_and_dirt_label) - dirtCount] * self.num_agents).squeeze()
+            info["waste_cleared"] = jnp.array([len(state.potential_dirt_and_dirt_label) - dirtCount] * self.num_agents).squeeze() 
             
             state_nxt = State(
                 agent_locs=state.agent_locs,
@@ -1962,4 +2020,62 @@ class Clean_up(MultiAgentEnv):
             return jnp.where(agent_mask, svo_utility, array), theta
         else:
             return svo_utility, theta
+
+    def get_cf_regret(self, cf_rewards, actions):
+        """
+        计算每个智能体的cf regret（反事实遗憾）。
+        Args:
+            cf_rewards: jnp.ndarray, 形状为[num_agents, num_actions]，每个智能体每个动作的反事实奖励
+            actions: jnp.ndarray, 形状为[num_agents]，每个智能体的实际动作
+        Returns:
+            cf_regret: jnp.ndarray, 形状为[num_agents]，每个智能体的cf regret
+        """
+        # 1. 对每个智能体，找到最大反事实奖励
+        max_cf_reward = jnp.max(cf_rewards, axis=1)  # [num_agents]
+        # 2. 取实际动作下的反事实奖励
+        actual_cf_reward = cf_rewards[jnp.arange(self.num_agents), actions]  # [num_agents]
+        # 3. 计算cf regret
+        cf_regret = max_cf_reward - actual_cf_reward
+        return cf_regret
+
+    def get_cf_regret_from_state(self, key, state, actions):
+        """
+        计算每个智能体的cf regret（反事实遗憾），通过枚举每个agent的所有可能动作，其他agent动作不变，调用环境获得奖励。
+        Args:
+            key: jax.random.PRNGKey
+            state: 当前环境状态
+            actions: jnp.ndarray, 形状为[num_agents]，每个智能体的实际动作
+        Returns:
+            cf_regret: jnp.ndarray, 形状为[num_agents]，每个智能体的cf regret
+        """
+        num_agents = self.num_agents
+        num_actions = self.num_actions
+
+        def agent_cf_rewards(agent_id):
+            def single_action_cf(a_cf):
+                # 构造反事实动作
+                cf_actions = actions.at[agent_id].set(a_cf)
+                # 调用环境获得奖励
+                _, _, rewards, _, _ = self.step_env(key, state, cf_actions)
+                return rewards[agent_id]
+            # 对该agent所有动作枚举
+            return jax.vmap(single_action_cf)(jnp.arange(num_actions))  # [num_actions]
+
+        # 对所有agent批量计算cf_rewards
+        cf_rewards = jax.vmap(agent_cf_rewards)(jnp.arange(num_agents))  # [num_agents, num_actions]
+        # 计算cf regret
+        cf_regret = self.get_cf_regret(cf_rewards, actions)
+        return cf_regret
+
+    def get_simple_cf_regret(self, rewards):
+        """
+        近似cf regret，只基于当前reward array。
+        Args:
+            rewards: jnp.ndarray, 形状为[num_agents, 1]
+        Returns:
+            regret: jnp.ndarray, 形状为[num_agents]
+        """
+        max_reward = jnp.max(rewards)  # 全体agent中最大即时奖励
+        regret = max_reward - rewards.squeeze()
+        return regret
 

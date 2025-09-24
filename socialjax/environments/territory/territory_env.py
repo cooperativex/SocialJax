@@ -174,6 +174,19 @@ class Territory_open(MultiAgentEnv):
         num_outer_steps=1,
         num_agents=9,
         shared_rewards=True,
+        inequity_aversion=False,
+        inequity_aversion_target_agents=None,
+        inequity_aversion_alpha=5,
+        inequity_aversion_beta=0.05,
+        enable_smooth_rewards=False,
+        svo=False,
+        svo_target_agents=None,
+        svo_w=0.5,
+        svo_ideal_angle_degrees=45,
+        interest=False,
+        s_interest=0.5,
+        s_interest_schedule=None,
+        s_interest_change_every=1000000,
         grid_size=(23,39),
         obs_size=11,
         cnn=True,
@@ -231,6 +244,24 @@ class Territory_open(MultiAgentEnv):
         self.agents = list(range(num_agents))#, dtype=jnp.int16)
         self._agents = jnp.array(self.agents, dtype=jnp.int16) + len(Items)
         self.shared_rewards = shared_rewards
+        self.inequity_aversion = inequity_aversion
+        self.inequity_aversion_target_agents = inequity_aversion_target_agents
+        self.inequity_aversion_alpha = inequity_aversion_alpha
+        self.inequity_aversion_beta = inequity_aversion_beta
+        self.enable_smooth_rewards = enable_smooth_rewards
+        self.svo = svo
+        self.svo_target_agents = svo_target_agents
+        self.svo_w = svo_w
+        self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
+        self.smooth_rewards = enable_smooth_rewards
+        self.interest = interest
+        self.s_interest = s_interest
+        # Convert schedule to JAX array for JIT compatibility
+        if s_interest_schedule is not None:
+            self.s_interest_schedule = jnp.array(s_interest_schedule)
+        else:
+            self.s_interest_schedule = None
+        self.s_interest_change_every = s_interest_change_every
 
         # self.agents = [str(i) for i in list(range(num_agents))]
 
@@ -1760,10 +1791,21 @@ class Territory_open(MultiAgentEnv):
             # state = state.replace(grid=new_grid, claimed_resources=new_claimed)
             return state
         
+        def get_current_s_interest(timestep):
+            """Calculate current s_interest based on timestep and schedule."""
+            if self.s_interest_schedule is None:
+                return self.s_interest
+
+            # Calculate which phase we're in using JAX operations
+            phase = timestep // self.s_interest_change_every
+            phase_idx = phase % self.s_interest_schedule.shape[0]
+            return self.s_interest_schedule[phase_idx]
+
         def _step(
             key: chex.PRNGKey,
             state: State,
-            actions: jnp.ndarray
+            actions: jnp.ndarray,
+            timestep: int = 0
         ):
             """Step the environment."""
             # actions = self.action_set.take(indices=jnp.array([actions["0"], actions["agent_1"]]))
@@ -2040,13 +2082,32 @@ class Territory_open(MultiAgentEnv):
                     "original_rewards": original_rewards.squeeze(),
                     "shaped_rewards": rewards.squeeze(),
                 }
-            elif self.svo:      
+            elif self.svo:
                 original_rewards = jnp.sum(rewards_matrix, axis=(1, 2)) * 0.01
                 rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
                 info = {
                     "original_rewards": original_rewards.squeeze(),
                     "svo_theta": theta.squeeze(),
                     "shaped_rewards": rewards.squeeze(),
+                }
+            elif self.interest:
+                original_rewards = jnp.sum(rewards_matrix, axis=(1, 2)) * 0.01
+
+                # Calculate current s_interest based on timestep
+                current_s_interest = get_current_s_interest(timestep)
+                original_flat = original_rewards.squeeze()
+
+                # Each agent gets s * their_reward + (1-s)/(n-1) * sum_of_others
+                total_reward = jnp.sum(original_flat)
+                others_reward = total_reward - original_flat  # sum of all other agents' rewards
+
+                rewards = (current_s_interest * original_flat +
+                        (1 - current_s_interest) / (self.num_agents - 1) * others_reward)
+
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                    "s_interest": current_s_interest,
                 }
             else:
                 rewards = jnp.sum(rewards_matrix, axis=(1, 2)) * 0.01

@@ -176,7 +176,11 @@ class Mushrooms(MultiAgentEnv):
         svo_target_agents=None,
         svo_w=0.5,
         svo_ideal_angle_degrees=45,
-        
+        interest=False,
+        s_interest=0.5,
+        s_interest_schedule=None,
+        s_interest_change_every=30000000,
+
         payoff_matrix=[[1, 1, -2], [1, 1, -2]],
         regrow_rate_red=0.25,  # 0.25
         regrow_rate_green=0.4,  # 0.4
@@ -219,6 +223,14 @@ class Mushrooms(MultiAgentEnv):
         self.svo_w = svo_w
         self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
         self.smooth_rewards = enable_smooth_rewards
+        self.interest = interest
+        self.s_interest = s_interest
+        # Convert schedule to JAX array for JIT compatibility
+        if s_interest_schedule is not None:
+            self.s_interest_schedule = jnp.array(s_interest_schedule)
+        else:
+            self.s_interest_schedule = None
+        self.s_interest_change_every = s_interest_change_every
 
         # self.agents = [str(i) for i in list(range(num_agents))]
 
@@ -968,10 +980,21 @@ class Mushrooms(MultiAgentEnv):
             return reborn_players, state
 
 
+        def get_current_s_interest(timestep):
+            """Calculate current s_interest based on timestep and schedule."""
+            if self.s_interest_schedule is None:
+                return self.s_interest
+
+            # Calculate which phase we're in using JAX operations
+            phase = timestep // self.s_interest_change_every
+            phase_idx = phase % self.s_interest_schedule.shape[0]
+            return self.s_interest_schedule[phase_idx]
+
         def _step(
             key: chex.PRNGKey,
             state: State,
-            actions: jnp.ndarray
+            actions: jnp.ndarray,
+            timestep: int = 0
         ):
             """Step the environment."""
             # actions = self.action_set.take(indices=jnp.array([actions["0"], actions["agent_1"]]))
@@ -1333,6 +1356,25 @@ class Mushrooms(MultiAgentEnv):
                     "original_rewards": original_rewards.squeeze(),
                     "svo_theta": theta.squeeze(),
                     "shaped_rewards": rewards.squeeze(),
+                }
+            elif self.interest:
+                original_rewards = rewards
+
+                # Calculate current s_interest based on timestep
+                current_s_interest = get_current_s_interest(timestep)
+                original_flat = original_rewards.squeeze()
+
+                # Each agent gets s * their_reward + (1-s)/(n-1) * sum_of_others
+                total_reward = jnp.sum(original_flat)
+                others_reward = total_reward - original_flat  # sum of all other agents' rewards
+
+                rewards = (current_s_interest * original_flat +
+                        (1 - current_s_interest) / (self.num_agents - 1) * others_reward)
+
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                    "s_interest": current_s_interest,
                 }
             else:
                 rewards = rewards

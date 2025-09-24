@@ -44,13 +44,14 @@ class MultiAgentEnv(object):
         key: chex.PRNGKey,
         state: State,
         actions: Dict[str, chex.Array],
+        timestep: int = 0,
         reset_state: Optional[State] = None,
     ) -> Tuple[Dict[str, chex.Array], State, Dict[str, float], Dict[str, bool], Dict]:
         """Performs step transitions in the environment. Resets the environment if done.
         To control the reset state, pass `reset_state`. Otherwise, the environment will reset randomly."""
 
         key, key_reset = jax.random.split(key)
-        obs_st, states_st, rewards, dones, infos = self.step_env(key, state, actions)
+        obs_st, states_st, rewards, dones, infos = self.step_env(key, state, actions, timestep)
 
         if reset_state is None:
             obs_re, states_re = self.reset(key_reset)
@@ -68,7 +69,7 @@ class MultiAgentEnv(object):
         return obs, states, rewards, dones, infos
 
     def step_env(
-        self, key: chex.PRNGKey, state: State, actions: Dict[str, chex.Array]
+        self, key: chex.PRNGKey, state: State, actions: Dict[str, chex.Array], timestep: int = 0
     ) -> Tuple[Dict[str, chex.Array], State, Dict[str, float], Dict[str, bool], Dict]:
         """Environment-specific step transition."""
         raise NotImplementedError

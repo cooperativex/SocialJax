@@ -425,6 +425,10 @@ class CoopMining(MultiAgentEnv):
             svo_target_agents=None,
             svo_w=0.5,
             svo_ideal_angle_degrees=45,
+            interest=False,
+            s_interest=0.5,
+            s_interest_schedule=None,
+            s_interest_change_every=30000000,
             max_miners=4,  # how many miners can we store per gold cell
             min_gold_miners=2,  # how many distinct miners needed to finalize gold
             mining_range=3,
@@ -448,6 +452,14 @@ class CoopMining(MultiAgentEnv):
         self.svo_w = svo_w
         self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
         self.smooth_rewards = enable_smooth_rewards
+        self.interest = interest
+        self.s_interest = s_interest
+        # Convert schedule to JAX array for JIT compatibility
+        if s_interest_schedule is not None:
+            self.s_interest_schedule = jnp.array(s_interest_schedule)
+        else:
+            self.s_interest_schedule = None
+        self.s_interest_change_every = s_interest_change_every
 
         self.view_config = view_config
         self.num_inner_steps = num_inner_steps
@@ -596,7 +608,17 @@ class CoopMining(MultiAgentEnv):
             smooth_rewards=jnp.zeros((self.num_agents, 1)),
         )
 
-    def step_env(self, key: jnp.ndarray, state: State, actions: jnp.ndarray):
+    def get_current_s_interest(self, timestep):
+        """Calculate current s_interest based on timestep and schedule."""
+        if self.s_interest_schedule is None:
+            return self.s_interest
+
+        # Calculate which phase we're in using JAX operations
+        phase = timestep // self.s_interest_change_every
+        phase_idx = phase % self.s_interest_schedule.shape[0]
+        return self.s_interest_schedule[phase_idx]
+
+    def step_env(self, key: jnp.ndarray, state: State, actions: jnp.ndarray, timestep: int = 0):
         """
         step_env for a CoopMining environment.
 
@@ -604,6 +626,7 @@ class CoopMining(MultiAgentEnv):
           key: PRNGKey for any random draws (e.g. regrow ore).
           state: current State dataclass (agent positions, grid, partial ore states, etc.).
           actions: a tuple/list of ints (one per agent) from the ACTION_SET.
+          timestep: current timestep for s_interest schedule
 
         Returns:
           obs: observations dict-of-dicts or array-of-arrays.
@@ -695,6 +718,25 @@ class CoopMining(MultiAgentEnv):
                 "original_rewards": final_rewards.squeeze(),
                 "svo_theta": theta.squeeze(),
                 "shaped_rewards": rewards.squeeze(),
+            }
+        elif self.interest:
+            final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
+
+            # Calculate current s_interest based on timestep
+            current_s_interest = self.get_current_s_interest(timestep)
+            original_flat = final_rewards.squeeze()
+
+            # Each agent gets s * their_reward + (1-s)/(n-1) * sum_of_others
+            total_reward = jnp.sum(original_flat)
+            others_reward = total_reward - original_flat  # sum of all other agents' rewards
+
+            rewards = (current_s_interest * original_flat +
+                    (1 - current_s_interest) / (self.num_agents - 1) * others_reward)
+
+            info = {
+                "original_rewards": final_rewards.squeeze(),
+                "shaped_rewards": rewards.squeeze(),
+                "s_interest": current_s_interest,
             }
         else:
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)

@@ -170,6 +170,10 @@ class CoinGame(MultiAgentEnv):
         svo_target_agents=None,
         svo_w=0.5,
         svo_ideal_angle_degrees=45,
+        interest=False,
+        s_interest = 0.5,
+        s_interest_schedule=None,
+        s_interest_change_every=30000000,
         jit=True,
         
         grid_size=(16,11),
@@ -216,6 +220,14 @@ class CoinGame(MultiAgentEnv):
         self.svo_w = svo_w
         self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
         self.smooth_rewards = enable_smooth_rewards
+        self.interest = interest
+        self.s_interest = s_interest
+        # Convert schedule to JAX array for JIT compatibility
+        if s_interest_schedule is not None:
+            self.s_interest_schedule = jnp.array(s_interest_schedule)
+        else:
+            self.s_interest_schedule = None
+        self.s_interest_change_every = s_interest_change_every
 
         self.PLAYER_COLOURS = generate_agent_colors(num_agents)
         self.GRID_SIZE_ROW = grid_size[0]
@@ -723,10 +735,21 @@ class CoinGame(MultiAgentEnv):
             return grids
 
 
+        def get_current_s_interest(timestep):
+            """Calculate current s_interest based on timestep and schedule."""
+            if self.s_interest_schedule is None:
+                return self.s_interest
+
+            # Calculate which phase we're in using JAX operations
+            phase = timestep // self.s_interest_change_every
+            phase_idx = phase % self.s_interest_schedule.shape[0]
+            return self.s_interest_schedule[phase_idx]
+
         def _step(
             key: chex.PRNGKey,
             state: State,
-            actions: jnp.ndarray
+            actions: jnp.ndarray,
+            timestep: int = 0
         ):
             """Step the environment."""
             # actions = self.action_set.take(indices=jnp.array([actions["0"], actions["agent_1"]]))
@@ -959,12 +982,43 @@ class CoinGame(MultiAgentEnv):
                     "svo_theta": theta.squeeze(),
                     "shaped_rewards": rewards.squeeze(),
                 }
-            else:
+            elif self.interest:
                 rewards = jnp.zeros((2, 1))
                 rewards = rewards.at[0, 0].set(red_reward[0])
                 rewards = rewards.at[1, 0].set(green_reward[0])
-                rewards = rewards * self.num_agents
-                info = {}
+                original_rewards = rewards * self.num_agents
+                original_flat = original_rewards.squeeze()
+
+                # Calculate current s_interest based on timestep
+                current_s_interest = get_current_s_interest(timestep)
+
+                # Each agent gets s * their_reward + (1-s)/(n-1) * sum_of_others
+                total_reward = jnp.sum(original_flat)
+                others_reward = total_reward - original_flat  # sum of all other agents' rewards
+
+                rewards = (current_s_interest * original_flat +
+                        (1 - current_s_interest) / (self.num_agents - 1) * others_reward).reshape(-1, 1)
+
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                    "s_interest": current_s_interest,
+                }
+            else:
+                rewards = jnp.zeros((2, 1))
+                rewards = rewards.at[0, 0].set(red_reward[0])
+                org_rewards = rewards.at[1, 0].set(green_reward[0])
+                rewards = org_rewards * self.num_agents
+                
+                rewards_sum = jnp.sum(org_rewards)
+                rewards_sum_all_agents = jnp.zeros((self.num_agents, 1))
+                rewards_sum_all_agents += rewards_sum
+                sum_rewards = rewards_sum_all_agents
+                
+                info = {
+                    "original_rewards": rewards.squeeze(),
+                    "shaped_rewards": sum_rewards,
+                }
             
             eat_own_coins = jnp.zeros((2, 1))
             red_reward, green_reward = 0, 0
