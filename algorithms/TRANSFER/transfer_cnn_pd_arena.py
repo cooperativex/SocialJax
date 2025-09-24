@@ -164,7 +164,7 @@ def calculate_s_interest_schedule(n_agents=4):
     """
     ratio = [20, 10, 5, 3, 5/2, 2, 5/3, 4/3, 1]
     s = [1] + [r / (n_agents + r - 1) for r in ratio]
-    s = [0.25] * 9
+    s = [2 / (n_agents + 1)] * (len(ratio) + 1)
 
     return s
 
@@ -190,7 +190,7 @@ def make_train(config):
     if config["ENV_KWARGS"].get("interest", False):
         s_interest_schedule = calculate_s_interest_schedule(config["ENV_KWARGS"]["num_agents"])
         config["ENV_KWARGS"]["s_interest_schedule"] = s_interest_schedule
-        config["ENV_KWARGS"]["s_interest_change_every"] = config.get("S_INTEREST_CHANGE_EVERY", 1000000)
+        config["ENV_KWARGS"]["s_interest_change_every"] = config.get("S_INTEREST_CHANGE_EVERY", 30000000)
         print(f"Using s_interest schedule: {s_interest_schedule}")
         print(f"Changing every {config['ENV_KWARGS']['s_interest_change_every']} timesteps")
 
@@ -333,9 +333,9 @@ def make_train(config):
                         transition.reward,
                     )
 
-                    reward_mean = jnp.mean(reward, axis=0)
-                    # reward_std = jnp.std(reward, axis=0) + 1e-8
-                    reward = (reward - reward_mean)# / reward_std
+                    # reward_mean = jnp.mean(reward, axis=0)
+                    # # reward_std = jnp.std(reward, axis=0) + 1e-8
+                    # reward = (reward - reward_mean)# / reward_std
 
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (

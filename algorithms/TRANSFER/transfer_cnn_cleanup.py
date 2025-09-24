@@ -164,7 +164,7 @@ def calculate_s_interest_schedule(n_agents=7):
     """
     ratio = [20, 10, 5, 3, 5/2, 2, 5/3, 4/3, 1]
     s = [1] + [r / (n_agents + r - 1) for r in ratio]
-    s = [0.25] * 9
+    s = [2 / (n_agents + 1)] * (len(ratio) + 1)
     return s
 
 def group_and_distribute_sum(array):

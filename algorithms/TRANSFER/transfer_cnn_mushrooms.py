@@ -164,7 +164,7 @@ def calculate_s_interest_schedule(n_agents=5):
     """
     ratio = [20, 10, 5, 3, 5/2, 2, 5/3, 4/3, 1]
     s = [1] + [r / (n_agents + r - 1) for r in ratio]
-    s = [0.25] * 9
+    s = [2 / (n_agents + 1)] * (len(ratio) + 1)
 
     return s
 
@@ -333,9 +333,9 @@ def make_train(config):
                         transition.reward,
                     )
 
-                    reward_mean = jnp.mean(reward, axis=0)
-                    # reward_std = jnp.std(reward, axis=0) + 1e-8
-                    reward = (reward - reward_mean)# / reward_std
+                    # reward_mean = jnp.mean(reward, axis=0)
+                    # # reward_std = jnp.std(reward, axis=0) + 1e-8
+                    # reward = (reward - reward_mean)# / reward_std
 
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (
