@@ -186,15 +186,6 @@ for t in range(100):
 You can test the speed of our environments by running [speed_test_random.py](https://github.com/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.py) or using the [colab](https://colab.research.google.com/github/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.ipynb).
 
 
-## Citation
-```
-@article{guo2025socialjax,
-  title={SocialJax: An Evaluation Suite for Multi-agent Reinforcement Learning in Sequential Social Dilemmas},
-  author={Guo, Zihao and Willis, Richard and Shi, Shuqing and Tomilin, Tristan and Leibo, Joel Z and Du, Yali},
-  journal={arXiv preprint arXiv:2503.14576},
-  year={2025}
-}
-```
 ## See Also
 
 [JaxMARL](https://github.com/flairox/jaxmarl): accelerated MARL environments with baselines in JAX.
