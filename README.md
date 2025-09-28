@@ -42,13 +42,15 @@ SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 ## Update
-***[2025/09/28]*** ✨ Updated [PPO-RE](https://github.com/cooperativex/SocialJax/tree/test/algorithms/TRANSFER) algorithm for all environments, it's named TRANSFER in our repo.
 
-***[2025/04/29]*** 🚀 Updated [Mushrooms](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/mushrooms) environment.
+***[2025/09/28]*** ✨ Updated [TRANSFER (PPO-RE)](algorithms/TRANSFER) algorithm for all environments.
 
-***[2025/04/28]*** 🚀 Updated [Gift Refinement](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/gift) environment.
+***[2025/04/29]*** 🚀 Updated [Mushrooms](socialjax/environments/mushrooms) environment.
 
-***[2025/04/16]*** ✨ Added [MAPPO](https://github.com/cooperativex/SocialJax/tree/main/algorithms/MAPPO) algorithm for all environments.
+***[2025/04/28]*** 🚀 Updated [Gift Refinement](socialjax/environments/gift) environment.
+
+***[2025/04/16]*** ✨ Added [MAPPO](algorithms/MAPPO) algorithm for all environments.
+
 
 
 ## Installation
