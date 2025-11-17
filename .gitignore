@@ -4,3 +4,12 @@ outputs/
 wandb/
 checkpoints/
 *.pickle
+
+# IQL evaluation outputs
+evaluation/iql/outputs/
+evaluation/iql/wandb/
+
+# Claude Code generated files
+.claude/
+CLAUDE.md
+ENGINEERING_CONTRIBUTIONS.md
