@@ -43,6 +43,8 @@ Our [blog](https://sites.google.com/view/socialjax/home) presents more details a
 
 ## Update
 
+***[2025/11/17]*** ✨ Updated [IPL](algorithms/QLearning) algorithm for Harvest.
+
 ***[2025/09/28]*** ✨ Updated [TRANSFER (PPO-RE)](algorithms/TRANSFER) algorithm for all environments.
 
 ***[2025/04/29]*** 🚀 Updated [Mushrooms](socialjax/environments/mushrooms) environment.
