@@ -41,17 +41,6 @@ SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-
 
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
-## Update
-
-***[2025/11/17]*** ✨ Updated [IPL](algorithms/QLearning) algorithm for Harvest.
-
-***[2025/09/28]*** ✨ Updated [TRANSFER (PPO-RE)](algorithms/TRANSFER) algorithm for all environments.
-
-***[2025/04/29]*** 🚀 Updated [Mushrooms](socialjax/environments/mushrooms) environment.
-
-***[2025/04/28]*** 🚀 Updated [Gift Refinement](socialjax/environments/gift) environment.
-
-***[2025/04/16]*** ✨ Added [MAPPO](algorithms/MAPPO) algorithm for all environments.
 
 
 
