@@ -2,30 +2,12 @@
 Specific to this implementation: CNN network and Reward Shaping Annealing as per Overcooked paper.
 """
 import os
-import sys
 import copy
-
-# Add project root to path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import jax
 import jax.numpy as jnp
 import numpy as np
 from functools import partial
 from typing import Any
-
-# Monkey-patch for JAX 0.4.23 compatibility with flashbax 0.1.3
-# flashbax 0.1.3 uses jax.tree.map which is deprecated in JAX 0.4.23+
-if not hasattr(jax, 'tree'):
-    import types
-    jax.tree = types.SimpleNamespace()
-    jax.tree.map = jax.tree_util.tree_map
-    jax.tree.leaves = jax.tree_util.tree_leaves
-    jax.tree.structure = jax.tree_util.tree_structure
-    jax.tree.flatten = jax.tree_util.tree_flatten
-    jax.tree.unflatten = jax.tree_util.tree_unflatten
 
 import flax
 import chex
@@ -39,6 +21,15 @@ import wandb
 
 import socialjax
 from socialjax.wrappers.baselines import LogWrapper, CTRolloutManager
+
+if not hasattr(jax, 'tree'):
+    import types
+    jax.tree = types.SimpleNamespace()
+    jax.tree.map = jax.tree_util.tree_map
+    jax.tree.leaves = jax.tree_util.tree_leaves
+    jax.tree.structure = jax.tree_util.tree_structure
+    jax.tree.flatten = jax.tree_util.tree_flatten
+    jax.tree.unflatten = jax.tree_util.tree_unflatten
 
 
 class CNN(nn.Module):
@@ -68,7 +59,7 @@ class CNN(nn.Module):
         x = x.reshape((x.shape[0], -1))  # Flatten
 
         x = nn.Dense(
-            features=64 
+            features=64
         )(x)
         x = activation(x)
 
@@ -78,14 +69,22 @@ class CNN(nn.Module):
 class QNetwork(nn.Module):
     action_dim: int
     hidden_size: int = 64
+    activation: str = "relu"
 
     @nn.compact
     def __call__(self, x: jnp.ndarray):
+        if self.activation == "relu":
+            activation = nn.relu
+        else:
+            activation = nn.tanh
+            
         embedding = CNN()(x)
+        # no activation here as a nonlinearity has already
+        # been applied to the embedding
         x = nn.Dense(self.hidden_size)(embedding)
+        x = activation(x)
         x = nn.Dense(self.action_dim)(x)
         return x
-
 
 @chex.dataclass(frozen=True)
 class Timestep:
@@ -154,11 +153,7 @@ def make_train(config, env):
 
     def batchify(x: dict):
         # CTRolloutManager returns dicts with string keys like "0", "1", "2"...
-        # LB Foraging uses integer keys, so try both
-        try:
-            return jnp.stack([x[str(agent)] for agent in env.agents], axis=0)
-        except KeyError:
-            return jnp.stack([x[agent] for agent in env.agents], axis=0)
+        return jnp.stack([x[str(agent)] for agent in env.agents], axis=0)
 
     def unbatchify(x: jnp.ndarray):
         # Return dict with string keys to match CTRolloutManager format
@@ -243,7 +238,7 @@ def make_train(config, env):
             rewards=_rewards,
             dones=_dones,
         )
-        _tiemstep_unbatched = jax.tree_util.tree_map(
+        _tiemstep_unbatched = jax.tree.map(
             lambda x: x[0], _timestep
         )  # remove the NUM_ENV dim
         buffer_state = buffer.init(_tiemstep_unbatched)
@@ -281,7 +276,7 @@ def make_train(config, env):
                 if "shaped_reward" in infos:
                     shaped_reward = infos.pop("shaped_reward")
                     shaped_reward["__all__"] = batchify(shaped_reward).sum(axis=0)
-                    rewards = jax.tree_util.tree_map(
+                    rewards = jax.tree.map(
                         lambda x, y: x + y * rew_shaping_anneal(train_state.timesteps),
                         rewards,
                         shaped_reward,
@@ -312,7 +307,7 @@ def make_train(config, env):
             )  # update timesteps count
 
             # BUFFER UPDATE
-            timesteps = jax.tree_util.tree_map(
+            timesteps = jax.tree.map(
                 lambda x: x.reshape(-1, *x.shape[2:]), timesteps
             )  # (num_envs*num_steps, ...)
             buffer_state = buffer.add(buffer_state, timesteps)
@@ -329,12 +324,11 @@ def make_train(config, env):
                 )  # (num_agents, batch_size, ...)
                 q_next_target = jnp.max(q_next_target, axis=-1)  # (batch_size,)
 
-                target = (
-                    batchify(minibatch.first.rewards)
-                    + (1 - batchify(minibatch.first.dones))
-                    * config["GAMMA"]
-                    * q_next_target
-                )
+                vdn_target = minibatch.first.rewards["__all__"] + (
+                    1 - minibatch.first.dones["__all__"]
+                ) * config["GAMMA"] * jnp.sum(
+                    q_next_target, axis=0
+                )  # sum over agents
 
                 def _loss_fn(params):
                     q_vals = jax.vmap(network.apply, in_axes=(None, 0))(
@@ -348,7 +342,8 @@ def make_train(config, env):
                         axis=-1,
                     ).squeeze()  # (num_agents, batch_size, )
 
-                    loss = jnp.mean((chosen_action_q_vals - target) ** 2)
+                    chosen_action_q_vals = jnp.sum(chosen_action_q_vals, axis=0)
+                    loss = jnp.mean((chosen_action_q_vals - vdn_target) ** 2)
 
                     return loss, chosen_action_q_vals.mean()
 
@@ -406,7 +401,7 @@ def make_train(config, env):
                 "loss": loss.mean(),
                 "qvals": qvals.mean(),
             }
-            metrics.update(jax.tree_util.tree_map(lambda x: x.mean(), infos))
+            metrics.update(jax.tree.map(lambda x: x.mean(), infos))
 
             if config.get("TEST_DURING_TRAINING", True):
                 rng, _rng = jax.random.split(rng)
@@ -514,7 +509,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = "iql_cnn"
+    alg_name = "vdn_cnn"
     env, env_name = env_from_config(copy.deepcopy(config))
 
     wandb.init(
@@ -528,7 +523,6 @@ def single_run(config):
         name=f"{alg_name}_{env_name}",
         config=config,
         mode=config["WANDB_MODE"],
-        dir=config.get("WANDB_DIR", None),  # Use custom wandb directory if specified
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -552,7 +546,7 @@ def single_run(config):
         )
 
         for i, rng in enumerate(rngs):
-            params = jax.tree_util.tree_map(lambda x: x[i], model_state.params)
+            params = jax.tree.map(lambda x: x[i], model_state.params)
             save_path = os.path.join(
                 save_dir,
                 f'{alg_name}_{env_name}_seed{config["SEED"]}_vmap{i}.safetensors',
@@ -568,7 +562,7 @@ def tune(default_config):
         **default_config["alg"],
     }  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = "iql_cnn"
+    alg_name = "vdn_cnn"
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():
@@ -614,7 +608,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=300)
 
 
-@hydra.main(version_base=None, config_path="./config", config_name="iql_cnn_lb_foraging")
+@hydra.main(version_base=None, config_path="./config", config_name="vdn_cnn_harvest_open")
 def main(config):
     config = OmegaConf.to_container(config)
     print("Config:\n", OmegaConf.to_yaml(config))
