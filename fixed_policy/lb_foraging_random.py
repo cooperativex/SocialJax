@@ -22,10 +22,12 @@ def main():
     configs = [
         {
             'num_agents': 3,
-            'grid_size': 8,
+            'field_size': (8, 8),
             'num_food': 5,
             'max_food_level': 3,
+            'min_food_level': 1,
             'max_agent_level': 3,
+            'min_agent_level': 1,
             'num_inner_steps': 50,
             'force_coop': False,
         },
@@ -36,7 +38,7 @@ def main():
     for config in configs:
         num_agents = config['num_agents']
         num_inner_steps = config['num_inner_steps']
-        grid_size = config['grid_size']
+        field_size = config['field_size']
         num_food = config['num_food']
         force_coop = config['force_coop']
 
@@ -47,19 +49,26 @@ def main():
         env = make(
             "lb_foraging",
             num_agents=num_agents,
-            grid_size=grid_size,
+            field_size=field_size,
             num_food=num_food,
             max_food_level=config['max_food_level'],
+            min_food_level=config['min_food_level'],
             max_agent_level=config['max_agent_level'],
+            min_agent_level=config['min_agent_level'],
             num_inner_steps=num_inner_steps,
             force_coop=force_coop,
             sight=3,
             jit=False,  # Disable JIT for easier debugging
             cnn=True,
+            grid_observation=True,
+            observe_agent_levels=True,
+            normalize_reward=True,
+            penalty=0.0,
         )
 
         # Prepare output directory
         coop_str = "coop" if force_coop else "individual"
+        grid_size = field_size[0]  # For directory naming
         root_dir = f"tests/lb_foraging_a{num_agents}_g{grid_size}_f{num_food}_{coop_str}"
         path = Path(root_dir + "/state_pics")
         path.mkdir(parents=True, exist_ok=True)
@@ -74,14 +83,16 @@ def main():
             print("=" * 60)
             print(f"Configuration:")
             print(f"  - Agents: {num_agents}")
-            print(f"  - Grid Size: {grid_size}x{grid_size}")
+            print(f"  - Field Size: {field_size[0]}x{field_size[1]}")
             print(f"  - Food Items: {num_food}")
             print(f"  - Max Food Level: {config['max_food_level']}")
             print(f"  - Max Agent Level: {config['max_agent_level']}")
             print(f"  - Force Cooperation: {force_coop}")
             print(f"  - Episode Length: {num_inner_steps}")
             print("\nInitial State:")
+            print(f"  - Agent Positions: {np.array(state.agent_pos)}")
             print(f"  - Agent Levels: {np.array(state.agent_levels)}")
+            print(f"  - Food Positions: {np.array(state.food_pos)}")
             print(f"  - Food Levels: {np.array(state.food_levels)}")
             print(f"  - Active Food: {np.sum(state.food_active)}/{num_food}")
             print("=" * 60 + "\n")
@@ -89,14 +100,16 @@ def main():
         # Store frames for GIF
         pics = []
 
-        # Render and save initial state
-        img = env.render(state, cell_size=50)
-        Image.fromarray(img).save(f"{root_dir}/state_pics/init_state.png")
-        pics.append(img)
-
         # Track statistics
         total_reward = 0.0
         food_collected = 0
+        # Track cumulative rewards for each agent
+        cumulative_rewards = {str(i): 0.0 for i in range(num_agents)}
+
+        # Render and save initial state (with zero rewards)
+        img = env.render(state, cell_size=50, cumulative_rewards=cumulative_rewards)
+        Image.fromarray(img).save(f"{root_dir}/state_pics/init_state.png")
+        pics.append(img)
 
         # Run episode with random actions
         for t in range(num_inner_steps):
@@ -112,19 +125,24 @@ def main():
                 rng, state, actions
             )
 
-            # Update statistics
+            # Update statistics and cumulative rewards
             step_reward = sum([float(rewards[str(i)]) for i in range(num_agents)])
             total_reward += step_reward
+
+            # Update cumulative rewards for each agent
+            for i in range(num_agents):
+                cumulative_rewards[str(i)] += float(rewards[str(i)])
 
             if verbose and step_reward > 0:
                 print(f"Step {t + 1}:")
                 print(f"  - Actions: {actions}")
                 print(f"  - Rewards: {[float(rewards[str(i)]) for i in range(num_agents)]}")
+                print(f"  - Cumulative Rewards: {[cumulative_rewards[str(i)] for i in range(num_agents)]}")
                 print(f"  - Total Reward This Step: {step_reward:.2f}")
                 print(f"  - Active Food: {np.sum(state.food_active)}/{num_food}")
 
-            # Render and save
-            img = env.render(state, cell_size=50)
+            # Render and save with cumulative rewards
+            img = env.render(state, cell_size=50, cumulative_rewards=cumulative_rewards)
             Image.fromarray(img).save(f"{root_dir}/state_pics/state_{t + 1}.png")
             pics.append(img)
 
@@ -145,6 +163,9 @@ def main():
             print(f"  - Total Reward: {total_reward:.2f}")
             print(f"  - Food Collected: {food_collected}/{num_food}")
             print(f"  - Collection Rate: {food_collected / num_food * 100:.1f}%")
+            print("\nAgent Cumulative Rewards:")
+            for i in range(num_agents):
+                print(f"  - Agent {i}: {cumulative_rewards[str(i)]:.4f}")
             print("=" * 60 + "\n")
 
         # Create and save GIF

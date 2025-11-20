@@ -1,5 +1,5 @@
 "LR": 0.0005
-"NUM_ENVS": 256  # Increased from 5 to 256 for better GPU utilization (matches IPPO)
+"NUM_ENVS": 5
 "NUM_STEPS": 100
 "TOTAL_TIMESTEPS": 1e9
 "UPDATE_EPOCHS": 2
@@ -16,10 +16,10 @@
 "ENV_NAME": "harvest_common_open"
 "REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
 
-"ENV_KWARGS": 
+"ENV_KWARGS":
   "num_agents" : 7
   "num_inner_steps" : 1000
-  "shared_rewards" : True  # Attention: switch to False for individual rewards 
+  "shared_rewards" : False  # IRAT: Use individual rewards, sum them in algorithm for team reward
   "cnn" : True
   "jit" : True
   
@@ -29,12 +29,13 @@
 "NUM_SEEDS": 1
 "TUNE": False
 
-"REWARD": "MAPPO" # individual; common
+"REWARD": "IRAT"  # IRAT uses both individual and team rewards
 "GIF_NUM_FRAMES": 250
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "socialjax_mappo"
+"PROJECT": "socialjax_irat"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
-  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD
+  - IRAT
+  - INDIVIDUAL_REWARD

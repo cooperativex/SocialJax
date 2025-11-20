@@ -1,5 +1,20 @@
-""" 
-Based on PureJaxRL & jaxmarl Implementation of PPO
+"""
+AAA (Advantage Alignment Actor) Implementation
+Based on: "Advantage Alignment Algorithms" (https://github.com/jduquevan/advantage-alignment)
+
+Key innovation: Modifies PPO advantage function to incorporate opponent advantages,
+steering agents toward mutually beneficial equilibria.
+
+AAA Formula: A*(s_t, a_t, b_t) = A¹(s_t, a_t, b_t) + β · aa_term(t)
+Where:
+- aa_term(t) = (Σ_{k<t} A¹(s_k, a_k, b_k)) · A²(s_t, a_t, b_t) / t
+- A¹: Agent's own advantage at each timestep
+- A²: Sum of opponent advantages (all other agents)
+- β: Scaling parameter for opponent influence (AAA_BETA)
+- t: Current timestep number (for normalization)
+
+Note: The cumulative sum is a SIMPLE sum (not discounted by gamma).
+The formula applies to timesteps t >= 1 (t=0 uses original advantage).
 """
 
 import jax
@@ -250,16 +265,12 @@ def make_train(config):
                 env_act = [v for v in env_act.values()]
 
                 #VALUE
-                world_state = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ENVS"], *(env.observation_space()[0]).shape[:-1], -1)
-                world_state = jnp.expand_dims(world_state, axis=0)
-                world_state = jnp.tile(world_state, (env.num_agents, 1, 1, 1, 1))
-                world_state = jnp.reshape(world_state, (-1, *(world_state.shape[2:])))
-                # world_state = last_obs["world_state"].swapaxes(0,1)  
-                # world_state = world_state.reshape((config["NUM_ACTORS"],-1))
-                value = critic_network.apply(train_states[1].params, world_state)
-                # expanded_value = jnp.expand_dims(value, axis=0)
-                # value = jnp.tile(expanded_value, (env.num_agents, 1))
-                value = value.reshape(config["NUM_ACTORS"])
+                # World state is shared across all agents, only compute once per env
+                world_state_per_env = jnp.transpose(last_obs, (0,2,3,1,4)).reshape(config["NUM_ENVS"], *(env.observation_space()[0]).shape[:-1], -1)
+                # Compute value for each env (world state is same for all agents in same env)
+                value_per_env = critic_network.apply(train_states[1].params, world_state_per_env)
+                # Broadcast value to all agents in each env
+                value = jnp.repeat(value_per_env, env.num_agents)
 
 
                 # STEP ENV
@@ -280,7 +291,7 @@ def make_train(config):
                     batchify_numpy(reward, env.agents, config["NUM_ACTORS"]).squeeze(),
                     log_prob,
                     obs_batch,
-                    world_state,
+                    world_state_per_env,  # Store compact world state (NUM_ENVS) instead of replicated (NUM_ACTORS)
                     info
                 )
                 runner_state = (train_states, env_state, obsv, done_batch, rng)
@@ -303,6 +314,7 @@ def make_train(config):
             last_val = last_val.squeeze()
 
             def _calculate_gae(traj_batch, last_val):
+                # Standard GAE calculation first
                 def _get_advantages(gae_and_next_value, transition):
                     gae, next_value = gae_and_next_value
                     done, value, reward = (
@@ -324,7 +336,72 @@ def make_train(config):
                     reverse=True,
                     unroll=16,
                 )
-                return advantages, advantages + traj_batch.value
+
+                # AAA: Modify advantages using opponent advantages
+                # Original implementation: aa_terms = (A_1s * A_2s) / timestep
+                # where A_1s = cumsum(A_s[:, :-1]), A_2s = other_agents(A_s[:, 1:])
+                # Shape: (num_steps, num_actors) where num_actors = num_agents * num_envs
+                # Reshape to (num_steps, num_agents, num_envs) for easier agent separation
+                num_steps = advantages.shape[0]
+                advantages_reshaped = advantages.reshape(num_steps, env.num_agents, config["NUM_ENVS"])
+
+                # Apply AAA formula for each agent
+                def apply_aaa_to_agent(agent_idx, advantages_reshaped):
+                    # Get this agent's advantages: (num_steps, num_envs)
+                    agent_adv = advantages_reshaped[:, agent_idx, :]
+
+                    # Following original implementation exactly:
+                    # A_1s = torch.cumsum(A_s[:, :-1], dim=1) - cumsum of PAST advantages (exclude last timestep)
+                    # A_s[:, 1:] - CURRENT advantages (exclude first timestep)
+
+                    # Compute cumulative advantages for timesteps [0, T-2]
+                    # These will align with current advantages at timesteps [1, T-1]
+                    agent_adv_past = agent_adv[:-1, :]  # (T-1, num_envs)
+                    cumulative_past_adv = jnp.cumsum(agent_adv_past, axis=0)  # (T-1, num_envs)
+
+                    # Current advantages for timesteps [1, T-1]
+                    agent_adv_current = agent_adv[1:, :]  # (T-1, num_envs)
+
+                    # Get opponent advantages (sum of all other agents) for timesteps [1, T-1]
+                    # A² = sum of all opponents' advantages
+                    opponent_mask = jnp.ones(env.num_agents)
+                    opponent_mask = opponent_mask.at[agent_idx].set(0)
+                    opponent_adv = jnp.sum(
+                        advantages_reshaped[1:, :, :] * opponent_mask[None, :, None],
+                        axis=1
+                    )  # (T-1, num_envs)
+
+                    # AAA formula from original: (A_1s * A_2s) / timestep
+                    # Timesteps are numbered 1, 2, 3, ..., T-1
+                    time_steps = jnp.arange(1, num_steps, dtype=jnp.float32)[:, None]  # (T-1, 1)
+                    aa_term = (cumulative_past_adv * opponent_adv) / time_steps
+
+                    # Apply AAA modification with beta weight
+                    # Original: A_s = A_s + aa_terms * aa_weight
+                    modified_adv_current = agent_adv_current + config["AAA_BETA"] * aa_term
+
+                    # For the first timestep (t=0), there's no cumulative past, so no AAA modification
+                    # Prepend the original advantage for t=0
+                    modified_adv = jnp.concatenate([
+                        agent_adv[0:1, :],  # t=0, no modification
+                        modified_adv_current  # t=1 to T-1, with AAA modification
+                    ], axis=0)
+
+                    return modified_adv
+
+                # Apply to all agents
+                modified_advantages_list = []
+                for i in range(env.num_agents):
+                    modified_adv = apply_aaa_to_agent(i, advantages_reshaped)
+                    modified_advantages_list.append(modified_adv)
+
+                # Stack back: (num_agents, num_steps, num_envs) -> (num_steps, num_agents, num_envs)
+                modified_advantages = jnp.stack(modified_advantages_list, axis=1)
+
+                # Reshape back to original: (num_steps, num_actors)
+                modified_advantages = modified_advantages.reshape(num_steps, config["NUM_ACTORS"])
+
+                return modified_advantages, modified_advantages + traj_batch.value
 
             advantages, targets = _calculate_gae(traj_batch, last_val)
 
@@ -373,7 +450,11 @@ def make_train(config):
 
                     def _critic_loss_fn(critic_params, traj_batch, targets):
                         # RERUN NETWORK
-                        value = critic_network.apply(critic_params, traj_batch.world_state.reshape(-1, *(traj_batch.world_state).shape[-3:])) 
+                        # world_state is now properly expanded and minibatched to match traj_batch.value
+                        # Shape: (minibatch_size, H, W, C*num_agents)
+                        world_state_batch = jnp.reshape(traj_batch.world_state, (-1, *(traj_batch.world_state).shape[-3:]))
+                        value = critic_network.apply(critic_params, world_state_batch)
+                        # Reshape to match traj_batch.value
                         value = jnp.reshape(value, traj_batch.value.shape)
                         # CALCULATE VALUE LOSS
                         value_pred_clipped = traj_batch.value + (
@@ -449,7 +530,30 @@ def make_train(config):
                     batch_size == config["NUM_STEPS"] * config["NUM_ACTORS"]
                 ), "batch size must be equal to number of steps * number of actors"
                 permutation = jax.random.permutation(_rng, batch_size)
-                batch = (traj_batch, advantages, targets)
+
+                # Expand world_state from per-env to per-actor for minibatching
+                # This happens AFTER trajectory collection, so we still save memory during collection
+                # Shape: (NUM_STEPS, NUM_ENVS, H, W, C) -> (NUM_STEPS, NUM_ACTORS, H, W, C)
+                world_state_expanded = jnp.repeat(
+                    jnp.expand_dims(traj_batch.world_state, axis=2),  # (NUM_STEPS, NUM_ENVS, 1, H, W, C)
+                    env.num_agents,
+                    axis=2
+                ).reshape(config["NUM_STEPS"], config["NUM_ACTORS"], *traj_batch.world_state.shape[2:])
+
+                # Replace world_state in traj_batch with expanded version
+                traj_batch_expanded = Transition(
+                    global_done=traj_batch.global_done,
+                    done=traj_batch.done,
+                    action=traj_batch.action,
+                    value=traj_batch.value,
+                    reward=traj_batch.reward,
+                    log_prob=traj_batch.log_prob,
+                    obs=traj_batch.obs,
+                    world_state=world_state_expanded,
+                    info=traj_batch.info
+                )
+
+                batch = (traj_batch_expanded, advantages, targets)
                 batch = jax.tree_util.tree_map(
                     lambda x: x.reshape((batch_size,) + x.shape[2:]), batch
                 )
@@ -526,10 +630,10 @@ def single_run(config):
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=["MAPPO", "FF"],
+        tags=["AAA", "ADVANTAGE_ALIGNMENT"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'mappo_cnn_harvest_common'
+        name=f'aaa_cnn_harvest_common'
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -694,7 +798,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="mappo_cnn_harvest_common")
+@hydra.main(version_base=None, config_path="config", config_name="aaa_cnn_harvest_common")
 def main(config):
     if config["TUNE"]:
         tune(config)

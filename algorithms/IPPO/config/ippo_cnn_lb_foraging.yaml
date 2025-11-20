@@ -1,0 +1,53 @@
+"LR": 0.0005
+"NUM_ENVS": 256
+"NUM_STEPS": 50  # Episode length for lb_foraging
+"TOTAL_TIMESTEPS": 5e7
+"UPDATE_EPOCHS": 2
+"NUM_MINIBATCHES": 128
+"GAMMA": 0.99
+"GAE_LAMBDA": 0.95
+"CLIP_EPS": 0.2
+"ENT_COEF": 0.01
+"VF_COEF": 0.5
+"MAX_GRAD_NORM": 0.5
+"ACTIVATION": "relu"
+"ENV_NAME": "lb_foraging"
+"REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
+"SHAPING_BEGIN": 1e6
+"ENV_KWARGS":
+  "num_agents" : 3
+  "field_size" : [8, 8]
+  "num_food" : 5
+  "max_food_level" : 3
+  "min_food_level" : 1
+  "max_agent_level" : 3
+  "min_agent_level" : 1
+  "num_inner_steps" : 50
+  "shared_rewards" : False  # False for individual rewards, True for common rewards
+  "force_coop" : False  # True to force cooperation (all food at max level)
+  "sight" : 3
+  "cnn" : True
+  "jit" : True
+  "grid_observation" : True
+  "observe_agent_levels" : True
+  "normalize_reward" : True
+  "penalty" : 0.0
+
+
+"ANNEAL_LR": True
+"SEED": 30
+"NUM_SEEDS": 1
+"TUNE": False
+
+"REWARD": "individual" # individual; common
+"GIF_NUM_FRAMES": 50
+"PARAMETER_SHARING": True
+
+# WandB Params
+"ENTITY": ""
+"PROJECT": "socialjax"
+"WANDB_MODE" : "online"
+"WANDB_TAGS":
+  - IPPO
+  - LB_FORAGING
+  - INDIVIDUAL_REWARD # COMMON_REWARD

@@ -16,10 +16,14 @@
 "ENV_NAME": "harvest_common_open"
 "REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
 
-"ENV_KWARGS": 
+# AAA-specific parameter
+"AAA_BETA": 0.01  # Scaling parameter for opponent advantage influence (β in AAA formula)
+# Reduced from 0.1 to 0.01 to avoid over-penalizing competitive actions
+
+"ENV_KWARGS":
   "num_agents" : 7
   "num_inner_steps" : 1000
-  "shared_rewards" : True  # Attention: switch to False for individual rewards 
+  "shared_rewards" : False  # AAA: Use individual rewards for each agent
   "cnn" : True
   "jit" : True
   
@@ -29,12 +33,14 @@
 "NUM_SEEDS": 1
 "TUNE": False
 
-"REWARD": "MAPPO" # individual; common
+"REWARD": "AAA"  # AAA: Advantage Alignment Actor
 "GIF_NUM_FRAMES": 250
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "socialjax_mappo"
+"PROJECT": "socialjax_aaa"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
-  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD
+  - AAA
+  - ADVANTAGE_ALIGNMENT
+  - INDIVIDUAL_REWARD
