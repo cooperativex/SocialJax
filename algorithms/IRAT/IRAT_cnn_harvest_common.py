@@ -276,18 +276,20 @@ def make_train(config):
                 # Prepare observations
                 obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
 
-                # IRAT: Sample actions from BOTH policies
-                rng, rng_ind, rng_team = jax.random.split(rng, 3)
-
-                # Individual policy samples action (for learning only)
-                ind_pi = ind_actor_network.apply(train_states[0].params, obs_batch)
-                ind_action = ind_pi.sample(seed=rng_ind)
-                ind_log_prob = ind_pi.log_prob(ind_action)
+                # IRAT: Sample action from team policy and execute it
+                # Individual policy evaluates the SAME action for on-policy learning
+                rng, rng_team = jax.random.split(rng, 2)
 
                 # Team policy samples action (EXECUTED in environment)
                 team_pi = team_actor_network.apply(train_states[2].params, obs_batch)
                 team_action = team_pi.sample(seed=rng_team)
                 team_log_prob = team_pi.log_prob(team_action)
+
+                # Individual policy evaluates the SAME team_action (on-policy)
+                # This allows individual policy to learn from team's trajectory
+                # but optimize for individual rewards
+                ind_pi = ind_actor_network.apply(train_states[0].params, obs_batch)
+                ind_log_prob = ind_pi.log_prob(team_action)  # Use team_action!
 
                 # Execute TEAM action in environment (IRAT design)
                 env_act = unbatchify(
@@ -326,17 +328,18 @@ def make_train(config):
                 # Individual rewards from environment (NUM_ACTORS,)
                 ind_reward = batchify_numpy(reward, env.agents, config["NUM_ACTORS"]).squeeze()
 
-                # Team reward = sum of individual rewards (broadcast to all agents)
+                # Team reward = mean of individual rewards (broadcast to all agents)
+                # Using mean instead of sum for better scaling
                 # Shape: (NUM_ENVS,) then broadcast to (NUM_ACTORS,)
                 ind_reward_reshaped = ind_reward.reshape(env.num_agents, config["NUM_ENVS"])
-                team_reward_per_env = ind_reward_reshaped.sum(axis=0)  # (NUM_ENVS,)
+                team_reward_per_env = ind_reward_reshaped.mean(axis=0)  # (NUM_ENVS,) - CHANGED TO MEAN
                 # Broadcast team reward to all agents
                 team_reward = jnp.repeat(team_reward_per_env, env.num_agents)  # (NUM_ACTORS,)
 
                 transition = Transition(
                     global_done=jnp.tile(done["__all__"], env.num_agents),
                     done=last_done,
-                    ind_action=ind_action,
+                    ind_action=team_action,  # Individual policy uses same action as team
                     ind_value=ind_value,
                     ind_log_prob=ind_log_prob,
                     team_action=team_action,
@@ -609,6 +612,10 @@ def make_train(config):
             metric = jax.tree_map(lambda x: x.mean(), metric)
             metric["update_steps"] = update_steps
             metric["env_step"] = update_steps * config["NUM_STEPS"] * config["NUM_ENVS"]
+
+            # Add loss information to metrics
+            loss_metric = jax.tree_map(lambda x: x.mean(), loss_info)
+            metric.update(loss_metric)
 
             # jax.experimental.io_callback(callback, None, metric)
 
