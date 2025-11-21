@@ -722,3 +722,57 @@ class LevelBasedForaging(MultiAgentEnv):
             return jnp.where(agent_mask, svo_utility, rewards).squeeze(), theta.squeeze()
         else:
             return svo_utility.squeeze(), theta.squeeze()
+
+    # ------------------- RENDERING ----------------------------------------
+    def render(self, state: State, cell_size: int = 50, cumulative_rewards: dict = None) -> onp.ndarray:
+        """
+        Render the LBF environment state as an RGB image.
+
+        Args:
+            state: Current environment state
+            cell_size: Size of each grid cell in pixels
+            cumulative_rewards: Dict of cumulative rewards per agent (for display)
+
+        Returns:
+            RGB image as numpy array (H, W, 3)
+        """
+        from socialjax.environments.lb_foraging.rendering import render_lb_foraging
+
+        # Convert JAX state to format expected by rendering function
+        # Create a simple namespace object to hold state attributes
+        class RenderState:
+            def __init__(self, env_ref, state_obj):
+                # Extract food positions and levels from food_grid
+                food_positions = []
+                food_levels_list = []
+                food_active_list = []
+
+                food_grid_np = onp.array(state_obj.food_grid)
+                for r in range(food_grid_np.shape[0]):
+                    for c in range(food_grid_np.shape[1]):
+                        if food_grid_np[r, c] > 0:
+                            food_positions.append([r, c])
+                            food_levels_list.append(food_grid_np[r, c] - 10)
+                            food_active_list.append(True)
+
+                # Pad to num_food size (in case some food was collected)
+                while len(food_positions) < env_ref.num_food:
+                    food_positions.append([0, 0])
+                    food_levels_list.append(1)
+                    food_active_list.append(False)
+
+                self.food_pos = onp.array(food_positions[:env_ref.num_food])
+                self.food_levels = onp.array(food_levels_list[:env_ref.num_food])
+                self.food_active = onp.array(food_active_list[:env_ref.num_food])
+                self.agent_pos = onp.array(state_obj.agent_positions)
+                self.agent_levels = onp.array(state_obj.agent_levels)
+                self.step_count = state_obj.inner_t
+
+        render_state = RenderState(self, state)
+
+        return render_lb_foraging(
+            render_state,
+            field_size=self.grid_shape,
+            cell_size=cell_size,
+            cumulative_rewards=cumulative_rewards
+        )
