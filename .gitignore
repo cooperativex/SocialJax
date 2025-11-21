@@ -13,3 +13,6 @@ evaluation/iql/wandb/
 .claude/
 CLAUDE.md
 ENGINEERING_CONTRIBUTIONS.md
+test_env.py
+test_lbf_env.py
+test_lbf_simple.py

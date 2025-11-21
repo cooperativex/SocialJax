@@ -1,10 +1,8 @@
-"""
-IPPO for LB Foraging Environment
+""" 
 Based on PureJaxRL & jaxmarl Implementation of PPO
 """
 import sys
-import os
-# Add project root to path
+sys.path.append('/home/shuqing/SocialJax')
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
@@ -13,10 +11,11 @@ import optax
 from flax.linen.initializers import constant, orthogonal
 from typing import Sequence, NamedTuple, Any
 from flax.training.train_state import TrainState
+# from flax.training import checkpoints
 import distrax
 from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper
 import socialjax
-from socialjax.wrappers.baselines import LogWrapper
+from socialjax.wrappers.baselines import LogWrapper, SVOLogWrapper
 import hydra
 from omegaconf import OmegaConf
 import wandb
@@ -110,6 +109,51 @@ class Transition(NamedTuple):
     info: jnp.ndarray
 
 
+def get_rollout(params, config):
+    env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
+    if config["PARAMETER_SHARING"]:
+        network = ActorCritic(env.action_space().n, activation=config["ACTIVATION"])
+    else:
+        network = [ActorCritic(env.action_space().n, activation=config["ACTIVATION"]) for _ in range(env.num_agents)]
+    key = jax.random.PRNGKey(0)
+    key, key_r, key_a = jax.random.split(key, 3)
+
+    done = False
+
+    obs, state = env.reset(key_r)
+    state_seq = [state]
+    for o in range(config["GIF_NUM_FRAMES"]):
+        print(o)
+        key, key_a0, key_a1, key_s = jax.random.split(key, 4)
+
+        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
+        if config["PARAMETER_SHARING"]: 
+            pi, value = network.apply(params, obs_batch)
+            action = pi.sample(seed=key_a0)
+            env_act = unbatchify(
+                action, env.agents, 1, env.num_agents
+            )           
+        else:
+            env_act = {}
+            for i in range(env.num_agents):
+                pi, value = network[i].apply(params[i], obs_batch)
+                action = pi.sample(seed=key_a0)
+                env_act[env.agents[i]] = action
+
+
+        
+
+        env_act = {k: v.squeeze() for k, v in env_act.items()}
+
+        # STEP ENV
+        obs, state, reward, done, info = env.step(key_s, state, env_act)
+        done = done["__all__"]
+
+        state_seq.append(state)
+
+    return state_seq
+
+
 def batchify(x: dict, agent_list, num_actors):
     x = jnp.stack([x[:, a] for a in agent_list])
     return x.reshape((num_actors, -1))
@@ -139,6 +183,19 @@ def make_train(config):
 
     env = LogWrapper(env, replace_info=False)
 
+    rew_shaping_anneal = optax.linear_schedule(
+        init_value=0.,
+        end_value=1.,
+        transition_steps=config["REW_SHAPING_HORIZON"],
+        transition_begin=config["SHAPING_BEGIN"]
+    )
+
+    rew_shaping_anneal_org = optax.linear_schedule(
+        init_value=1.,
+        end_value=0.,
+        transition_steps=config["REW_SHAPING_HORIZON"],
+        transition_begin=config["SHAPING_BEGIN"]
+    )
     def linear_schedule(count):
         frac = (
             1.0
@@ -154,9 +211,9 @@ def make_train(config):
             network = ActorCritic(env.action_space().n, activation=config["ACTIVATION"])
         else:
             network = [ActorCritic(env.action_space().n, activation=config["ACTIVATION"]) for _ in range(env.num_agents)]
-
+        
         rng, _rng = jax.random.split(rng)
-        init_x = jnp.zeros((1, *(env.observation_space()[0]).shape))
+        init_x = jnp.zeros((1, *env.observation_space()[0].shape))
 
         if config["PARAMETER_SHARING"]:
             network_params = network.init(_rng, init_x)
@@ -199,8 +256,13 @@ def make_train(config):
                 # SELECT ACTION
                 rng, _rng = jax.random.split(rng)
 
+
+                
+                # obs_batch = jnp.stack([last_obs[a] for a in env.agents]).reshape(-1, *env.observation_space().shape)
+                
                 if config["PARAMETER_SHARING"]:
                     obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
+                    print("input_obs_shape", obs_batch.shape)
                     pi, value = network.apply(train_state.params, obs_batch)
                     action = pi.sample(seed=_rng)
                     log_prob = pi.log_prob(action)
@@ -213,14 +275,18 @@ def make_train(config):
                     log_prob = []
                     value = []
                     for i in range(env.num_agents):
+                        print("input_obs_shape", obs_batch[i].shape)
                         pi, value_i = network[i].apply(train_state[i].params, obs_batch[i])
                         action = pi.sample(seed=_rng)
                         log_prob.append(pi.log_prob(action))
                         env_act[env.agents[i]] = action
                         value.append(value_i)
 
-                env_act = [v for v in env_act.values()]
 
+
+                # env_act = {k: v.flatten() for k, v in env_act.items()}
+                env_act = [v for v in env_act.values()]
+                
                 # STEP ENV
                 rng, _rng = jax.random.split(rng)
                 rng_step = jax.random.split(_rng, config["NUM_ENVS"])
@@ -229,6 +295,11 @@ def make_train(config):
                     env.step, in_axes=(0, 0, 0)
                 )(rng_step, env_state, env_act)
 
+                # current_timestep = update_step*config["NUM_STEPS"]*config["NUM_ENVS"]
+                # shaped_reward = compute_grouped_rewards(reward)
+                # reward = jax.tree_map(lambda x,y: x*rew_shaping_anneal_org(current_timestep)+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
+
+                
                 if config["PARAMETER_SHARING"]:
                     info = jax.tree_map(lambda x: x.reshape((config["NUM_ACTORS"])), info)
                     transition = Transition(
@@ -282,13 +353,16 @@ def make_train(config):
                         transition.value,
                         transition.reward,
                     )
+                    # reward_mean = jnp.mean(reward, axis=0)
+                    # # reward_std = jnp.std(reward, axis=0) + 1e-8
+                    # reward = (reward - reward_mean)# / reward_std
                     delta = reward + config["GAMMA"] * next_value * (1 - done) - value
                     gae = (
                         delta
                         + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
                     )
                     return (gae, value), gae
-
+                
                 _, advantages = jax.lax.scan(
                     _get_advantages,
                     (jnp.zeros_like(last_val), last_val),
@@ -369,6 +443,13 @@ def make_train(config):
                 batch = jax.tree_util.tree_map(
                         lambda x: x.reshape((batch_size,) + x.shape[2:]), batch
                     )
+                # if config["PARAMETER_SHARING"]:
+                    
+                # else:
+                #     batch = jax.tree_util.tree_map(
+                #         lambda x: x.reshape((batch_size,) + x.shape[2:]),  # 保持第一个维度为batch_size，自动计算第二个维度
+                #         batch
+                #     )
                 shuffled_batch = jax.tree_util.tree_map(
                     lambda x: jnp.take(x, permutation, axis=0), batch
                 )
@@ -389,7 +470,7 @@ def make_train(config):
 
                 update_state = (train_state, traj_batch, advantages, targets, rng)
                 return update_state, total_loss
-
+            
             if config["PARAMETER_SHARING"]:
                 update_state = (train_state, traj_batch, advantages, targets, rng)
                 update_state, loss_info = jax.lax.scan(
@@ -412,7 +493,7 @@ def make_train(config):
                     metric_i['loss'] = loss_info[0]
                     metric.append(metric_i)
                     rng = update_state[-1]
-
+                
             def callback(metric):
                 wandb.log(metric)
 
@@ -421,14 +502,13 @@ def make_train(config):
             if config["PARAMETER_SHARING"]:
                 metric["update_step"] = update_step
                 metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
+                jax.debug.callback(callback, metric)
             else:
                 for i in range(env.num_agents):
                     metric[i]["update_step"] = update_step
                     metric[i]["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
                 metric = metric[0]
-            metric["update_step"] = update_step
-            metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
-            jax.debug.callback(callback, metric)
+                jax.debug.callback(callback, metric)
 
             runner_state = (train_state, env_state, last_obs, update_step, rng)
             return runner_state, metric
@@ -444,14 +524,16 @@ def make_train(config):
 
 def single_run(config):
     config = OmegaConf.to_container(config)
+    # layout_name = copy.deepcopy(config["ENV_KWARGS"]["layout"])
+    # config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
 
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=config.get("WANDB_TAGS", ["IPPO", "LB_FORAGING"]),
+        tags=["IPPO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_lb_foraging_agents{config["ENV_KWARGS"]["num_agents"]}_seed{config["SEED"]}'
+        name=f'ippo_cnn_lb_foraging'
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -460,25 +542,29 @@ def single_run(config):
     out = jax.vmap(train_jit)(rngs)
 
     print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_agents{config["ENV_KWARGS"]["num_agents"]}_seed{config["SEED"]}'
+    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}'
     train_state = jax.tree_map(lambda x: x[0], out["runner_state"][0])
-
+    save_path = f"./checkpoints/individual/{filename}.pkl"
     if config["PARAMETER_SHARING"]:
-        save_path = f"./checkpoints/individual/{filename}.pkl"
+        save_path = f"./checkpoints/indvidual/{filename}.pkl"
         save_params(train_state, save_path)
         params = load_params(save_path)
     else:
         params = []
         for i in range(config['ENV_KWARGS']['num_agents']):
-            save_path = f"./checkpoints/individual/{filename}_agent{i}.pkl"
+            save_path = f"./checkpoints/individual/{filename}_{i}.pkl"
             save_params(train_state[i], save_path)
             params.append(load_params(save_path))
-
     evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
+    # state_seq = get_rollout(train_state.params, config)
+    # viz = OvercookedVisualizer()
+    # agent_view_size is hardcoded as it determines the padding around the layout.
+    # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
 
 def save_params(train_state, save_path):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     params = jax.tree_util.tree_map(lambda x: np.array(x), train_state.params)
+
     with open(save_path, 'wb') as f:
         pickle.dump(params, f)
 
@@ -489,79 +575,67 @@ def load_params(load_path):
 
 def evaluate(params, env, save_path, config):
     rng = jax.random.PRNGKey(0)
-
+    
     rng, _rng = jax.random.split(rng)
     obs, state = env.reset(_rng)
     done = False
-
+    
     pics = []
     img = env.render(state)
     pics.append(img)
-
-    n_agents = config["ENV_KWARGS"]["num_agents"]
-    root_dir = f"evaluation/lb_foraging_agents{n_agents}"
+    root_dir = f"evaluation/lb_foraging"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
-    total_reward = {agent: 0.0 for agent in env.agents}
-    food_collected = 0
-
     for o_t in range(config["GIF_NUM_FRAMES"]):
-        # Get actions from trained policy
+        # 获取所有智能体的观察
+        # print(o_t)
+        # 使用模型选择动作
         if config["PARAMETER_SHARING"]:
             obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-            network = ActorCritic(action_dim=env.action_space().n, activation=config["ACTIVATION"])
+            network = ActorCritic(action_dim=env.action_space().n, activation="relu")  # 使用与训练时相同的参数
             pi, _ = network.apply(params, obs_batch)
             rng, _rng = jax.random.split(rng)
             actions = pi.sample(seed=_rng)
+            # 转换动作格式
             env_act = {k: v.squeeze() for k, v in unbatchify(
                 actions, env.agents, 1, env.num_agents
             ).items()}
         else:
             obs_batch = jnp.stack([obs[a] for a in env.agents])
             env_act = {}
-            network = [ActorCritic(action_dim=env.action_space().n, activation=config["ACTIVATION"]) for _ in range(env.num_agents)]
+            network = [ActorCritic(action_dim=env.action_space().n, activation="relu") for _ in range(env.num_agents)]
             for i in range(env.num_agents):
-                obs_single = jnp.expand_dims(obs_batch[i], axis=0)
-                pi, _ = network[i].apply(params[i], obs_single)
+                obs = jnp.expand_dims(obs_batch[i],axis=0)
+                pi, _ = network[i].apply(params[i], obs)
                 rng, _rng = jax.random.split(rng)
                 single_action = pi.sample(seed=_rng)
                 env_act[env.agents[i]] = single_action
 
-        # Step environment
+        
+        # 执行动作
         rng, _rng = jax.random.split(rng)
         obs, state, reward, done, info = env.step(_rng, state, [v.item() for v in env_act.values()])
-
-        # Update statistics
-        for agent in env.agents:
-            total_reward[agent] += float(reward[agent])
-
-        # Check food collected
-        food_collected = config["ENV_KWARGS"]["num_food"] - int(jnp.sum(state.food_active))
-
-        # Render
+        done = done["__all__"]
+        
+        # 记录结果
+        # episode_reward += sum(reward.values())
+        
+        # 渲染
         img = env.render(state)
         pics.append(img)
-        Image.fromarray(img).save(f"{root_dir}/state_pics/step_{o_t}.png")
-
-        if done["__all__"]:
-            print(f"Episode ended at step {o_t + 1}")
-            break
-
-    # Print statistics
-    print(f"\n{'='*60}")
-    print("Evaluation Results:")
-    print(f"{'='*60}")
-    print(f"Total Steps: {o_t + 1}")
-    print(f"Food Collected: {food_collected}/{config['ENV_KWARGS']['num_food']}")
-    print(f"Collection Rate: {food_collected / config['ENV_KWARGS']['num_food'] * 100:.1f}%")
-    for i, agent in enumerate(env.agents):
-        print(f"Agent {i} Total Reward: {total_reward[agent]:.4f}")
-    print(f"{'='*60}\n")
-
-    # Save GIF
+        
+        print('###################')
+        print(f'Actions: {env_act}')
+        print(f'Reward: {reward}')
+        # print(f'State: {state.agent_locs}')
+        # print(f'State: {state.claimed_indicator_time_matrix}')
+        print("###################")
+    
+    # 保存GIF
     print(f"Saving Episode GIF")
     pics = [Image.fromarray(np.array(img)) for img in pics]
+    n_agents = len(env.agents)
     gif_path = f"{root_dir}/{n_agents}-agents_seed-{config['SEED']}_frames-{o_t + 1}.gif"
     pics[0].save(
         gif_path,
@@ -573,19 +647,87 @@ def evaluate(params, env, save_path, config):
         loop=0,
     )
 
-    # Log to WandB
+    # Log the GIF to WandB
     print("Logging GIF to WandB")
-    wandb.log({
-        "Episode GIF": wandb.Video(gif_path, caption="Evaluation Episode", format="gif"),
-        "eval/food_collected": food_collected,
-        "eval/collection_rate": food_collected / config['ENV_KWARGS']['num_food'],
-        "eval/total_reward": sum(total_reward.values()),
-    })
+    wandb.log({"Episode GIF": wandb.Video(gif_path, caption="Evaluation Episode", format="gif")})
+        
+        # print(f"Episode {episode} total reward: {episode_reward}")
+def tune(default_config):
+    """
+    Hyperparameter sweep with wandb, including logic to:
+    - Initialize wandb
+    - Train for each hyperparameter set
+    - Save checkpoint
+    - Evaluate and log GIF
+    """
+    import copy
+
+    default_config = OmegaConf.to_container(default_config)
+
+    sweep_config = {
+        "name": "ippo_cnn_lb_foraging",
+        "method": "grid",
+        "metric": {
+            "name": "returned_episode_returns",
+            "goal": "maximize",
+        },
+        "parameters": {
+            # "LR": {"values": [0.001, 0.0005, 0.0001, 0.00005]},
+            # "ACTIVATION": {"values": ["relu", "tanh"]},
+            # "UPDATE_EPOCHS": {"values": [2, 4, 8]},
+            # "NUM_MINIBATCHES": {"values": [4, 8, 16, 32]},
+            # "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
+            # "ENT_COEF": {"values": [0.001, 0.01, 0.1]},
+            # "NUM_STEPS": {"values": [64, 128, 256]},
+            # "ENV_KWARGS.svo_w": {"values": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]},
+            # "ENV_KWARGS.svo_ideal_angle_degrees": {"values": [0, 45, 90]},
+            "SEED": {"values": [42, 52, 62]},
+
+        },
+    }
+
+    def wrapped_make_train():
+
+
+        wandb.init(project=default_config["PROJECT"])
+        config = copy.deepcopy(default_config)
+        # only overwrite the single nested key we're sweeping
+        for k, v in dict(wandb.config).items():
+            if "." in k:
+                parent, child = k.split(".", 1)
+                config[parent][child] = v
+            else:
+                config[k] = v
+
+
+        # Rename the run for clarity
+        run_name = f"sweep_{config['ENV_NAME']}_seed{config['SEED']}"
+        wandb.run.name = run_name
+        print("Running experiment:", run_name)
+
+        rng = jax.random.PRNGKey(config["SEED"])
+        rngs = jax.random.split(rng, config["NUM_SEEDS"])
+        train_vjit = jax.jit(jax.vmap(make_train(config)))
+        outs = jax.block_until_ready(train_vjit(rngs))
+        train_state = jax.tree_map(lambda x: x[0], outs["runner_state"][0])
+
+        # Evaluate and log
+        # params = load_params(train_state.params)
+        # test_env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        # evaluate(params, test_env, config)
+
+    wandb.login()
+    sweep_id = wandb.sweep(
+        sweep_config, entity=default_config["ENTITY"], project=default_config["PROJECT"]
+    )
+    wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
 @hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_lb_foraging")
 def main(config):
-    single_run(config)
-
+    if config["TUNE"]:
+        tune(config)
+    else:
+        single_run(config)
 if __name__ == "__main__":
     main()

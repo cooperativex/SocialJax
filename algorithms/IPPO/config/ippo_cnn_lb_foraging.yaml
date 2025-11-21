@@ -1,9 +1,9 @@
 "LR": 0.0005
 "NUM_ENVS": 256
-"NUM_STEPS": 50  # Episode length for lb_foraging
+"NUM_STEPS": 128
 "TOTAL_TIMESTEPS": 5e7
 "UPDATE_EPOCHS": 2
-"NUM_MINIBATCHES": 128
+"NUM_MINIBATCHES": 16
 "GAMMA": 0.99
 "GAE_LAMBDA": 0.95
 "CLIP_EPS": 0.2
@@ -16,22 +16,18 @@
 "SHAPING_BEGIN": 1e6
 "ENV_KWARGS":
   "num_agents" : 3
-  "field_size" : [8, 8]
   "num_food" : 5
   "max_food_level" : 3
-  "min_food_level" : 1
-  "max_agent_level" : 3
-  "min_agent_level" : 1
+  "max_player_level" : 2  # Fixed: was max_agent_level
   "num_inner_steps" : 50
-  "shared_rewards" : False  # False for individual rewards, True for common rewards
-  "force_coop" : False  # True to force cooperation (all food at max level)
-  "sight" : 3
+  "num_outer_steps" : 1
+  "shared_rewards" : True  # Attention: switch to False for individual rewards; True for common rewards
+  "force_coop" : False
+  "sight" : 7  # Full 7x7 observation window
   "cnn" : True
   "jit" : True
-  "grid_observation" : True
-  "observe_agent_levels" : True
   "normalize_reward" : True
-  "penalty" : 0.0
+  "load_penalty" : 0.1  # Fixed: was "penalty"
 
 
 "ANNEAL_LR": True
@@ -40,7 +36,7 @@
 "TUNE": False
 
 "REWARD": "individual" # individual; common
-"GIF_NUM_FRAMES": 50
+"GIF_NUM_FRAMES": 250
 "PARAMETER_SHARING": True
 
 # WandB Params
@@ -48,6 +44,4 @@
 "PROJECT": "socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
-  - IPPO
-  - LB_FORAGING
   - INDIVIDUAL_REWARD # COMMON_REWARD

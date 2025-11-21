@@ -389,14 +389,16 @@ def make_train(config):
 
                     return modified_adv
 
-                # Apply to all agents
-                modified_advantages_list = []
-                for i in range(env.num_agents):
-                    modified_adv = apply_aaa_to_agent(i, advantages_reshaped)
-                    modified_advantages_list.append(modified_adv)
+                # Apply to all agents using vmap (vectorized over agent_idx)
+                # This is much faster than Python loop - compiles to parallel operations
+                modified_advantages = jax.vmap(
+                    apply_aaa_to_agent,
+                    in_axes=(0, None),  # vmap over agent_idx, advantages_reshaped is broadcasted
+                    out_axes=0  # output: (num_agents, num_steps, num_envs)
+                )(jnp.arange(env.num_agents), advantages_reshaped)
 
-                # Stack back: (num_agents, num_steps, num_envs) -> (num_steps, num_agents, num_envs)
-                modified_advantages = jnp.stack(modified_advantages_list, axis=1)
+                # Transpose to: (num_steps, num_agents, num_envs)
+                modified_advantages = jnp.transpose(modified_advantages, (1, 0, 2))
 
                 # Reshape back to original: (num_steps, num_actors)
                 modified_advantages = modified_advantages.reshape(num_steps, config["NUM_ACTORS"])
