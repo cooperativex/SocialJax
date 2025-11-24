@@ -1,7 +1,7 @@
 "LR": 0.0005
-"NUM_ENVS": 256  # Increased from 5 to 256 for better GPU utilization (matches IPPO)
+"NUM_ENVS": 2  # Increased from 5 to 256 for better GPU utilization (matches IPPO)
 "NUM_STEPS": 100
-"TOTAL_TIMESTEPS": 1e9
+"TOTAL_TIMESTEPS": 3e8
 "UPDATE_EPOCHS": 2
 "NUM_MINIBATCHES": 4
 "GAMMA": 0.99
