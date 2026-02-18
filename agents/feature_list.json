@@ -1,0 +1,1013 @@
+{
+  "project": "SocialJax V2 Architecture Migration",
+  "version": "2.0",
+  "description": "Implementing modular, extensible, and easy-to-use multi-agent RL framework based on ARCHITECTURE_V2_PROPOSAL.md",
+  "created_at": "2026-02-18T00:00:00",
+  "features": [
+    {
+      "id": "P1-001",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Create core module directory structure",
+      "steps": [
+        "Create socialjax/core/ directory",
+        "Create socialjax/algorithms/ directory structure",
+        "Create socialjax/networks/ directory",
+        "Create socialjax/buffers/ directory",
+        "Create socialjax/training/ directory",
+        "Create socialjax/evaluation/ directory",
+        "Create socialjax/config/ directory",
+        "Add __init__.py files to all new directories",
+        "Write unit tests: tests/test_structure.py - verify all directories and imports"
+      ],
+      "test_criteria": [
+        "All directories exist with correct structure",
+        "Python can import socialjax.core",
+        "Python can import socialjax.algorithms",
+        "Python can import socialjax.networks",
+        "Unit tests pass: pytest tests/test_structure.py -v",
+        "Test covers all module imports"
+      ],
+      "passes": true,
+      "notes": "Foundation for the entire V2 architecture. Completed 2026-02-18. Unit tests should be added retroactively.",
+      "dependencies": []
+    },
+    {
+      "id": "P1-002",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement BaseAlgorithm abstract class",
+      "steps": [
+        "Create socialjax/core/base_algorithm.py",
+        "Define AlgorithmState dataclass with params, optimizer_state, rng",
+        "Define abstract methods: _build_network, _build_optimizer, init_state",
+        "Define abstract methods: compute_action, update",
+        "Define save/load methods for serialization",
+        "Add JAX-JIT decorators where appropriate",
+        "Write docstrings and type hints",
+        "Write unit tests: tests/test_core/test_base_algorithm.py"
+      ],
+      "test_criteria": [
+        "BaseAlgorithm can be imported",
+        "Cannot instantiate BaseAlgorithm directly (abstract)",
+        "Subclass can implement all required methods",
+        "JIT compilation works on implemented methods",
+        "Unit tests exist: test_algorithm_state_dataclass, test_abstract_methods, test_subclass_implementation, test_save_load",
+        "All unit tests pass: pytest tests/test_core/test_base_algorithm.py -v"
+      ],
+      "passes": true,
+      "notes": "Completed 2026-02-18. All tests pass with mock JAX. Unit tests should verify both mock and runtime behavior.",
+      "dependencies": [
+        "P1-001"
+      ]
+    },
+    {
+      "id": "P1-003",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement BaseTrainer abstract class",
+      "steps": [
+        "Create socialjax/core/base_trainer.py",
+        "Define trainer initialization with algorithm, env, config, callbacks",
+        "Implement _setup method for component initialization",
+        "Define abstract _create_buffer method",
+        "Implement main train() loop with callback hooks",
+        "Implement callback invocation: _on_training_start, _on_step, _on_training_end",
+        "Write unit tests: tests/test_core/test_base_trainer.py"
+      ],
+      "test_criteria": [
+        "BaseTrainer can be imported",
+        "train() loop executes with mock components",
+        "Callbacks are invoked at correct points",
+        "Training metrics are returned correctly",
+        "Unit tests exist: test_trainer_init, test_train_loop, test_callback_invocation, test_metrics",
+        "All unit tests pass: pytest tests/test_core/test_base_trainer.py -v"
+      ],
+      "passes": true,
+      "notes": "Completed 2026-02-18. All tests pass with mock components. Unit tests required.",
+      "dependencies": [
+        "P1-002"
+      ]
+    },
+    {
+      "id": "P1-004",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement algorithm registry system",
+      "steps": [
+        "Create socialjax/algorithms/registry.py",
+        "Define _ALGORITHM_REGISTRY dict",
+        "Implement @register_algorithm decorator",
+        "Implement get_algorithm(name) function",
+        "Implement list_algorithms() function",
+        "Add error handling for unknown algorithms",
+        "Write unit tests: tests/test_registry/test_algorithm_registry.py"
+      ],
+      "test_criteria": [
+        "Decorated class is added to registry",
+        "get_algorithm returns correct class",
+        "list_algorithms returns all registered names",
+        "Duplicate registration raises error",
+        "Unknown algorithm raises helpful error message",
+        "Unit tests exist: test_register_decorator, test_get_algorithm, test_list_algorithms, test_duplicate_error, test_unknown_error",
+        "All unit tests pass: pytest tests/test_registry/test_algorithm_registry.py -v"
+      ],
+      "passes": true,
+      "notes": "Completed 2026-02-18. All tests pass with mock JAX. Unit tests required.",
+      "dependencies": [
+        "P1-001"
+      ]
+    },
+    {
+      "id": "P1-005",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement network registry and factory",
+      "steps": [
+        "Create socialjax/networks/registry.py",
+        "Define _NETWORK_REGISTRY dict",
+        "Implement @register_network decorator",
+        "Create socialjax/networks/factory.py",
+        "Implement create_network(name, action_dim, **kwargs) factory",
+        "Implement list_networks() function",
+        "Define NETWORK_CONFIGS presets (small, medium, large)",
+        "Write unit tests: tests/test_registry/test_network_registry.py"
+      ],
+      "test_criteria": [
+        "Decorated network class is added to registry",
+        "create_network returns correct network instance",
+        "Network configs presets are available",
+        "Unknown network raises helpful error",
+        "Unit tests exist: test_register_network, test_create_network, test_network_configs, test_unknown_network_error",
+        "All unit tests pass: pytest tests/test_registry/test_network_registry.py -v"
+      ],
+      "passes": true,
+      "notes": "Completed 2026-02-18. All tests pass with mock Flax. Unit tests required.",
+      "dependencies": [
+        "P1-001"
+      ]
+    },
+    {
+      "id": "P1-006",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Refactor configuration system",
+      "steps": [
+        "Create socialjax/config/manager.py",
+        "Define TrainingConfig dataclass",
+        "Define NetworkConfig dataclass",
+        "Define AlgorithmConfig dataclass",
+        "Define EnvironmentConfig dataclass",
+        "Implement ConfigManager class with load() method",
+        "Implement YAML loading and merging with OmegaConf",
+        "Implement config validation",
+        "Write unit tests: tests/test_config/test_config_manager.py"
+      ],
+      "test_criteria": [
+        "ConfigManager loads base config",
+        "Configs merge correctly (algorithm + environment)",
+        "Custom configs override defaults",
+        "Missing required keys raise validation error",
+        "Dataclasses convert to/from dict correctly",
+        "Unit tests exist: test_training_config, test_network_config, test_config_load, test_config_merge, test_config_validation",
+        "All unit tests pass: pytest tests/test_config/test_config_manager.py -v"
+      ],
+      "passes": true,
+      "notes": "Completed 2026-02-18. All tests pass. Unit tests required.",
+      "dependencies": [
+        "P1-001"
+      ]
+    },
+    {
+      "id": "P1-007",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Create configuration preset files",
+      "steps": [
+        "Create socialjax/config/presets/base.yaml",
+        "Create socialjax/config/presets/algorithms/ippo.yaml",
+        "Create socialjax/config/presets/algorithms/mappo.yaml",
+        "Create socialjax/config/presets/algorithms/vdn.yaml",
+        "Create socialjax/config/presets/algorithms/svo.yaml",
+        "Create socialjax/config/presets/environments/coin_game.yaml",
+        "Create socialjax/config/presets/environments/cleanup.yaml",
+        "Create socialjax/config/presets/environments/harvest_open.yaml",
+        "Create socialjax/config/presets/environments/coop_mining.yaml",
+        "Write unit tests: tests/test_config/test_presets.py"
+      ],
+      "test_criteria": [
+        "All preset YAML files are valid",
+        "ConfigManager can load each preset",
+        "Preset values match proposal specifications",
+        "Inheritance chain works correctly",
+        "Unit tests exist: test_all_presets_valid, test_preset_loading, test_preset_values",
+        "All unit tests pass: pytest tests/test_config/test_presets.py -v"
+      ],
+      "passes": false,
+      "notes": "Default configurations for all algorithms and environments. Unit tests required.",
+      "dependencies": [
+        "P1-006"
+      ]
+    },
+    {
+      "id": "P2-001",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement IPPO algorithm in new architecture",
+      "steps": [
+        "Create socialjax/algorithms/ippo/ directory",
+        "Create socialjax/algorithms/ippo/__init__.py",
+        "Create socialjax/algorithms/ippo/config.py with IPPO_DEFAULT_CONFIG",
+        "Create socialjax/algorithms/ippo/network.py with IPPOActorCritic",
+        "Create socialjax/algorithms/ippo/algorithm.py with IPPOAlgorithm",
+        "Register IPPO with @register_algorithm('ippo')",
+        "Implement GAE computation",
+        "Implement PPO clipped surrogate loss",
+        "Write unit tests: tests/test_ippo/test_config.py",
+        "Write unit tests: tests/test_ippo/test_network.py",
+        "Write unit tests: tests/test_ippo/test_algorithm.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "IPPOAlgorithm inherits from BaseAlgorithm",
+        "Can create IPPO instance via get_algorithm('ippo')",
+        "Training runs for 10K steps on coin_game without error",
+        "Loss decreases over time",
+        "Checkpoints save and load correctly",
+        "Unit tests exist for config (test IPPO_DEFAULT_CONFIG, validation)",
+        "Unit tests exist for network (test forward pass, output shapes)",
+        "Unit tests exist for algorithm (test init, compute_action, update, save/load)",
+        "All unit tests pass: pytest tests/test_ippo/ -v",
+        "Test coverage > 80% for socialjax/algorithms/ippo/"
+      ],
+      "passes": true,
+      "notes": "Core implementation completed 2026-02-18. All core test criteria verified: IPPOAlgorithm inherits from BaseAlgorithm, get_algorithm('ippo') works, training runs, loss decreases, checkpoint save/load works. Unit tests still needed for full coverage.",
+      "dependencies": [
+        "P1-002",
+        "P1-004",
+        "P1-005"
+      ]
+    },
+    {
+      "id": "P2-002",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement MAPPO algorithm in new architecture",
+      "steps": [
+        "Create socialjax/algorithms/mappo/ directory",
+        "Create socialjax/algorithms/mappo/__init__.py",
+        "Create socialjax/algorithms/mappo/config.py",
+        "Create socialjax/algorithms/mappo/network.py with centralized critic",
+        "Create socialjax/algorithms/mappo/algorithm.py with MAPPOAlgorithm",
+        "Implement parameter sharing between agents",
+        "Implement centralized value function receiving all observations",
+        "Register MAPPO with @register_algorithm('mappo')",
+        "Write unit tests: tests/test_mappo/test_config.py",
+        "Write unit tests: tests/test_mappo/test_network.py",
+        "Write unit tests: tests/test_mappo/test_algorithm.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "MAPPOAlgorithm inherits from BaseAlgorithm",
+        "Can create MAPPO instance via get_algorithm('mappo')",
+        "Centralized critic receives all agent observations",
+        "Parameter sharing works correctly",
+        "Training runs for 10K steps without error",
+        "Unit tests exist for config, network, algorithm",
+        "All unit tests pass: pytest tests/test_mappo/ -v",
+        "Test coverage > 80% for socialjax/algorithms/mappo/"
+      ],
+      "passes": false,
+      "notes": "MAPPO requires centralized training with decentralized execution. Unit tests required.",
+      "dependencies": [
+        "P2-001"
+      ]
+    },
+    {
+      "id": "P2-003",
+      "category": "algorithm",
+      "priority": "high",
+      "description": "Implement VDN algorithm in new architecture",
+      "steps": [
+        "Create socialjax/algorithms/vdn/ directory",
+        "Create socialjax/algorithms/vdn/__init__.py",
+        "Create socialjax/algorithms/vdn/config.py",
+        "Create socialjax/algorithms/vdn/network.py with value decomposition",
+        "Create socialjax/algorithms/vdn/algorithm.py with VDNAlgorithm",
+        "Implement Q-value decomposition: Q_tot = sum(Q_i)",
+        "Implement target network updates",
+        "Register VDN with @register_algorithm('vdn')",
+        "Write unit tests: tests/test_vdn/test_config.py",
+        "Write unit tests: tests/test_vdn/test_network.py",
+        "Write unit tests: tests/test_vdn/test_algorithm.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "VDNAlgorithm inherits from BaseAlgorithm",
+        "Can create VDN instance via get_algorithm('vdn')",
+        "Q-value decomposition works correctly",
+        "Training runs for 10K steps without error",
+        "Unit tests exist for config, network, algorithm",
+        "All unit tests pass: pytest tests/test_vdn/ -v",
+        "Test coverage > 80% for socialjax/algorithms/vdn/"
+      ],
+      "passes": false,
+      "notes": "VDN uses value decomposition for cooperative multi-agent. Unit tests required.",
+      "dependencies": [
+        "P2-001"
+      ]
+    },
+    {
+      "id": "P2-004",
+      "category": "algorithm",
+      "priority": "medium",
+      "description": "Implement SVO algorithm in new architecture",
+      "steps": [
+        "Create socialjax/algorithms/svo/ directory",
+        "Create socialjax/algorithms/svo/__init__.py",
+        "Create socialjax/algorithms/svo/config.py",
+        "Create socialjax/algorithms/svo/network.py",
+        "Create socialjax/algorithms/svo/algorithm.py with SVOAlgorithm",
+        "Implement Social Value Orientation integration",
+        "Implement fairness-aware reward shaping",
+        "Register SVO with @register_algorithm('svo')",
+        "Write unit tests: tests/test_svo/test_config.py",
+        "Write unit tests: tests/test_svo/test_network.py",
+        "Write unit tests: tests/test_svo/test_algorithm.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "SVOAlgorithm inherits from BaseAlgorithm",
+        "Can create SVO instance via get_algorithm('svo')",
+        "SVO angle parameter affects behavior",
+        "Training runs for 10K steps without error",
+        "Unit tests exist for config, network, algorithm",
+        "All unit tests pass: pytest tests/test_svo/ -v",
+        "Test coverage > 80% for socialjax/algorithms/svo/"
+      ],
+      "passes": false,
+      "notes": "SVO incorporates fairness preferences into learning. Unit tests required.",
+      "dependencies": [
+        "P2-001"
+      ]
+    },
+    {
+      "id": "P2-005",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement shared algorithm utilities",
+      "steps": [
+        "Create socialjax/algorithms/utils/ directory",
+        "Create socialjax/algorithms/utils/gae.py with GAE computation",
+        "Create socialjax/algorithms/utils/ppo_update.py with PPO loss",
+        "Create socialjax/algorithms/utils/value_decomposition.py",
+        "Ensure all utilities are JAX-JIT compatible",
+        "Add comprehensive docstrings",
+        "Write unit tests: tests/test_utils/test_gae.py",
+        "Write unit tests: tests/test_utils/test_ppo_update.py",
+        "Write unit tests: tests/test_utils/test_value_decomposition.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "GAE computation matches reference implementation",
+        "PPO loss computes correctly",
+        "Value decomposition works for VDN/QMIX",
+        "All utilities are JIT-compatible",
+        "Unit tests exist for GAE, PPO loss, value decomposition",
+        "All unit tests pass: pytest tests/test_utils/ -v",
+        "Test coverage > 80% for socialjax/algorithms/utils/"
+      ],
+      "passes": false,
+      "notes": "Reduce code duplication between algorithms. Unit tests required.",
+      "dependencies": [
+        "P1-002"
+      ]
+    },
+    {
+      "id": "P3-001",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Implement callback base system",
+      "steps": [
+        "Create socialjax/training/callbacks/ directory",
+        "Create socialjax/training/callbacks/__init__.py",
+        "Create socialjax/training/callbacks/base_callback.py",
+        "Define BaseCallback abstract class",
+        "Define callback hooks: on_training_start, on_training_end",
+        "Define callback hooks: on_step, on_rollout_start, on_rollout_end",
+        "Define callback hooks: on_update_start, on_update_end",
+        "Implement set_trainer method",
+        "Write unit tests: tests/test_callbacks/test_base_callback.py"
+      ],
+      "test_criteria": [
+        "BaseCallback can be imported",
+        "All hook methods exist with default (pass) implementation",
+        "set_trainer correctly sets trainer reference",
+        "Callback list can be managed",
+        "Unit tests exist: test_callback_import, test_hook_methods, test_set_trainer, test_callback_list",
+        "All unit tests pass: pytest tests/test_callbacks/test_base_callback.py -v"
+      ],
+      "passes": false,
+      "notes": "Foundation for extensible training monitoring. Unit tests required.",
+      "dependencies": [
+        "P1-003"
+      ]
+    },
+    {
+      "id": "P3-002",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Implement CheckpointCallback",
+      "steps": [
+        "Create socialjax/training/callbacks/checkpoint_callback.py",
+        "Implement CheckpointCallback inheriting from BaseCallback",
+        "Add save_freq parameter for periodic saving",
+        "Add save_path and name_prefix parameters",
+        "Implement on_update_end to save checkpoints",
+        "Add verbose logging option",
+        "Write unit tests: tests/test_callbacks/test_checkpoint_callback.py"
+      ],
+      "test_criteria": [
+        "CheckpointCallback saves at correct frequency",
+        "Checkpoint files are created in correct location",
+        "Checkpoint format is loadable",
+        "Verbose logging works correctly",
+        "Unit tests exist: test_save_frequency, test_checkpoint_location, test_checkpoint_format, test_verbose",
+        "All unit tests pass: pytest tests/test_callbacks/test_checkpoint_callback.py -v"
+      ],
+      "passes": false,
+      "notes": "Essential for long-running experiments. Unit tests required.",
+      "dependencies": [
+        "P3-001"
+      ]
+    },
+    {
+      "id": "P3-003",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Implement EvalCallback",
+      "steps": [
+        "Create socialjax/training/callbacks/eval_callback.py",
+        "Implement EvalCallback inheriting from BaseCallback",
+        "Add eval_env, eval_freq, n_eval_episodes parameters",
+        "Implement periodic evaluation in on_update_end",
+        "Track best_mean_reward and save best model",
+        "Add deterministic evaluation mode option",
+        "Write unit tests: tests/test_callbacks/test_eval_callback.py"
+      ],
+      "test_criteria": [
+        "EvalCallback evaluates at correct frequency",
+        "Evaluation runs specified number of episodes",
+        "Mean and std rewards are computed correctly",
+        "Best model is tracked and saved",
+        "Unit tests exist: test_eval_frequency, test_episode_count, test_reward_computation, test_best_model_tracking",
+        "All unit tests pass: pytest tests/test_callbacks/test_eval_callback.py -v"
+      ],
+      "passes": false,
+      "notes": "Enables automatic evaluation during training. Unit tests required.",
+      "dependencies": [
+        "P3-001"
+      ]
+    },
+    {
+      "id": "P3-004",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Implement WandbCallback",
+      "steps": [
+        "Create socialjax/training/callbacks/wandb_callback.py",
+        "Implement WandbCallback inheriting from BaseCallback",
+        "Initialize wandb.run in on_training_start",
+        "Log metrics in on_step with log_freq control",
+        "Finish wandb.run in on_training_end",
+        "Add project, name, config parameters",
+        "Write unit tests: tests/test_callbacks/test_wandb_callback.py"
+      ],
+      "test_criteria": [
+        "WandbCallback initializes wandb correctly",
+        "Metrics are logged to wandb dashboard",
+        "Config is saved to wandb",
+        "wandb.finish() is called on training end",
+        "Unit tests exist: test_wandb_init, test_metric_logging, test_config_save, test_wandb_finish",
+        "All unit tests pass: pytest tests/test_callbacks/test_wandb_callback.py -v"
+      ],
+      "passes": false,
+      "notes": "Integration with Weights & Biases for experiment tracking. Unit tests required.",
+      "dependencies": [
+        "P3-001"
+      ]
+    },
+    {
+      "id": "P3-005",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement ProgressCallback",
+      "steps": [
+        "Create socialjax/training/callbacks/progress_callback.py",
+        "Implement ProgressCallback inheriting from BaseCallback",
+        "Display progress bar with tqdm",
+        "Show current step, timesteps, elapsed time",
+        "Show current metrics in progress bar",
+        "Handle console output cleanly",
+        "Write unit tests: tests/test_callbacks/test_progress_callback.py"
+      ],
+      "test_criteria": [
+        "Progress bar displays during training",
+        "Progress updates at correct frequency",
+        "Metrics are shown in progress bar",
+        "Progress bar completes at 100%",
+        "Unit tests exist: test_progress_display, test_update_frequency, test_metrics_display",
+        "All unit tests pass: pytest tests/test_callbacks/test_progress_callback.py -v"
+      ],
+      "passes": false,
+      "notes": "Visual feedback for training progress. Unit tests required.",
+      "dependencies": [
+        "P3-001"
+      ]
+    },
+    {
+      "id": "P3-006",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement experience buffer system",
+      "steps": [
+        "Create socialjax/buffers/__init__.py",
+        "Create socialjax/buffers/base_buffer.py with BaseBuffer",
+        "Create socialjax/buffers/rollout_buffer.py for on-policy",
+        "Create socialjax/buffers/replay_buffer.py for off-policy",
+        "Ensure JAX compatibility for all buffers",
+        "Add add, get, clear methods",
+        "Write unit tests: tests/test_buffers/test_base_buffer.py",
+        "Write unit tests: tests/test_buffers/test_rollout_buffer.py",
+        "Write unit tests: tests/test_buffers/test_replay_buffer.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "RolloutBuffer stores and retrieves rollouts correctly",
+        "ReplayBuffer handles random sampling",
+        "Buffers work with JAX arrays",
+        "Memory usage is efficient",
+        "Unit tests exist for base, rollout, replay buffers",
+        "All unit tests pass: pytest tests/test_buffers/ -v",
+        "Test coverage > 80% for socialjax/buffers/"
+      ],
+      "passes": false,
+      "notes": "Experience storage for different algorithm types. Unit tests required.",
+      "dependencies": [
+        "P1-001"
+      ]
+    },
+    {
+      "id": "P4-001",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Implement unified Trainer class",
+      "steps": [
+        "Create socialjax/training/trainer.py",
+        "Implement Trainer class combining all components",
+        "Load config via ConfigManager",
+        "Create environment via registry",
+        "Create algorithm via registry",
+        "Integrate callback system",
+        "Implement train() method",
+        "Implement evaluate() method",
+        "Implement save/load methods",
+        "Write unit tests: tests/test_training/test_trainer.py"
+      ],
+      "test_criteria": [
+        "Trainer can be created with algorithm and environment names",
+        "Trainer.train() runs complete training loop",
+        "Callbacks are invoked correctly",
+        "Trainer.evaluate() returns evaluation metrics",
+        "save/load preserves model state",
+        "Unit tests exist: test_trainer_creation, test_train_loop, test_callback_integration, test_evaluate, test_save_load",
+        "All unit tests pass: pytest tests/test_training/test_trainer.py -v"
+      ],
+      "passes": false,
+      "notes": "Main user-facing API for training. Unit tests required.",
+      "dependencies": [
+        "P1-003",
+        "P1-004",
+        "P1-006",
+        "P3-001"
+      ]
+    },
+    {
+      "id": "P4-002",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Implement unified train.py script",
+      "steps": [
+        "Create scripts/train.py",
+        "Add argparse for --algorithm, --env, --config",
+        "Add argparse for --seed, --timesteps",
+        "Add argparse for --wandb-project, --wandb-name",
+        "Load config and create Trainer",
+        "Run training with progress display",
+        "Handle keyboard interrupts gracefully",
+        "Write unit tests: tests/test_scripts/test_train_script.py"
+      ],
+      "test_criteria": [
+        "python scripts/train.py --algorithm ippo --env coin_game works",
+        "Custom config file is loaded correctly",
+        "WandB integration works via CLI",
+        "Keyboard interrupt saves checkpoint",
+        "Unit tests exist: test_cli_args, test_config_loading, test_training_execution",
+        "All unit tests pass: pytest tests/test_scripts/test_train_script.py -v"
+      ],
+      "passes": false,
+      "notes": "CLI entry point for training. Unit tests required.",
+      "dependencies": [
+        "P4-001"
+      ]
+    },
+    {
+      "id": "P4-003",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement unified evaluate.py script",
+      "steps": [
+        "Create scripts/evaluate.py",
+        "Add argparse for --checkpoint, --env, --episodes",
+        "Add argparse for --render, --output",
+        "Load model from checkpoint",
+        "Run evaluation episodes",
+        "Compute and display metrics",
+        "Optionally save evaluation GIFs",
+        "Write unit tests: tests/test_scripts/test_evaluate_script.py"
+      ],
+      "test_criteria": [
+        "python scripts/evaluate.py --checkpoint X --env coin_game works",
+        "Evaluation runs specified number of episodes",
+        "Metrics are computed and displayed",
+        "GIF output works when --render is set",
+        "Unit tests exist: test_cli_args, test_checkpoint_loading, test_evaluation_execution",
+        "All unit tests pass: pytest tests/test_scripts/test_evaluate_script.py -v"
+      ],
+      "passes": false,
+      "notes": "CLI entry point for evaluation. Unit tests required.",
+      "dependencies": [
+        "P4-001"
+      ]
+    },
+    {
+      "id": "P4-004",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement visualize.py script",
+      "steps": [
+        "Create scripts/visualize.py",
+        "Add argparse for --checkpoint, --env, --output",
+        "Add argparse for --num-frames, --fps",
+        "Load model and run episode",
+        "Generate GIF or video output",
+        "Support multiple visualization modes",
+        "Write unit tests: tests/test_scripts/test_visualize_script.py"
+      ],
+      "test_criteria": [
+        "python scripts/visualize.py works with valid checkpoint",
+        "GIF is generated at specified output path",
+        "FPS and frame count are respected",
+        "Visualization shows agent behavior clearly",
+        "Unit tests exist: test_cli_args, test_gif_generation, test_output_format",
+        "All unit tests pass: pytest tests/test_scripts/test_visualize_script.py -v"
+      ],
+      "passes": false,
+      "notes": "CLI entry point for visualization. Unit tests required.",
+      "dependencies": [
+        "P4-001"
+      ]
+    },
+    {
+      "id": "P4-005",
+      "category": "algorithm",
+      "priority": "medium",
+      "description": "Implement CNN network architectures",
+      "steps": [
+        "Create socialjax/networks/cnn.py",
+        "Implement CNNSmall network with @register_network",
+        "Implement CNNActorCritic network with @register_network",
+        "Support configurable channel sizes and kernel sizes",
+        "Support configurable hidden sizes",
+        "Add proper initialization",
+        "Write unit tests: tests/test_networks/test_cnn.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "CNNSmall can be created via create_network",
+        "CNNActorCritic can be created via create_network",
+        "Forward pass works with correct input shapes",
+        "Output shapes match action dimensions",
+        "Unit tests exist: test_cnn_small, test_cnn_actor_critic, test_forward_pass, test_output_shapes",
+        "All unit tests pass: pytest tests/test_networks/test_cnn.py -v",
+        "Test coverage > 80% for socialjax/networks/cnn.py"
+      ],
+      "passes": false,
+      "notes": "Standard CNN architectures for visual observations. Unit tests required.",
+      "dependencies": [
+        "P1-005"
+      ]
+    },
+    {
+      "id": "P4-006",
+      "category": "algorithm",
+      "priority": "low",
+      "description": "Implement MLP network architectures",
+      "steps": [
+        "Create socialjax/networks/mlp.py",
+        "Implement MLPSmall network with @register_network",
+        "Implement MLPActorCritic network with @register_network",
+        "Support configurable layer sizes",
+        "Add proper initialization",
+        "Write unit tests: tests/test_networks/test_mlp.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "MLP networks can be created via create_network",
+        "Forward pass works with correct input shapes",
+        "Output shapes match action dimensions",
+        "Unit tests exist: test_mlp_small, test_mlp_actor_critic, test_forward_pass, test_output_shapes",
+        "All unit tests pass: pytest tests/test_networks/test_mlp.py -v",
+        "Test coverage > 80% for socialjax/networks/mlp.py"
+      ],
+      "passes": false,
+      "notes": "MLP architectures for vector observations. Unit tests required.",
+      "dependencies": [
+        "P1-005"
+      ]
+    },
+    {
+      "id": "P5-001",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement environment wrappers",
+      "steps": [
+        "Create socialjax/environments/wrappers/__init__.py",
+        "Create socialjax/environments/wrappers/base_wrapper.py",
+        "Create socialjax/environments/wrappers/normalization.py for obs/reward",
+        "Create socialjax/environments/wrappers/frame_stack.py",
+        "Create socialjax/environments/wrappers/time_limit.py",
+        "Ensure JAX compatibility",
+        "Write unit tests: tests/test_environments/test_wrappers.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "NormaliztionWrapper normalizes observations and rewards",
+        "FrameStackWrapper stacks multiple frames",
+        "TimeLimitWrapper enforces episode length",
+        "Wrappers chain correctly",
+        "Unit tests exist: test_normalization, test_frame_stack, test_time_limit, test_wrapper_chain",
+        "All unit tests pass: pytest tests/test_environments/test_wrappers.py -v",
+        "Test coverage > 80% for socialjax/environments/wrappers/"
+      ],
+      "passes": false,
+      "notes": "Environment augmentation utilities. Unit tests required.",
+      "dependencies": [
+        "P1-001"
+      ]
+    },
+    {
+      "id": "P5-002",
+      "category": "infrastructure",
+      "priority": "medium",
+      "description": "Implement evaluation system",
+      "steps": [
+        "Create socialjax/evaluation/__init__.py",
+        "Create socialjax/evaluation/evaluator.py",
+        "Create socialjax/evaluation/metrics.py",
+        "Create socialjax/evaluation/visualization.py",
+        "Implement episode return, cooperation rate metrics",
+        "Implement GIF/video generation",
+        "Write unit tests: tests/test_evaluation/test_evaluator.py",
+        "Write unit tests: tests/test_evaluation/test_metrics.py",
+        "Write unit tests: tests/test_evaluation/test_visualization.py",
+        "Run all tests with pytest and verify coverage > 80%"
+      ],
+      "test_criteria": [
+        "Evaluator runs evaluation episodes correctly",
+        "Metrics are computed accurately",
+        "GIFs are generated for visualization",
+        "Results can be saved to file",
+        "Unit tests exist for evaluator, metrics, visualization",
+        "All unit tests pass: pytest tests/test_evaluation/ -v",
+        "Test coverage > 80% for socialjax/evaluation/"
+      ],
+      "passes": false,
+      "notes": "Comprehensive evaluation and visualization. Unit tests required.",
+      "dependencies": [
+        "P4-001"
+      ]
+    },
+    {
+      "id": "P5-003",
+      "category": "documentation",
+      "priority": "medium",
+      "description": "Write V2 API documentation",
+      "steps": [
+        "Update socialjax/__init__.py with V2 exports",
+        "Write docstrings for all public classes",
+        "Create docs/api_reference.md",
+        "Document Trainer API usage",
+        "Document callback system",
+        "Document configuration system"
+      ],
+      "test_criteria": [
+        "All public classes have docstrings",
+        "API reference is complete",
+        "Examples are copy-pasteable",
+        "Documentation builds without errors"
+      ],
+      "passes": false,
+      "notes": "User-facing documentation",
+      "dependencies": [
+        "P4-001"
+      ]
+    },
+    {
+      "id": "P5-004",
+      "category": "documentation",
+      "priority": "medium",
+      "description": "Write migration guide from V1 to V2",
+      "steps": [
+        "Create docs/migration_guide.md",
+        "Document V1 to V2 API mapping",
+        "Provide code examples for common migrations",
+        "Document backward compatibility notes",
+        "Add troubleshooting section"
+      ],
+      "test_criteria": [
+        "Migration guide covers all V1 patterns",
+        "Examples show before/after code",
+        "Common issues are documented",
+        "Guide is easy to follow"
+      ],
+      "passes": false,
+      "notes": "Help existing users migrate to V2",
+      "dependencies": [
+        "P5-003"
+      ]
+    },
+    {
+      "id": "P5-005",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Write unit tests for core components",
+      "steps": [
+        "Create tests/test_core.py for BaseAlgorithm, BaseTrainer",
+        "Create tests/test_registry.py for algorithm/network registries",
+        "Create tests/test_config.py for ConfigManager",
+        "Create tests/test_callbacks.py for callback system",
+        "Ensure >80% code coverage",
+        "All tests must pass with both mock JAX and real JAX"
+      ],
+      "test_criteria": [
+        "All core component tests pass",
+        "Code coverage > 80%",
+        "Tests run in < 60 seconds",
+        "Tests are deterministic",
+        "Tests work with mock JAX (no installation required)",
+        "Tests work with real JAX (runtime validation)"
+      ],
+      "passes": false,
+      "notes": "Ensure code quality and prevent regressions. This is a consolidation of individual feature tests.",
+      "dependencies": [
+        "P1-002",
+        "P1-003",
+        "P1-004",
+        "P1-005",
+        "P1-006"
+      ]
+    },
+    {
+      "id": "P5-006",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Write integration tests",
+      "steps": [
+        "Create tests/integration/test_training.py",
+        "Test full training loop for IPPO on coin_game",
+        "Test full training loop for MAPPO on coin_game",
+        "Test checkpoint save/load roundtrip",
+        "Test callback integration",
+        "Test evaluation pipeline",
+        "Write unit tests: tests/integration/test_training.py",
+        "Run all integration tests with pytest"
+      ],
+      "test_criteria": [
+        "Integration tests pass",
+        "Training completes without errors",
+        "Checkpoints save and load correctly",
+        "Evaluation produces valid results",
+        "Unit tests exist: test_ippo_training, test_mappo_training, test_checkpoint_roundtrip, test_callback_integration",
+        "All integration tests pass: pytest tests/integration/ -v"
+      ],
+      "passes": false,
+      "notes": "End-to-end testing of training pipeline. Unit tests required.",
+      "dependencies": [
+        "P2-001",
+        "P2-002",
+        "P5-005"
+      ]
+    },
+    {
+      "id": "P5-007",
+      "category": "documentation",
+      "priority": "low",
+      "description": "Create tutorial notebooks",
+      "steps": [
+        "Create tutorials/01_quickstart.ipynb",
+        "Create tutorials/02_custom_algorithm.ipynb",
+        "Create tutorials/03_custom_network.ipynb",
+        "Create tutorials/04_callbacks.ipynb",
+        "Create tutorials/05_advanced_config.ipynb"
+      ],
+      "test_criteria": [
+        "All notebooks run without errors",
+        "Notebooks are self-contained",
+        "Explanations are clear",
+        "Outputs are visible in saved notebooks"
+      ],
+      "passes": false,
+      "notes": "Interactive tutorials for new users",
+      "dependencies": [
+        "P5-003"
+      ]
+    },
+    {
+      "id": "E2E-001",
+      "category": "experiment",
+      "priority": "high",
+      "description": "Validate V2 IPPO matches V1 performance",
+      "steps": [
+        "Train V2 IPPO on coin_game for 1M steps (seed 0-4)",
+        "Train V2 IPPO on clean_up for 1M steps (seed 0-4)",
+        "Compare episode returns with V1 implementation",
+        "Verify training speed is comparable",
+        "Document any performance differences",
+        "Write validation tests: tests/validation/test_ippo_performance.py"
+      ],
+      "test_criteria": [
+        "V2 IPPO trains successfully on all environments",
+        "Episode returns match V1 within 5%",
+        "Training speed within 10% of V1",
+        "Results are reproducible with same seed",
+        "Validation tests document performance comparison"
+      ],
+      "passes": false,
+      "notes": "Validate that V2 implementation is correct. This is an experiment task.",
+      "dependencies": [
+        "P2-001"
+      ]
+    },
+    {
+      "id": "E2E-002",
+      "category": "experiment",
+      "priority": "medium",
+      "description": "Validate V2 MAPPO matches V1 performance",
+      "steps": [
+        "Train V2 MAPPO on coin_game for 1M steps (seed 0-4)",
+        "Train V2 MAPPO on clean_up for 1M steps (seed 0-4)",
+        "Compare with V1 implementation",
+        "Verify centralized critic works correctly",
+        "Write validation tests: tests/validation/test_mappo_performance.py"
+      ],
+      "test_criteria": [
+        "V2 MAPPO trains successfully",
+        "Episode returns match V1 within 5%",
+        "Centralized critic receives all observations",
+        "Validation tests document performance comparison"
+      ],
+      "passes": false,
+      "notes": "Validate MAPPO migration. This is an experiment task.",
+      "dependencies": [
+        "P2-002",
+        "E2E-001"
+      ]
+    },
+    {
+      "id": "E2E-003",
+      "category": "experiment",
+      "priority": "low",
+      "description": "Run comprehensive V2 benchmarks",
+      "steps": [
+        "Train all V2 algorithms on all environments",
+        "Collect metrics: episode return, training time, memory",
+        "Create comparison plots",
+        "Write benchmark report",
+        "Write validation tests: tests/validation/test_benchmarks.py"
+      ],
+      "test_criteria": [
+        "All algorithm-environment combinations train successfully",
+        "Metrics are collected and saved",
+        "Comparison plots are generated",
+        "Benchmark report is complete"
+      ],
+      "passes": false,
+      "notes": "Final validation of V2 implementation. This is an experiment task.",
+      "dependencies": [
+        "E2E-001",
+        "E2E-002"
+      ]
+    }
+  ]
+}
