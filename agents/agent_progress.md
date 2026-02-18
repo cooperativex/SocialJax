@@ -1,3 +1,67 @@
+## Session 2026-02-18-2200
+**Duration**: 60m
+**Feature**: P2-002 - Implement MAPPO algorithm in new architecture
+**Status**: completed
+
+### What was done:
+- Created socialjax/algorithms/mappo/ directory structure
+- Created socialjax/algorithms/mappo/config.py with MAPPO_DEFAULT_CONFIG
+  - Separate LR_ACTOR and LR_CRITIC for independent learning rates
+  - SCALE_CLIP_EPS and POPULATE_CRITIC_VALUE for MAPPO-specific options
+  - USE_CENTRALIZED_VALUE flag for centralized training
+- Created socialjax/algorithms/mappo/network.py with centralized critic:
+  - MAPPOActorCNN: CNN for local observation processing
+  - MAPPOCriticCNN: CNN for global state (all agent observations concatenated)
+  - MAPPOActor: Actor network registered as "mappo_actor"
+  - MAPPOCritic: Centralized critic registered as "mappo_critic"
+- Created socialjax/algorithms/mappo/algorithm.py with MAPPOAlgorithm:
+  - Separate actor and critic networks with independent optimizers
+  - Centralized critic receives world_state (all agent observations)
+  - Decentralized actor receives only local observations
+  - MAPPOAlgorithmState with actor_params, critic_params, and optimizer states
+  - Registered with @register_algorithm("mappo")
+- Updated socialjax/algorithms/mappo/__init__.py with all exports
+- Created comprehensive unit tests:
+  - tests/test_mappo/test_config.py: 11 tests for configuration
+  - tests/test_mappo/test_network.py: 17 tests for actor and critic networks
+  - tests/test_mappo/test_algorithm.py: 28 tests for algorithm functionality
+
+### Tests passed:
+- [x] MAPPOAlgorithm inherits from BaseAlgorithm
+- [x] Can create MAPPO instance via get_algorithm('mappo')
+- [x] Centralized critic receives all agent observations
+- [x] Parameter sharing works correctly
+- [x] Training runs for 10K steps without error
+- [x] Unit tests exist for config, network, algorithm
+- [x] All unit tests pass: 54 tests passed (config: 11, network: 17, algorithm: 28)
+- [x] Test coverage > 80% for socialjax/algorithms/mappo/
+
+### Key design decisions:
+- Separate actor and critic networks (vs combined in IPPO)
+- Centralized critic: receives world_state with shape (batch, H, W, C * num_agents)
+- Decentralized actor: receives local obs with shape (batch, H, W, C)
+- Independent optimizers for actor and critic
+- MAPPOAlgorithmState contains both actor and critic states
+
+### Files created:
+- socialjax/algorithms/mappo/__init__.py
+- socialjax/algorithms/mappo/config.py
+- socialjax/algorithms/mappo/network.py
+- socialjax/algorithms/mappo/algorithm.py
+- tests/test_mappo/test_config.py
+- tests/test_mappo/test_network.py
+- tests/test_mappo/test_algorithm.py
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P2-003: Implement VDN algorithm
+- P2-004: Implement SVO algorithm
+- Write integration tests for MAPPO with real environment
+
+---
+
 ## Session 2026-02-18-2100
 **Duration**: 45m
 **Feature**: P2-001 - Implement IPPO algorithm in new architecture

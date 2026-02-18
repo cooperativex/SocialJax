@@ -277,8 +277,8 @@
         "All unit tests pass: pytest tests/test_mappo/ -v",
         "Test coverage > 80% for socialjax/algorithms/mappo/"
       ],
-      "passes": false,
-      "notes": "MAPPO requires centralized training with decentralized execution. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-18. MAPPO uses centralized training with decentralized execution (CTDE). Centralized critic receives world_state (all agent observations concatenated), decentralized actor receives only local observations. 54 unit tests pass. Coverage > 80%.",
       "dependencies": [
         "P2-001"
       ]
