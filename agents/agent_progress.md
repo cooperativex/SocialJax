@@ -1,5 +1,60 @@
 ## Session 2026-02-18-2350
 **Duration**: 30m
+**Feature**: P3-002 - Implement CheckpointCallback
+**Status**: completed
+
+### What was done:
+- Created socialjax/training/callbacks/checkpoint_callback.py with:
+  - CheckpointCallback class inheriting from BaseCallback
+  - save_freq parameter for periodic checkpoint saving
+  - save_path and name_prefix parameters for file location
+  - verbose flag for logging checkpoint saves
+  - on_training_start creates checkpoint directory
+  - on_update_end triggers checkpoint saves at correct frequency
+  - _save_checkpoint internal method for actual saving
+  - get_last_save_step and get_update_count utility methods
+  - reset method to clear counters
+- Updated socialjax/training/callbacks/__init__.py to export CheckpointCallback
+- Updated socialjax/training/__init__.py to export CheckpointCallback
+- Created comprehensive unit tests (29 tests):
+  - tests/test_callbacks/test_checkpoint_callback.py with:
+    - TestCheckpointCallbackImport (3 tests)
+    - TestCheckpointCallbackInit (5 tests)
+    - TestSaveFrequency (4 tests)
+    - TestCheckpointLocation (4 tests)
+    - TestCheckpointFormat (3 tests)
+    - TestVerboseLogging (5 tests)
+    - TestEdgeCases (5 tests)
+    - TestCallbackListIntegration (1 test)
+
+### Tests passed:
+- [x] CheckpointCallback saves at correct frequency
+- [x] Checkpoint files are created in correct location
+- [x] Checkpoint format is loadable
+- [x] Verbose logging works correctly
+- [x] Unit tests exist: test_save_frequency, test_checkpoint_location, test_checkpoint_format, test_verbose
+- [x] All unit tests pass: pytest tests/test_callbacks/test_checkpoint_callback.py -v (29 passed)
+
+### Files created:
+- socialjax/training/callbacks/checkpoint_callback.py
+- tests/test_callbacks/test_checkpoint_callback.py
+
+### Files updated:
+- socialjax/training/callbacks/__init__.py
+- socialjax/training/__init__.py
+- agents/feature_list.json
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P3-003: Implement EvalCallback (depends on P3-001)
+- P3-004: Implement WandbCallback (depends on P3-001)
+
+---
+
+## Session 2026-02-18-2350
+**Duration**: 30m
 **Feature**: P3-001 - Implement callback base system
 **Status**: completed
 

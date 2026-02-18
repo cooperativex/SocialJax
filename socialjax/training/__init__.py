@@ -3,6 +3,6 @@
 This module provides training utilities and callback systems.
 """
 
-from socialjax.training.callbacks import BaseCallback, CallbackList
+from socialjax.training.callbacks import BaseCallback, CallbackList, CheckpointCallback
 
-__all__ = ["BaseCallback", "CallbackList"]
+__all__ = ["BaseCallback", "CallbackList", "CheckpointCallback"]
