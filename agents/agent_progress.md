@@ -1,3 +1,68 @@
+## Session 2026-02-18-2300
+**Duration**: 45m
+**Feature**: P2-003 - Implement VDN algorithm in new architecture
+**Status**: completed
+
+### What was done:
+- Created socialjax/algorithms/vdn/ directory structure (directory already existed)
+- Created socialjax/algorithms/vdn/config.py with VDN_DEFAULT_CONFIG
+  - LR, GAMMA, MAX_GRAD_NORM for training
+  - EPS_START, EPS_FINISH, EPS_DECAY for epsilon-greedy exploration
+  - TARGET_UPDATE_INTERVAL, TAU for target network updates
+  - BUFFER_SIZE, BUFFER_BATCH_SIZE for experience replay
+- Created socialjax/algorithms/vdn/network.py with value decomposition:
+  - VDNCNN: CNN feature extractor
+  - VDNQNetwork: Q-network registered as "vdn_q_network"
+  - compute_q_tot: Sum individual Q-values for team Q-value
+  - compute_vdn_target: Compute TD target with VDN decomposition
+- Created socialjax/algorithms/vdn/algorithm.py with VDNAlgorithm:
+  - VDNAlgorithmState with params, target_params, optimizer_state
+  - Epsilon-greedy exploration with decay schedule
+  - Target network updates (soft or hard)
+  - Q_tot = sum_i Q_i(s_i, a_i) decomposition
+  - Registered with @register_algorithm("vdn")
+- Updated socialjax/algorithms/vdn/__init__.py with all exports
+- Created comprehensive unit tests:
+  - tests/test_vdn/test_config.py: 22 tests for configuration
+  - tests/test_vdn/test_network.py: 17 tests for Q-network and decomposition
+  - tests/test_vdn/test_algorithm.py: 25 tests for algorithm functionality
+
+### Tests passed:
+- [x] VDNAlgorithm inherits from BaseAlgorithm
+- [x] Can create VDN instance via get_algorithm('vdn')
+- [x] Q-value decomposition works correctly (Q_tot = sum Q_i)
+- [x] Training runs for 100+ updates without error
+- [x] Unit tests exist for config, network, algorithm
+- [x] All unit tests pass: 62 tests (config: 22, network: 17, algorithm: 25)
+- [x] Test coverage 93% for socialjax/algorithms/vdn/
+
+### Key design decisions:
+- Value decomposition: Q_tot = sum_i Q_i(s_i, a_i)
+- Target network with configurable soft/hard updates
+- Epsilon-greedy exploration with linear decay
+- Off-policy learning with experience replay (configurable)
+- Parameter sharing across agents
+
+### Files created:
+- socialjax/algorithms/vdn/config.py
+- socialjax/algorithms/vdn/network.py
+- socialjax/algorithms/vdn/algorithm.py
+- socialjax/algorithms/vdn/__init__.py (updated)
+- tests/test_vdn/__init__.py
+- tests/test_vdn/test_config.py
+- tests/test_vdn/test_network.py
+- tests/test_vdn/test_algorithm.py
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P2-004: Implement SVO algorithm
+- P2-005: Implement shared algorithm utilities
+- Integration tests for VDN with real environment
+
+---
+
 ## Session 2026-02-18-2200
 **Duration**: 60m
 **Feature**: P2-002 - Implement MAPPO algorithm in new architecture

@@ -311,8 +311,8 @@
         "All unit tests pass: pytest tests/test_vdn/ -v",
         "Test coverage > 80% for socialjax/algorithms/vdn/"
       ],
-      "passes": false,
-      "notes": "VDN uses value decomposition for cooperative multi-agent. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-18. VDN uses value decomposition: Q_tot = sum_i Q_i. Features: target networks, epsilon-greedy exploration, experience replay. 62 unit tests pass with 93% coverage.",
       "dependencies": [
         "P2-001"
       ]
