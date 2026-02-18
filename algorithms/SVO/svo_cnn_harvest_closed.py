@@ -21,80 +21,24 @@ import copy
 import pickle
 import os
 import matplotlib.pyplot as plt
+# Import shared network architectures and utilities
+from algorithms.utils import (
+    ActorCritic,
+    batchify,
+    batchify_dict,
+    batchify_numpy,
+    unbatchify,
+    save_params,
+    load_params,
+    evaluate_ippo as evaluate
+)
+
 from PIL import Image
 from pathlib import Path
 
-class CNN(nn.Module):
-    activation: str = "relu"
-
-    @nn.compact
-    def __call__(self, x):
-        if self.activation == "relu":
-            activation = nn.relu
-        else:
-            activation = nn.tanh
-        x = nn.Conv(
-            features=32,
-            kernel_size=(5, 5),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
-        x = nn.Conv(
-            features=32,
-            kernel_size=(3, 3),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
-        x = nn.Conv(
-            features=32,
-            kernel_size=(3, 3),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
-        x = x.reshape((x.shape[0], -1))  # Flatten
-
-        x = nn.Dense(
-            features=64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(x)
-        x = activation(x)
-
-        return x
+# Import shared IO utilities
 
 
-class ActorCritic(nn.Module):
-    action_dim: Sequence[int]
-    activation: str = "relu"
-
-    @nn.compact
-    def __call__(self, x):
-        if self.activation == "relu":
-            activation = nn.relu
-        else:
-            activation = nn.tanh
-
-        embedding = CNN(self.activation)(x)
-
-        actor_mean = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(embedding)
-        actor_mean = activation(actor_mean)
-        actor_mean = nn.Dense(
-            self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0)
-        )(actor_mean)
-        pi = distrax.Categorical(logits=actor_mean)
-
-        critic = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(embedding)
-        critic = activation(critic)
-        critic = nn.Dense(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0))(
-            critic
-        )
-
-        return pi, jnp.squeeze(critic, axis=-1)
 
 
 class Transition(NamedTuple):
@@ -105,7 +49,6 @@ class Transition(NamedTuple):
     log_prob: jnp.ndarray
     obs: jnp.ndarray
     info: jnp.ndarray
-
 
 def get_rollout(params, config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -140,18 +83,6 @@ def get_rollout(params, config):
     return state_seq
 
 
-def batchify(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[:, a] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-def batchify_dict(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[str(a)] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-
-def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
-    x = x.reshape((num_actors, num_envs, -1))
-    return {a: x[i] for i, a in enumerate(agent_list)}
 
 def group_and_distribute_sum(array):
     """
@@ -234,7 +165,6 @@ def make_train(config):
 
                 # SELECT ACTION
                 rng, _rng = jax.random.split(rng)
-
 
                 obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
                 # obs_batch = jnp.stack([last_obs[a] for a in env.agents]).reshape(-1, *env.observation_space().shape)
@@ -319,8 +249,6 @@ def make_train(config):
                     unroll=16,
                 )
 
-
-
                 # adv_mean = jnp.mean(advantages, axis=0)
                 # adv_std = jnp.std(advantages, axis=0) + 1e-8
                 # advantages = (advantages - adv_mean)
@@ -328,7 +256,6 @@ def make_train(config):
                 # value_mean = jnp.mean(traj_batch.value, axis=0)
                 # value_std = jnp.std(traj_batch.value, axis=0) + 1e-8
                 # value=(traj_batch.value - value_mean) / value_std
-
 
                 return advantages, advantages + traj_batch.value  # traj.value; value
             
@@ -447,7 +374,6 @@ def make_train(config):
 def single_run(config):
     config = OmegaConf.to_container(config)
 
-
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
@@ -476,80 +402,7 @@ def single_run(config):
     # agent_view_size is hardcoded as it determines the padding around the layout.
     # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
 
-def save_params(train_state, save_path):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    params = jax.tree_util.tree_map(lambda x: np.array(x), train_state.params)
 
-    with open(save_path, 'wb') as f:
-        pickle.dump(params, f)
-
-def load_params(load_path):
-    with open(load_path, 'rb') as f:
-        params = pickle.load(f)
-    return jax.tree_util.tree_map(lambda x: jnp.array(x), params)
-
-def evaluate(params, env, save_path, config):
-    rng = jax.random.PRNGKey(0)
-    
-    rng, _rng = jax.random.split(rng)
-    obs, state = env.reset(_rng)
-    done = False
-    
-    pics = []
-    img = env.render(state)
-    pics.append(img)
-    root_dir = f"evaluation/harvest_closed"
-    path = Path(root_dir + "/state_pics")
-    path.mkdir(parents=True, exist_ok=True)
-
-    for o_t in range(config["GIF_NUM_FRAMES"]):
-        # 获取所有智能体的观察
-        print(o_t)
-        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-
-        # 使用模型选择动作
-        network = ActorCritic(action_dim=env.action_space().n, activation=config["ACTIVATION"])  # 使用与训练时相同的参数
-        pi, _ = network.apply(params, obs_batch)
-        rng, _rng = jax.random.split(rng)
-        actions = pi.sample(seed=_rng)
-        
-        # 转换动作格式
-        env_act = {k: v.squeeze() for k, v in unbatchify(
-            actions, env.agents, 1, env.num_agents
-        ).items()}
-        
-        # 执行动作
-        rng, _rng = jax.random.split(rng)
-        obs, state, reward, done, info = env.step(_rng, state, [v.item() for v in env_act.values()])
-        done = done["__all__"]
-        
-        # 记录结果
-        # episode_reward += sum(reward.values())
-        
-        # 渲染
-        img = env.render(state)
-        pics.append(img)
-        
-        print('###################')
-        print(f'Actions: {env_act}')
-        print(f'Reward: {reward}')
-        print(f'State: {state.agent_locs}')
-        print("###################")
-    
-    # 保存GIF
-    print(f"Saving Episode GIF")
-    pics = [Image.fromarray(img) for img in pics]
-    pics[0].save(
-    f"{root_dir}/state_outer_step_{o_t+1}.gif",
-    format="GIF",
-    save_all=True,
-    optimize=False,
-    append_images=pics[1:],
-    duration=200,
-    loop=0,
-    )
-        
-        # print(f"Episode {episode} total reward: {episode_reward}")
 def tune(default_config):
     """
     Hyperparameter sweep with wandb, including logic to:
@@ -585,7 +438,6 @@ def tune(default_config):
 
     def wrapped_make_train():
 
-
         wandb.init(project=default_config["PROJECT"])
         config = copy.deepcopy(default_config)
         # only overwrite the single nested key we're sweeping
@@ -595,7 +447,6 @@ def tune(default_config):
                 config[parent][child] = v
             else:
                 config[k] = v
-
 
         # Rename the run for clarity
         run_name = f"sweep_{config['ENV_NAME']}_seed{config['SEED']}"
@@ -618,7 +469,6 @@ def tune(default_config):
         sweep_config, entity=default_config["ENTITY"], project=default_config["PROJECT"]
     )
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
-
 
 @hydra.main(version_base=None, config_path="config", config_name="svo_cnn_harvest_closed")
 def main(config):

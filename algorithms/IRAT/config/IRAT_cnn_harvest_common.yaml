@@ -1,41 +1,19 @@
-"LR": 0.0005
-"NUM_ENVS": 5
-"NUM_STEPS": 100
-"TOTAL_TIMESTEPS": 1e9
-"UPDATE_EPOCHS": 2
-"NUM_MINIBATCHES": 4
-"GAMMA": 0.99
-"GAE_LAMBDA": 0.95
-"CLIP_EPS": 0.2
-"ENT_COEF": 0.01
-"VF_COEF": 0.5
-"MAX_GRAD_NORM": 0.5
-"SCALE_CLIP_EPS": True
+# IRAT Configuration for Harvest Common (Open)
+defaults:
+  - irat_base
 
-"ACTIVATION": "relu"
+# Environment-specific settings
 "ENV_NAME": "harvest_common_open"
-"REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
 
-"ENV_KWARGS":
-  "num_agents" : 7
-  "num_inner_steps" : 1000
-  "shared_rewards" : False  # IRAT: Use individual rewards, sum them in algorithm for team reward
-  "cnn" : True
-  "jit" : True
-  
+"ENV_KWARGS": 
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
 
-"ANNEAL_LR": True
-"SEED": 30
-"NUM_SEEDS": 1
-"TUNE": False
-
+# IRAT-specific settings
 "REWARD": "IRAT"  # IRAT uses both individual and team rewards
-"GIF_NUM_FRAMES": 250
-
-# WandB Params
-"ENTITY": ""
-"PROJECT": "socialjax_irat"
-"WANDB_MODE" : "online"
-"WANDB_TAGS":
+"WANDB_TAGS": 
   - IRAT
   - INDIVIDUAL_REWARD

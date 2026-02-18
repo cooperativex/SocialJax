@@ -1,0 +1,11 @@
+# VDN Configuration for Gift
+defaults:
+  - vdn_base
+
+"ENV_NAME": "gift"
+"ENV_KWARGS":
+  "num_agents": 5
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True

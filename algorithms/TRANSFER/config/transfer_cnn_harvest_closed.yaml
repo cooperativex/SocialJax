@@ -1,0 +1,38 @@
+# TRANSFER Configuration for Harvest Common Closed
+defaults:
+  - transfer_base
+
+"ENV_NAME": "harvest_common_closed"
+
+"ENV_KWARGS": 
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+  "svo": False
+  "svo_target_agents": [0, 1, 2, 3, 4, 5, 6]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+  "interest": True
+  "s_interest_change_every": 30000000
+  map_ASCII: ["AAA    A  WW  A    AAA",
+              "AA    AAA WW AAA    AA",
+              "A    AAAAAWWAAAAA    A",
+              "      AAA WW AAA      ",
+              "       A  WW  A       ",
+              "  A       WW       A  ",
+              " AAA  Q   WW   Q  AAA ",
+              "AAAAA     WW     AAAAA",
+              " AAA  WWWWWWWWWW  AAA ",
+              "  A       WW       A  ",
+              "WWWWWWWWW WW WWWWWWWWW",
+              "          WW          ",
+              "  WWWWWWWWWWWWWWWWWW  ",
+              "  P P P P P P P P P   ",
+              " P P P P P P P P P P  ",
+             ]
+
+"REWARD": "individual"
+"WANDB_TAGS": 
+  - INDIVIDUAL_REWARD

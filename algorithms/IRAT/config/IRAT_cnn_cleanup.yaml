@@ -1,0 +1,19 @@
+# IRAT Configuration for Clean Up
+defaults:
+  - irat_base
+
+# Environment-specific settings
+"ENV_NAME": "clean_up"
+
+"ENV_KWARGS": 
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+
+# IRAT-specific settings
+"REWARD": "IRAT"  # IRAT uses both individual and team rewards
+"WANDB_TAGS": 
+  - IRAT
+  - INDIVIDUAL_REWARD

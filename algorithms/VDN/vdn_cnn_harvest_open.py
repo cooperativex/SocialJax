@@ -588,16 +588,7 @@ def tune(default_config):
             "goal": "maximize",
         },
         "parameters": {
-            "LR": {
-                "values": [
-                    0.005,
-                    0.001,
-                    0.0005,
-                    0.0001,
-                    0.00005,
-                ]
-            },
-            "NUM_ENVS": {"values": [8, 32, 64, 128]},
+            "SEED": {"values": [42, 52, 62]},
         },
     }
 

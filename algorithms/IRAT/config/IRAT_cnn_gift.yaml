@@ -1,0 +1,19 @@
+# IRAT Configuration for Gift
+defaults:
+  - irat_base
+
+# Environment-specific settings
+"ENV_NAME": "gift"
+
+"ENV_KWARGS": 
+  "num_agents": 5
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+
+# IRAT-specific settings
+"REWARD": "IRAT"  # IRAT uses both individual and team rewards
+"WANDB_TAGS": 
+  - IRAT
+  - INDIVIDUAL_REWARD

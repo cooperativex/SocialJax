@@ -1,0 +1,11 @@
+# VDN Configuration for Cooperative Mining
+defaults:
+  - vdn_base
+
+"ENV_NAME": "coop_mining"
+"ENV_KWARGS":
+  "num_agents": 6
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True
