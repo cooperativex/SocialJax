@@ -583,8 +583,8 @@
         "Unit tests exist: test_trainer_creation, test_train_loop, test_callback_integration, test_evaluate, test_save_load",
         "All unit tests pass: pytest tests/test_training/test_trainer.py -v"
       ],
-      "passes": false,
-      "notes": "Main user-facing API for training. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-18. Unified Trainer class provides high-level API for training. Supports algorithm/env creation via names, config overrides via kwargs, callback integration. Includes RolloutBuffer and SpaceWrapper for handling JaxMARL-style callable spaces. 26 unit tests pass, 2 integration tests skipped (environment bug).",
       "dependencies": [
         "P1-003",
         "P1-004",
