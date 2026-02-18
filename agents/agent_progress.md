@@ -1,3 +1,55 @@
+## Session 2026-02-18-2350
+**Duration**: 30m
+**Feature**: P3-001 - Implement callback base system
+**Status**: completed
+
+### What was done:
+- Created socialjax/training/callbacks/base_callback.py with:
+  - BaseCallback class with default (pass) implementations for all callback hooks
+  - Callback hooks: on_training_start, on_training_end, on_step
+  - Callback hooks: on_rollout_start, on_rollout_end
+  - Callback hooks: on_update_start, on_update_end
+  - set_trainer method for storing trainer reference
+  - trainer property for accessing the trainer
+  - verbose flag for optional additional output
+- Created CallbackList class for managing multiple callbacks:
+  - add, remove methods for callback management
+  - Hook invocation methods that call all callbacks in order
+  - __len__, __iter__, __getitem__ for list-like behavior
+- Updated socialjax/training/callbacks/__init__.py with exports
+- Updated socialjax/training/__init__.py with exports
+- Created comprehensive unit tests:
+  - tests/test_callbacks/__init__.py
+  - tests/test_callbacks/test_base_callback.py with 32 tests
+
+### Tests passed:
+- [x] BaseCallback can be imported
+- [x] All hook methods exist with default (pass) implementation
+- [x] set_trainer correctly sets trainer reference
+- [x] Callback list can be managed
+- [x] Unit tests exist: test_callback_import, test_hook_methods, test_set_trainer, test_callback_list
+- [x] All unit tests pass: pytest tests/test_callbacks/test_base_callback.py -v (32 passed)
+
+### Files created:
+- socialjax/training/callbacks/base_callback.py
+- tests/test_callbacks/__init__.py
+- tests/test_callbacks/test_base_callback.py
+
+### Files updated:
+- socialjax/training/callbacks/__init__.py
+- socialjax/training/__init__.py
+- agents/feature_list.json
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P3-002: Implement CheckpointCallback (depends on P3-001)
+- P3-003: Implement EvalCallback (depends on P3-001)
+- P3-004: Implement WandbCallback (depends on P3-001)
+
+---
+
 ## Session 2026-02-18-2300
 **Duration**: 45m
 **Feature**: P2-003 - Implement VDN algorithm in new architecture
