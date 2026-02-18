@@ -1,3 +1,65 @@
+## Session 2026-02-18-2400
+**Duration**: 30m
+**Feature**: P3-003 - Implement EvalCallback
+**Status**: completed
+
+### What was done:
+- Created socialjax/training/callbacks/eval_callback.py with:
+  - EvalCallback class inheriting from BaseCallback
+  - eval_env, eval_freq, n_eval_episodes parameters for evaluation configuration
+  - best_model_save_path parameter for saving best models
+  - deterministic parameter for deterministic/stochastic evaluation mode
+  - verbose and warn flags for logging
+  - on_training_start creates best model directory if specified
+  - on_update_end triggers evaluation at correct frequency
+  - _evaluate_episodes method runs evaluation and collects rewards
+  - _run_evaluation computes mean/std rewards and tracks best model
+  - _save_best_model saves best model checkpoint
+  - best_mean_reward, last_mean_reward, last_std_reward properties
+  - get_evaluation_history method for accessing evaluation results
+  - get_update_count and reset methods for state management
+- Updated socialjax/training/callbacks/__init__.py to export EvalCallback
+- Updated socialjax/training/__init__.py to export EvalCallback
+- Created comprehensive unit tests (37 tests):
+  - tests/test_callbacks/test_eval_callback.py with:
+    - TestEvalCallbackImport (3 tests)
+    - TestEvalCallbackInit (8 tests)
+    - TestEvalFrequency (4 tests)
+    - TestEpisodeCount (2 tests)
+    - TestRewardComputation (4 tests)
+    - TestBestModelTracking (5 tests)
+    - TestDeterministicMode (2 tests)
+    - TestVerboseLogging (3 tests)
+    - TestEdgeCases (5 tests)
+    - TestCallbackListIntegration (1 test)
+
+### Tests passed:
+- [x] EvalCallback evaluates at correct frequency
+- [x] Evaluation runs specified number of episodes
+- [x] Mean and std rewards are computed correctly
+- [x] Best model is tracked and saved
+- [x] Unit tests exist: test_eval_frequency, test_episode_count, test_reward_computation, test_best_model_tracking
+- [x] All unit tests pass: pytest tests/test_callbacks/test_eval_callback.py -v (37 passed)
+- [x] All callback tests pass: pytest tests/test_callbacks/ -v (98 passed)
+
+### Files created:
+- socialjax/training/callbacks/eval_callback.py
+- tests/test_callbacks/test_eval_callback.py
+
+### Files updated:
+- socialjax/training/callbacks/__init__.py
+- socialjax/training/__init__.py
+- agents/feature_list.json
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P3-004: Implement WandbCallback (depends on P3-001)
+- P3-005: Implement ProgressCallback (depends on P3-001)
+
+---
+
 ## Session 2026-02-18-2350
 **Duration**: 30m
 **Feature**: P3-002 - Implement CheckpointCallback

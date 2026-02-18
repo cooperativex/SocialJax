@@ -5,5 +5,6 @@ This module provides callback classes for hooking into the training process.
 
 from socialjax.training.callbacks.base_callback import BaseCallback, CallbackList
 from socialjax.training.callbacks.checkpoint_callback import CheckpointCallback
+from socialjax.training.callbacks.eval_callback import EvalCallback
 
-__all__ = ["BaseCallback", "CallbackList", "CheckpointCallback"]
+__all__ = ["BaseCallback", "CallbackList", "CheckpointCallback", "EvalCallback"]
