@@ -1,3 +1,62 @@
+## Session 2026-02-18-2500
+**Duration**: 30m
+**Feature**: P3-004 - Implement WandbCallback
+**Status**: completed
+
+### What was done:
+- Created socialjax/training/callbacks/wandb_callback.py with:
+  - WandbCallback class inheriting from BaseCallback
+  - Module-level wandb import with WANDB_AVAILABLE flag for graceful degradation
+  - on_training_start: initializes wandb.run with project, name, config
+  - on_step: logs metrics at configurable log_freq
+  - on_update_end: logs update metrics with "update/" prefix
+  - on_training_end: calls wandb.finish() and resets _initialized flag
+  - log_custom: method for manual metric logging
+  - Utility methods: is_initialized, get_run_url, get_run_id
+  - Config merging: merges callback config with trainer config
+  - Verbose logging for all operations
+- Updated socialjax/training/callbacks/__init__.py to export WandbCallback
+- Updated socialjax/training/__init__.py to export WandbCallback
+- Created comprehensive unit tests (39 tests):
+  - tests/test_callbacks/test_wandb_callback.py with:
+    - TestWandbCallbackImport (3 tests)
+    - TestWandbCallbackInit (5 tests)
+    - TestWandbInit (5 tests)
+    - TestMetricLogging (6 tests)
+    - TestConfigSave (3 tests)
+    - TestWandbFinish (4 tests)
+    - TestVerboseLogging (3 tests)
+    - TestUtilityMethods (6 tests)
+    - TestEdgeCases (3 tests)
+    - TestCallbackListIntegration (1 test)
+
+### Tests passed:
+- [x] WandbCallback initializes wandb correctly
+- [x] Metrics are logged to wandb dashboard
+- [x] Config is saved to wandb
+- [x] wandb.finish() is called on training end
+- [x] Unit tests exist: test_wandb_init, test_metric_logging, test_config_save, test_wandb_finish
+- [x] All unit tests pass: pytest tests/test_callbacks/test_wandb_callback.py -v (39 passed)
+- [x] All callback tests pass: pytest tests/test_callbacks/ -v (137 passed)
+
+### Files created:
+- socialjax/training/callbacks/wandb_callback.py
+- tests/test_callbacks/test_wandb_callback.py
+
+### Files updated:
+- socialjax/training/callbacks/__init__.py
+- socialjax/training/__init__.py
+- agents/feature_list.json
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P3-005: Implement ProgressCallback (depends on P3-001)
+- Integration tests with real wandb runs
+
+---
+
 ## Session 2026-02-18-2400
 **Duration**: 30m
 **Feature**: P3-003 - Implement EvalCallback
