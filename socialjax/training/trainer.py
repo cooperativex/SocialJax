@@ -590,15 +590,20 @@ class Trainer(BaseTrainer):
             # Store current obs
             obs_arr = np.array(obs[first_agent])
 
-            # Step environment
+            # Step environment (JaxMARL-style: step(key, state, actions))
+            # Convert dict actions to list in agent order
+            action_list = [step_actions[agent] for agent in self.env.agents]
             self._rng, step_rng = jax.random.split(self._rng)
-            env_state, next_obs, step_rewards, step_dones, info = self.env.step(
-                env_state, step_actions
+            next_obs, env_state, step_rewards, step_dones, info = self.env.step(
+                step_rng, env_state, action_list
             )
 
             # Extract reward and done for first agent (parameter sharing)
+            # step_rewards is an array of shape (num_agents,)
+            # step_dones is a dict with string keys ('0', '1', '__all__')
             reward_arr = np.array(step_rewards[first_agent])
-            done_arr = np.array(step_dones.get("__all__", step_dones[first_agent]))
+            done_key = str(first_agent) if isinstance(first_agent, int) else first_agent
+            done_arr = np.array(step_dones.get("__all__", step_dones.get(done_key, False)))
 
             # Accumulate episode statistics
             current_episode_return += float(reward_arr)
@@ -710,14 +715,17 @@ class Trainer(BaseTrainer):
         old_log_probs = jnp.array(rollout_data["log_probs"])
         values = jnp.array(rollout_data["values"])
 
-        # Flatten batch
-        batch_size = obs.shape[0]
-        obs = obs.reshape(batch_size, -1)
-        actions = actions.reshape(batch_size)
-        advantages = advantages.reshape(batch_size)
-        targets = targets.reshape(batch_size)
-        old_log_probs = old_log_probs.reshape(batch_size)
-        values = values.reshape(batch_size)
+        # Flatten batch (but preserve observation spatial dimensions for CNN)
+        # obs shape: (num_steps, ...) -> (batch_size, *obs_shape)
+        batch_size = np.prod(obs.shape[:-len(self._get_obs_shape())]) if obs.ndim > len(self._get_obs_shape()) else obs.shape[0]
+        obs_shape = self._get_obs_shape()
+        obs = obs.reshape(-1, *obs_shape)  # (batch_size, H, W, C)
+        actions = actions.reshape(-1)
+        advantages = advantages.reshape(-1)
+        targets = targets.reshape(-1)
+        old_log_probs = old_log_probs.reshape(-1)
+        values = values.reshape(-1)
+        batch_size = obs.shape[0]  # Update batch_size after reshape
 
         # Track metrics across epochs
         total_loss_sum = 0.0

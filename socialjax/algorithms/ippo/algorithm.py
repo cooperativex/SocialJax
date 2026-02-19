@@ -165,6 +165,10 @@ class IPPOAlgorithm(BaseAlgorithm):
         Returns:
             Tuple of (action, info_dict) where info contains log_prob and value
         """
+        # Add batch dimension if needed (network expects batched input)
+        if observation.ndim == len(self.observation_space.shape):
+            observation = observation[jnp.newaxis, ...]
+
         pi, value = self.network.apply(state.params, observation)
 
         if deterministic:
@@ -173,6 +177,11 @@ class IPPOAlgorithm(BaseAlgorithm):
         else:
             action = pi.sample(seed=rng)
             log_prob = pi.log_prob(action)
+
+        # Remove batch dimension from outputs
+        action = action.squeeze(0)
+        log_prob = log_prob.squeeze(0)
+        value = value.squeeze(0)
 
         info = {
             "log_prob": log_prob,
@@ -195,8 +204,12 @@ class IPPOAlgorithm(BaseAlgorithm):
         Returns:
             Value estimate
         """
+        # Add batch dimension if needed (network expects batched input)
+        if observation.ndim == len(self.observation_space.shape):
+            observation = observation[jnp.newaxis, ...]
+
         _, value = self.network.apply(state.params, observation)
-        return value
+        return value.squeeze(0)
 
     def compute_gae(
         self,
