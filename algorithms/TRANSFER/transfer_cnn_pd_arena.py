@@ -164,7 +164,7 @@ def calculate_s_interest_schedule(n_agents=4):
     """
     ratio = [20, 10, 5, 3, 5/2, 2, 5/3, 4/3, 1]
     s = [1] + [r / (n_agents + r - 1) for r in ratio]
-    s = [2 / (n_agents + 1)] * (len(ratio) + 1)
+    # s = [2 / (n_agents + 1)] * (len(ratio) + 1)
 
     return s
 
@@ -190,7 +190,7 @@ def make_train(config):
     if config["ENV_KWARGS"].get("interest", False):
         s_interest_schedule = calculate_s_interest_schedule(config["ENV_KWARGS"]["num_agents"])
         config["ENV_KWARGS"]["s_interest_schedule"] = s_interest_schedule
-        config["ENV_KWARGS"]["s_interest_change_every"] = config.get("S_INTEREST_CHANGE_EVERY", 30000000)
+        config["ENV_KWARGS"]["s_interest_change_every"] = config["ENV_KWARGS"].get("s_interest_change_every", 30000000)
         print(f"Using s_interest schedule: {s_interest_schedule}")
         print(f"Changing every {config['ENV_KWARGS']['s_interest_change_every']} timesteps")
 
@@ -618,8 +618,9 @@ def tune(default_config):
             # "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
             # "ENT_COEF": {"values": [0.001, 0.01, 0.1]},
             # "NUM_STEPS": {"values": [64, 128, 256]},
-            "ENV_KWARGS.svo_w": {"values": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]},
+            # "ENV_KWARGS.svo_w": {"values": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]},
             # "ENV_KWARGS.svo_ideal_angle_degrees": {"values": [0, 45, 90]},
+            "SEED": {"values": [42, 52, 62]},
 
         },
     }

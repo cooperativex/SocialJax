@@ -495,8 +495,8 @@ def single_run(config):
         tags=["TRANSFER", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'transfer_cnn_harvest_open',
-        group=f'harvest_open',
+        name=f'transfer_cnn_harvest_common_closed',
+        group=f'harvest_common_closed',
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -539,7 +539,7 @@ def evaluate(params, env, save_path, config):
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/harvest_open"
+    root_dir = f"evaluation/harvest_common_closed"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -604,7 +604,7 @@ def tune(default_config):
     default_config = OmegaConf.to_container(default_config)
 
     sweep_config = {
-        "name": "harvest_open",
+        "name": "harvest_common_closed",
         "method": "grid",
         "metric": {
             "name": "returned_episode_original_returns",
@@ -621,6 +621,7 @@ def tune(default_config):
             # "ENV_KWARGS.svo_w": {"values": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]},
             # "ENV_KWARGS.svo_ideal_angle_degrees": {"values": [0, 45, 90]},
             "SEED": {"values": [42, 52, 62]},
+
 
         },
     }
@@ -662,7 +663,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="transfer_cnn_harvest_open")
+@hydra.main(version_base=None, config_path="config", config_name="transfer_cnn_harvest_common_closed")
 def main(config):
     if config["TUNE"]:
         tune(config)

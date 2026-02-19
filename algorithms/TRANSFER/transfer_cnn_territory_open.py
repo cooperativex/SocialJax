@@ -188,7 +188,7 @@ def make_train(config):
     if config["ENV_KWARGS"].get("interest", False):
         s_interest_schedule = calculate_s_interest_schedule(config["ENV_KWARGS"]["num_agents"])
         config["ENV_KWARGS"]["s_interest_schedule"] = s_interest_schedule
-        config["ENV_KWARGS"]["s_interest_change_every"] = config.get("S_INTEREST_CHANGE_EVERY", 1000000)
+        config["ENV_KWARGS"]["s_interest_change_every"] = config["ENV_KWARGS"].get("s_interest_change_every", 1000000)
         print(f"Using s_interest schedule: {s_interest_schedule}")
         print(f"Changing every {config['ENV_KWARGS']['s_interest_change_every']} timesteps")
 
@@ -602,7 +602,7 @@ def tune(default_config):
     default_config = OmegaConf.to_container(default_config)
 
     sweep_config = {
-        "name": "territory_open_angle",
+        "name": "territory_open",
         "method": "grid",
         "metric": {
             "name": "returned_episode_original_returns",

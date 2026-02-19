@@ -533,7 +533,7 @@ def single_run(config):
         tags=["IPPO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_harvest_common_partership'
+        name=f'ippo_cnn_harvest_common_partnership'
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -583,7 +583,7 @@ def evaluate(params, env, save_path, config):
     pics = []
     img = env.render(state)
     pics.append(img)
-    root_dir = f"evaluation/harvest_common_partership"
+    root_dir = f"evaluation/harvest_common_partnership"
     path = Path(root_dir + "/state_pics")
     path.mkdir(parents=True, exist_ok=True)
 
@@ -724,7 +724,7 @@ def tune(default_config):
     wandb.agent(sweep_id, wrapped_make_train, count=1000)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_harvest_common_partership")
+@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_harvest_common_partnership")
 def main(config):
     if config["TUNE"]:
         tune(config)

@@ -36,7 +36,7 @@
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "svo_socialjax"
+"PROJECT": "transfer_socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
   - INDIVIDUAL_REWARD # COMMON_REWARD
