@@ -1,3 +1,86 @@
+## Session 2026-02-19-2300
+**Duration**: 45m
+**Feature**: P3-006 - Implement experience buffer system
+**Status**: completed
+
+### What was done:
+- Created socialjax/buffers/base_buffer.py with:
+  - BaseBuffer abstract class with add, get, clear methods
+  - BufferError, BufferEmptyError, BufferFullError, InsufficientDataError exceptions
+  - Properties: size, full, pos
+  - can_sample method for checking buffer capacity
+- Created socialjax/buffers/rollout_buffer.py for on-policy algorithms:
+  - RolloutBuffer class with observations, actions, rewards, dones, log_probs, values
+  - Supports advantages and returns (set externally via GAE)
+  - get(), get_batch(), get_flattened() methods
+  - JAX array conversion support
+  - Memory usage calculation
+- Created socialjax/buffers/replay_buffer.py for off-policy algorithms:
+  - ReplayBuffer class with random sampling support
+  - Handles timeouts and agent_ids for multi-agent scenarios
+  - get_recent() method for recent transitions
+  - sample_with_next_values() for TD target computation
+  - PrioritizedReplayBuffer with proportional prioritization
+- Updated socialjax/buffers/__init__.py with all exports
+- Created comprehensive unit tests (133 tests total):
+  - tests/test_buffers/test_base_buffer.py (37 tests)
+  - tests/test_buffers/test_rollout_buffer.py (40 tests)
+  - tests/test_buffers/test_replay_buffer.py (56 tests)
+
+### Tests passed:
+- [x] RolloutBuffer stores and retrieves rollouts correctly
+- [x] ReplayBuffer handles random sampling
+- [x] Buffers work with JAX arrays
+- [x] Memory usage is efficient
+- [x] Unit tests exist for base, rollout, replay buffers
+- [x] All unit tests pass: pytest tests/test_buffers/ -v (133 passed)
+- [x] Test coverage > 80% for socialjax/buffers/ (91% achieved)
+- [x] All project tests pass: pytest tests/ -v (908 passed, 14 skipped)
+
+### Key buffer features:
+```python
+# On-policy training (IPPO, MAPPO, SVO)
+from socialjax.buffers import RolloutBuffer
+rollout = RolloutBuffer(buffer_size=128, num_envs=8, obs_shape=(15, 15, 3), action_dim=8)
+rollout.add(obs, action, reward, done, log_prob, value)
+batch = rollout.get(as_jax=True)
+rollout.clear()
+
+# Off-policy training (VDN, DQN)
+from socialjax.buffers import ReplayBuffer, PrioritizedReplayBuffer
+replay = ReplayBuffer(buffer_size=10000, obs_shape=(4,), action_dim=2)
+replay.add(obs, action, reward, next_obs, done)
+batch = replay.sample(32)
+
+# Prioritized experience replay
+per_buffer = PrioritizedReplayBuffer(buffer_size=10000, obs_shape=(4,), action_dim=2)
+batch = per_buffer.sample(32)  # Returns indices and importance weights
+per_buffer.update_priorities(batch["indices"], td_errors)
+```
+
+### Files created:
+- socialjax/buffers/base_buffer.py
+- socialjax/buffers/rollout_buffer.py
+- socialjax/buffers/replay_buffer.py
+- tests/test_buffers/__init__.py
+- tests/test_buffers/test_base_buffer.py
+- tests/test_buffers/test_rollout_buffer.py
+- tests/test_buffers/test_replay_buffer.py
+
+### Files modified:
+- socialjax/buffers/__init__.py (updated exports)
+- agents/feature_list.json (marked P3-006 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P4-003: Implement unified evaluate.py script
+- P4-004: Implement visualize.py script
+- P5-001: Implement environment wrappers
+
+---
+
 ## Session 2026-02-19-2200
 **Duration**: 45m
 **Feature**: P3-005 - Implement ProgressCallback

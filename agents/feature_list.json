@@ -551,8 +551,8 @@
         "All unit tests pass: pytest tests/test_buffers/ -v",
         "Test coverage > 80% for socialjax/buffers/"
       ],
-      "passes": false,
-      "notes": "Experience storage for different algorithm types. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-19. Experience buffer system with BaseBuffer abstract class, RolloutBuffer for on-policy (IPPO, MAPPO, SVO), ReplayBuffer and PrioritizedReplayBuffer for off-policy (VDN). All buffers support JAX array conversion. 133 unit tests with 91% code coverage.",
       "dependencies": [
         "P1-001"
       ]
