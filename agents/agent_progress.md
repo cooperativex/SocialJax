@@ -1,3 +1,72 @@
+## Session 2026-02-19-2100
+**Duration**: 60m
+**Feature**: P2-005 - Implement shared algorithm utilities
+**Status**: completed
+
+### What was done:
+- Created socialjax/algorithms/utils/ module with shared utilities:
+  - gae.py: GAE computation, advantage normalization, Monte Carlo returns
+  - ppo_update.py: PPO clipped surrogate loss, value loss, entropy bonus
+  - value_decomposition.py: VDN decomposition, TD targets, epsilon-greedy, target updates
+- Updated socialjax/algorithms/utils/__init__.py with all exports
+- Created comprehensive unit tests:
+  - tests/test_utils/test_gae.py: 28 tests for GAE utilities
+  - tests/test_utils/test_ppo_update.py: 33 tests for PPO loss utilities
+  - tests/test_utils/test_value_decomposition.py: 32 tests for VDN utilities
+- All utilities are JAX-JIT compatible with proper static_argnames
+
+### Tests passed:
+- [x] GAE computation matches reference implementation
+- [x] PPO loss computes correctly
+- [x] Value decomposition works for VDN/QMIX
+- [x] All utilities are JIT-compatible
+- [x] Unit tests exist for GAE, PPO loss, value decomposition
+- [x] All unit tests pass: pytest tests/test_utils/ -v (93 passed)
+- [x] Test coverage 100% for socialjax/algorithms/utils/
+
+### Key utilities:
+```
+GAE:
+  compute_gae(traj, last_value, gamma, gae_lambda)
+  compute_gae_batched(dones, values, rewards, last_value)
+  normalize_advantages(advantages)
+
+PPO:
+  compute_policy_loss(log_prob, old_log_prob, advantages)
+  compute_value_loss(value, old_value, target)
+  compute_ppo_loss(distribution, value, action, ...)
+  create_ppo_update_fn(network_apply_fn, ...)
+
+Value Decomposition:
+  vdn_decomposition(q_values, actions) -> q_tot
+  vdn_target(q_target, rewards, dones, gamma)
+  epsilon_greedy_action(q_values, rng, epsilon)
+  soft_target_update(params, target_params, tau)
+```
+
+### Files created:
+- socialjax/algorithms/utils/gae.py
+- socialjax/algorithms/utils/ppo_update.py
+- socialjax/algorithms/utils/value_decomposition.py
+- socialjax/algorithms/utils/__init__.py (updated)
+- tests/test_utils/__init__.py
+- tests/test_utils/test_gae.py
+- tests/test_utils/test_ppo_update.py
+- tests/test_utils/test_value_decomposition.py
+
+### Files modified:
+- agents/feature_list.json (marked P2-005 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P3-005: Implement ProgressCallback
+- P4-003: Implement unified evaluate.py script
+- P5-002: Implement evaluation system
+
+---
+
 ## Session 2026-02-19-1900
 **Duration**: 45m
 **Feature**: P2-004 - Implement SVO algorithm in new architecture
