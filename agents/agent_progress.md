@@ -1,3 +1,83 @@
+## Session 2026-02-19-2600
+**Duration**: 30m
+**Feature**: P4-005 - Implement CNN network architectures
+**Status**: completed
+
+### What was done:
+- Created socialjax/networks/cnn.py with four CNN network classes:
+  - CNNSmall: Lightweight CNN feature extractor with configurable channel/kernel sizes
+  - CNNActorCritic: Combined actor-critic network (registered as "cnn_small")
+  - CNNSmallEncoder: CNN encoder returning intermediate features (registered as "cnn_small_encoder")
+  - CNNImpala: IMPALA-style CNN with residual blocks (registered as "cnn_impala")
+- All networks support configurable parameters:
+  - channel_sizes: List of output channels per conv layer
+  - kernel_sizes: List of kernel sizes per conv layer (int or tuple)
+  - hidden_size: Size of fully-connected layers
+  - activation: "relu" or "tanh"
+  - padding: "SAME" or "VALID"
+- Updated socialjax/networks/__init__.py to export new classes
+- Created comprehensive unit tests (55 tests):
+  - tests/test_networks/test_cnn.py with:
+    - TestCNNSmall (10 tests)
+    - TestCNNActorCritic (11 tests)
+    - TestCNNSmallEncoder (4 tests)
+    - TestCNNImpala (5 tests)
+    - TestNetworkFactoryIntegration (8 tests)
+    - TestForwardPass (5 tests)
+    - TestOutputShapes (3 tests)
+    - TestEdgeCases (6 tests)
+    - TestModuleExports (4 tests)
+    - TestCNNSummary (1 test)
+
+### Tests passed:
+- [x] CNNSmall can be created via create_network
+- [x] CNNActorCritic can be created via create_network
+- [x] Forward pass works with correct input shapes
+- [x] Output shapes match action dimensions
+- [x] Unit tests exist: test_cnn_small, test_cnn_actor_critic, test_forward_pass, test_output_shapes
+- [x] All unit tests pass: pytest tests/test_networks/test_cnn.py -v (55 passed)
+- [x] Test coverage > 80% for socialjax/networks/cnn.py (94% achieved)
+- [x] All project tests pass: pytest tests/ -v (1057 passed, 15 skipped)
+
+### Key features:
+```python
+# Create a small CNN actor-critic
+from socialjax.networks import create_network
+network = create_network("cnn_small", action_dim=8)
+
+# Create with custom configuration
+network = create_network(
+    "cnn_small",
+    action_dim=8,
+    channel_sizes=(32, 64, 64),
+    kernel_sizes=(5, 3, 3),
+    hidden_size=128,
+    activation="tanh"
+)
+
+# IMPALA-style network for complex tasks
+encoder = create_network("cnn_impala", action_dim=None)
+```
+
+### Files created:
+- socialjax/networks/cnn.py
+- tests/test_networks/__init__.py
+- tests/test_networks/test_cnn.py
+
+### Files modified:
+- socialjax/networks/__init__.py (added CNN exports)
+- agents/feature_list.json (marked P4-005 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P4-006: Implement MLP network architectures
+- P5-001: Implement environment wrappers
+- P5-002: Implement evaluation system
+
+---
+
 ## Session 2026-02-19-2500
 **Duration**: 45m
 **Feature**: P4-004 - Implement visualize.py script
@@ -68,7 +148,7 @@ python scripts/visualize.py --checkpoint X --env coin_game --output output.gif -
 - agents/feature_list.json (marked P4-004 as passed)
 
 ### Git commits:
-- (pending commit)
+- b59a22e feat(P4-004): implement visualize.py script
 
 ### Next steps:
 - P4-005: Implement CNN network architectures

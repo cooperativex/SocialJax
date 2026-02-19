@@ -702,8 +702,8 @@
         "All unit tests pass: pytest tests/test_networks/test_cnn.py -v",
         "Test coverage > 80% for socialjax/networks/cnn.py"
       ],
-      "passes": false,
-      "notes": "Standard CNN architectures for visual observations. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-19. CNN architectures: CNNSmall (feature extractor), CNNActorCritic (registered as 'cnn_small'), CNNSmallEncoder (registered as 'cnn_small_encoder'), CNNImpala (registered as 'cnn_impala' with residual blocks). All networks support configurable channel_sizes, kernel_sizes, hidden_size, activation. 55 unit tests with 94% coverage.",
       "dependencies": [
         "P1-005"
       ]
