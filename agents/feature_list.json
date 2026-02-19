@@ -730,8 +730,8 @@
         "All unit tests pass: pytest tests/test_networks/test_mlp.py -v",
         "Test coverage > 80% for socialjax/networks/mlp.py"
       ],
-      "passes": false,
-      "notes": "MLP architectures for vector observations. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-19. MLP architectures for vector observations: MLPSmall (feature extractor), MLPActorCritic (registered as 'mlp_small'), MLPEncoder (registered as 'mlp_encoder'), MLPLargeActorCritic (registered as 'mlp_large'). All networks support configurable layer_sizes, activation functions (relu/tanh), and proper orthogonal initialization. 45 unit tests pass covering all classes, forward passes, output shapes, edge cases.",
       "dependencies": [
         "P1-005"
       ]

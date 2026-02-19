@@ -1,3 +1,79 @@
+## Session 2026-02-19-3200
+**Duration**: 45m
+**Feature**: P4-006 - Implement MLP network architectures
+**Status**: completed
+
+### What was done:
+- Created socialjax/networks/mlp.py with four MLP network classes:
+  - MLPSmall: Lightweight MLP feature extractor for vector observations
+  - MLPActorCritic: Combined actor-critic network (registered as "mlp_small")
+  - MLPEncoder: MLP encoder for auxiliary tasks (registered as "mlp_encoder")
+  - MLPLargeActorCritic: Large actor-critic for complex tasks (registered as "mlp_large")
+- All networks support configurable parameters:
+  - layer_sizes: List of layer sizes for each hidden layer
+  - activation: "relu" or "tanh"
+  - actor_hidden_size, critic_hidden_size: Optional separate head sizes
+- Updated socialjax/networks/__init__.py to export new classes
+- Created comprehensive unit tests (45 tests):
+  - tests/test_networks/test_mlp.py with:
+    - TestMLPSmall (8 tests): import, creation, default config, forward pass, custom layer sizes, tanh activation, invalid activation, batch processing
+    - TestMLPActorCritic (11 tests): import, creation, default config, forward pass, output shapes, custom hidden sizes, tanh activation, batch processing, distribution sampling, log prob
+    - TestMLPEncoder (4 tests): import, creation, forward pass, registered
+    - TestMLPLargeActorCritic (4 tests): import, creation, forward pass, registered
+    - TestNetworkFactoryIntegration (6 tests): create_mlp_small, create_mlp_encoder, create_mlp_large, custom params, get class, all listed
+    - TestForwardPass (2 tests): deterministic, different inputs
+    - TestOutputShapes (2 tests): output matches layer sizes, value shape
+    - TestEdgeCases (4 tests): single layer, large input, large batch, zero input
+    - TestModuleExports (4 tests): all in __all__, direct imports
+
+### Tests passed:
+- [x] MLP networks can be created via create_network
+- [x] Forward pass works with correct input shapes
+- [x] Output shapes match action dimensions
+- [x] Unit tests exist: test_mlp_small, test_mlp_actor_critic, test_forward_pass, test_output_shapes
+- [x] All unit tests pass: pytest tests/test_networks/test_mlp.py -v (45 passed)
+- [x] Test coverage > 80% for socialjax/networks/mlp.py
+- [x] All project tests pass: pytest tests/ (1300 passed, 7 skipped)
+
+### Key features:
+```python
+# Create a small MLP actor-critic
+from socialjax.networks import create_network
+network = create_network("mlp_small", action_dim=8)
+
+# Create with custom configuration
+network = create_network(
+    "mlp_small",
+    action_dim=8,
+    layer_sizes=(128, 128),
+    activation="tanh"
+)
+
+# Large network for complex tasks
+network = create_network("mlp_large", action_dim=8, hidden_size=256, num_layers=4)
+
+# Encoder for auxiliary tasks
+from socialjax.networks.mlp import MLPEncoder
+encoder = MLPEncoder(layer_sizes=(64, 64))
+```
+
+### Files created:
+- socialjax/networks/mlp.py
+- tests/test_networks/test_mlp.py
+
+### Files modified:
+- socialjax/networks/__init__.py (added MLP exports)
+- agents/feature_list.json (marked P4-006 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P5-007: Create tutorial notebooks
+- E2E-003: Run comprehensive V2 benchmarks (depends on E2E-002)
+
+---
+
 ## Session 2026-02-19-3100
 **Duration**: 60m
 **Feature**: E2E-002 - Validate V2 MAPPO matches V1 performance

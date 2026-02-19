@@ -47,6 +47,13 @@ from socialjax.networks.cnn import (
     CNNImpala,
 )
 
+from socialjax.networks.mlp import (
+    MLPSmall,
+    MLPActorCritic,
+    MLPEncoder,
+    MLPLargeActorCritic,
+)
+
 __all__ = [
     # Registry functions
     "register_network",
@@ -69,4 +76,9 @@ __all__ = [
     "CNNActorCritic",
     "CNNSmallEncoder",
     "CNNImpala",
+    # MLP Networks
+    "MLPSmall",
+    "MLPActorCritic",
+    "MLPEncoder",
+    "MLPLargeActorCritic",
 ]
