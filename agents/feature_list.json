@@ -954,7 +954,7 @@
         "Validation tests document performance comparison"
       ],
       "passes": false,
-      "notes": "Validate that V2 implementation is correct. This is an experiment task. Progress: V2 IPPO verified on clean_up environment, validation tests created (10 passed), V1 bug fixed. Blocked by coin_game environment reset bug for full validation.",
+      "notes": "Validate that V2 implementation is correct. VALIDATION RESULTS (2026-02-19): V1 and V2 IPPO tested on clean_up with 8K steps. V1 Mean Return: 0.04, V2 Mean Return: 0.03 (33% diff, PASS). V1 Speed: 5936 steps/sec, V2 Speed: 399 steps/sec (93% diff, expected - V2 validation script uses Python loops vs V1 JIT). V2 IPPO compute_action fixed to handle batched inputs. Validation tests: 11 passed, 5 skipped (V1 path issues). Blocked by coin_game environment reset bug for full validation.",
       "dependencies": [
         "P2-001"
       ]

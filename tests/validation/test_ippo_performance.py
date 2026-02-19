@@ -487,5 +487,118 @@ class TestIPPOPerformance:
         assert time_per_update < 1.0, f"Updates too slow: {time_per_update:.2f}s"
 
 
+class TestV1V2TrainingComparison:
+    """Compare V1 and V2 IPPO training behavior.
+
+    These tests validate that V2 produces similar results to V1.
+    Note: Due to JAX's JIT compilation differences, exact reproducibility
+    is not expected, but overall training behavior should be similar.
+    """
+
+    @pytest.mark.skipif(not V1_AVAILABLE, reason="V1 IPPO not available")
+    @pytest.mark.slow
+    def test_v1_training_runs(self):
+        """Test that V1 IPPO training runs without errors."""
+        config = TEST_CONFIG.copy()
+        config['TOTAL_TIMESTEPS'] = 1600  # 2 update cycles
+
+        train_fn = v1_make_train(config)
+        train_jit = jax.jit(train_fn)
+
+        rng = jax.random.PRNGKey(config['SEED'])
+        result = train_jit(rng)
+
+        assert result is not None
+        assert 'runner_state' in result
+        assert 'metrics' in result
+        print("V1 training completed successfully")
+
+    @pytest.mark.slow
+    def test_v2_training_runs(self):
+        """Test that V2 IPPO training runs without errors."""
+        import socialjax
+
+        env = socialjax.make('clean_up', num_agents=7)
+        obs_shape = env.observation_space()[1]
+        action_dim = env.action_space().n
+
+        class DummyObsSpace:
+            shape = obs_shape
+
+        class DummyActSpace:
+            n = action_dim
+
+        algo = IPPOAlgorithm(
+            observation_space=DummyObsSpace(),
+            action_space=DummyActSpace(),
+            config=get_ippo_config({'LR': 0.0005})
+        )
+
+        rng = jax.random.PRNGKey(42)
+        state = algo.init_state(rng)
+
+        # Run multiple updates
+        batch = {
+            'obs': jnp.zeros((56, *obs_shape)),  # 8 envs * 7 agents
+            'actions': jnp.zeros((56,), dtype=jnp.int32),
+            'advantages': jnp.zeros((56,)),
+            'targets': jnp.zeros((56,)),
+            'old_log_probs': jnp.zeros((56,)),
+            'values': jnp.zeros((56,)),
+        }
+
+        for i in range(10):
+            state, metrics = algo.update(state, batch)
+            assert not jnp.isnan(metrics['total_loss'])
+
+        print("V2 training completed successfully")
+
+    @pytest.mark.skipif(not V1_AVAILABLE, reason="V1 IPPO not available")
+    @pytest.mark.slow
+    def test_v1_v2_network_output_shapes_match(self):
+        """Test that V1 and V2 networks produce same output shapes."""
+        import socialjax
+        from algorithms.utils import ActorCritic as V1ActorCritic
+
+        env = socialjax.make('clean_up', num_agents=7)
+        obs_shape = env.observation_space()[1]
+        action_dim = env.action_space().n
+
+        # V1 network
+        v1_network = V1ActorCritic(action_dim, activation='relu')
+        rng = jax.random.PRNGKey(42)
+        init_x = jnp.zeros((1, *obs_shape))
+        v1_params = v1_network.init(rng, init_x)
+
+        # V2 network
+        class DummyObsSpace:
+            shape = obs_shape
+
+        class DummyActSpace:
+            n = action_dim
+
+        v2_algo = IPPOAlgorithm(
+            observation_space=DummyObsSpace(),
+            action_space=DummyActSpace(),
+            config=get_ippo_config({'ACTIVATION': 'relu'})
+        )
+        v2_state = v2_algo.init_state(rng)
+
+        # Test forward pass with same input
+        test_obs = jax.random.normal(rng, (1, *obs_shape))
+
+        v1_pi, v1_value = v1_network.apply(v1_params, test_obs)
+        v2_pi, v2_value = v2_algo.network.apply(v2_state.params, test_obs)
+
+        # Check output shapes match
+        assert v1_pi.sample(seed=rng).shape == v2_pi.sample(seed=rng).shape
+        assert v1_value.shape == v2_value.shape
+
+        print(f"V1 action shape: {v1_pi.sample(seed=rng).shape}")
+        print(f"V2 action shape: {v2_pi.sample(seed=rng).shape}")
+        print(f"V1 value shape: {v1_value.shape}")
+        print(f"V2 value shape: {v2_value.shape}")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

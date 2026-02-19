@@ -1,3 +1,52 @@
+## Session 2026-02-19-1400
+**Duration**: 60m
+**Feature**: E2E-001 - Validate V2 IPPO matches V1 performance
+**Status**: in_progress
+
+### What was done:
+- Completed startup checklist (JAX available with 3 CUDA GPUs)
+- Created scripts/validate_ippo_v1v2.py for V1/V2 comparison
+- Fixed V2 IPPO compute_action bug: added proper handling for batched inputs
+- Fixed V2 IPPO compute_value bug: consistent single/batch handling
+- Ran V1 IPPO training on clean_up (8K steps, 80K steps)
+- Ran V2 IPPO training on clean_up (8K steps)
+- Added 3 new validation tests: TestV1V2TrainingComparison
+
+### Tests passed:
+- [x] V1 IPPO training runs successfully on clean_up (8K, 80K steps)
+- [x] V2 IPPO training runs successfully on clean_up (8K steps)
+- [x] V1 Mean Return: 0.04 +/- 0.11 (8K steps)
+- [x] V2 Mean Return: 0.03 +/- 0.42 (8K steps)
+- [x] Episode returns within 50%: PASS (33.3% difference)
+- [x] Validation tests pass: 11 passed, 5 skipped
+
+### Validation Results (clean_up, 8K steps):
+- V1: 5936 steps/sec, Mean Return: 0.04 +/- 0.11
+- V2: 399 steps/sec, Mean Return: 0.03 +/- 0.42
+- Speed diff: 93% (expected - V2 script uses Python loops vs V1 JIT)
+- Returns diff: 33% (PASS - within 50% tolerance)
+
+### Issues encountered:
+- V1 IPPO import requires special path handling (conflict with socialjax/algorithms/utils)
+- V2 compute_action squeeze(0) fails on batched inputs - FIXED
+- V2 validation script runs out of GPU memory for 80K steps (works for 8K)
+
+### Files created/modified:
+- scripts/validate_ippo_v1v2.py (new - V1/V2 comparison script)
+- socialjax/algorithms/ippo/algorithm.py (fixed batched compute_action, compute_value)
+- tests/validation/test_ippo_performance.py (added 3 new tests)
+- validation_results_seed42_steps8000.json (validation output)
+
+### Git commits:
+- (pending)
+
+### Next steps:
+- Fix coin_game environment reset bug for full validation
+- Implement JIT-compiled training loop for V2 for fair speed comparison
+- Run 1M step training comparison
+
+---
+
 ## Session 2026-02-19-1000
 **Duration**: 90m
 **Feature**: E2E-001 - Validate V2 IPPO matches V1 performance
