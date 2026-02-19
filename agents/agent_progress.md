@@ -1,3 +1,53 @@
+## Session 2026-02-19-1000
+**Duration**: 90m
+**Feature**: E2E-001 - Validate V2 IPPO matches V1 performance
+**Status**: in_progress
+
+### What was done:
+- Completed startup checklist verification
+- Fixed V1 IPPO bug: Added missing Transition NamedTuple to ippo_cnn_cleanup.py
+- Verified V2 IPPO works on clean_up environment
+- Created tests/validation/ directory structure
+- Created tests/validation/test_ippo_performance.py (13 validation tests)
+- Tested V1 IPPO training on clean_up (short run successful)
+
+### Tests passed:
+- [x] V2 IPPO imports and creates algorithm instances
+- [x] V2 IPPO compute_action works correctly
+- [x] V2 IPPO update works correctly
+- [x] V2 IPPO loss decreases during training
+- [x] V2 IPPO entropy is within expected bounds
+- [x] V2 IPPO config is compatible with V1-style configs
+- [x] V2 IPPO update speed is reasonable (< 1s per update)
+- [x] Validation tests pass: pytest tests/validation/ (10 passed, 3 skipped)
+
+### Tests pending (blocked):
+- [ ] V2 IPPO trains on coin_game (blocked by environment reset bug)
+- [ ] Full V1/V2 performance comparison (requires longer training runs)
+- [ ] Episode returns match V1 within 5% (requires full training)
+- [ ] Training speed within 10% of V1 (requires JIT comparison)
+
+### Issues encountered:
+- coin_game environment has reset bug (ValueError in agent_locs creation)
+- V1 IPPO had missing Transition class definition (fixed)
+- V1 IPPO requires wandb.init() even in disabled mode
+
+### Files created/modified:
+- tests/validation/__init__.py (new)
+- tests/validation/test_ippo_performance.py (new, 13 tests)
+- algorithms/IPPO/ippo_cnn_cleanup.py (fixed Transition bug)
+
+### Git commits:
+- 410877b feat(E2E-001): add IPPO validation tests and fix V1 bug
+
+### Next steps:
+- Fix coin_game environment reset bug to enable full testing
+- Run longer V2 IPPO training on clean_up (1M steps)
+- Run V1 IPPO training on clean_up for comparison
+- Compare episode returns and training speed
+
+---
+
 ## Session 2026-02-19-0200
 **Duration**: 45m
 **Feature**: P5-006 - Write integration tests

@@ -954,7 +954,7 @@
         "Validation tests document performance comparison"
       ],
       "passes": false,
-      "notes": "Validate that V2 implementation is correct. This is an experiment task.",
+      "notes": "Validate that V2 implementation is correct. This is an experiment task. Progress: V2 IPPO verified on clean_up environment, validation tests created (10 passed), V1 bug fixed. Blocked by coin_game environment reset bug for full validation.",
       "dependencies": [
         "P2-001"
       ]
