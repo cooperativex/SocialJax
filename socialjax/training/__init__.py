@@ -8,6 +8,7 @@ from socialjax.training.callbacks import (
     CallbackList,
     CheckpointCallback,
     EvalCallback,
+    ProgressCallback,
     WandbCallback,
 )
 from socialjax.training.trainer import (
@@ -21,6 +22,7 @@ __all__ = [
     "CallbackList",
     "CheckpointCallback",
     "EvalCallback",
+    "ProgressCallback",
     "WandbCallback",
     "Trainer",
     "RolloutBuffer",

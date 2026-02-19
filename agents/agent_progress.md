@@ -1,3 +1,78 @@
+## Session 2026-02-19-2200
+**Duration**: 45m
+**Feature**: P3-005 - Implement ProgressCallback
+**Status**: completed
+
+### What was done:
+- Created socialjax/training/callbacks/progress_callback.py with:
+  - ProgressCallback class with tqdm progress bar display
+  - Configurable total_timesteps, progress_freq, show_metrics parameters
+  - on_training_start: creates tqdm progress bar
+  - on_step: updates progress bar with step, timestep, and metrics
+  - on_training_end: closes progress bar and prints completion message
+  - Utility methods: get_elapsed_time, get_progress_percentage, get_current_step, get_current_timestep, reset
+  - Graceful handling of missing tqdm (disables progress bar)
+  - Robust timestep tracking from trainer.timestep, trainer._timestep, or estimation from config
+- Updated socialjax/training/callbacks/__init__.py to export ProgressCallback
+- Updated socialjax/training/__init__.py to export ProgressCallback
+- Created comprehensive unit tests (48 tests):
+  - tests/test_callbacks/test_progress_callback.py with:
+    - TestProgressCallbackImport (4 tests)
+    - TestProgressCallbackInit (5 tests)
+    - TestProgressDisplay (5 tests)
+    - TestUpdateFrequency (3 tests)
+    - TestMetricsDisplay (6 tests)
+    - TestUtilityMethods (8 tests)
+    - TestSetTrainer (2 tests)
+    - TestTimestepTracking (3 tests)
+    - TestRolloutMetrics (2 tests)
+    - TestVerboseOutput (2 tests)
+    - TestCallbackListIntegration (2 tests)
+    - TestEdgeCases (6 tests)
+
+### Tests passed:
+- [x] Progress bar displays during training
+- [x] Progress updates at correct frequency
+- [x] Metrics are shown in progress bar
+- [x] Progress bar completes at 100%
+- [x] Unit tests exist: test_progress_display, test_update_frequency, test_metrics_display
+- [x] All unit tests pass: pytest tests/test_callbacks/test_progress_callback.py -v (48 passed)
+- [x] All callback tests pass: pytest tests/test_callbacks/ -v (185 passed)
+- [x] All project tests pass: pytest tests/ -v (727 passed, 2 skipped)
+
+### Key features:
+```python
+# Create progress callback with custom settings
+callback = ProgressCallback(
+    total_timesteps=1_000_000,
+    progress_freq=10,  # Update every 10 steps
+    show_metrics=['loss', 'episode_return'],
+    verbose=True,
+)
+
+# Progress bar output format:
+# Step 500000/1000000 [50%] Elapsed: 00:45, Metrics: loss=0.1234, episode_return=5.67
+```
+
+### Files created:
+- socialjax/training/callbacks/progress_callback.py
+- tests/test_callbacks/test_progress_callback.py
+
+### Files modified:
+- socialjax/training/callbacks/__init__.py (added ProgressCallback export)
+- socialjax/training/__init__.py (added ProgressCallback export)
+- agents/feature_list.json (marked P3-005 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P3-006: Implement experience buffer system
+- P4-003: Implement unified evaluate.py script
+- P5-002: Implement evaluation system
+
+---
+
 ## Session 2026-02-19-2100
 **Duration**: 60m
 **Feature**: P2-005 - Implement shared algorithm utilities
