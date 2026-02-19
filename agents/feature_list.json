@@ -760,8 +760,8 @@
         "All unit tests pass: pytest tests/test_environments/test_wrappers.py -v",
         "Test coverage > 80% for socialjax/environments/wrappers/"
       ],
-      "passes": false,
-      "notes": "Environment augmentation utilities. Unit tests required.",
+      "passes": true,
+      "notes": "Completed 2026-02-19. Environment wrappers: BaseWrapper (forwarding), NormalizationWrapper (obs/reward normalization with running statistics), FrameStackWrapper (temporal frame stacking), TimeLimitWrapper (episode length enforcement). All wrappers are JAX-JIT compatible. 39 unit tests with 85% coverage. All project tests pass (1096 passed, 15 skipped).",
       "dependencies": [
         "P1-001"
       ]

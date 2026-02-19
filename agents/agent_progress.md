@@ -1,3 +1,101 @@
+## Session 2026-02-19-2700
+**Duration**: 60m
+**Feature**: P5-001 - Implement environment wrappers
+**Status**: completed
+
+### What was done:
+- Created socialjax/environments/wrappers/__init__.py with module exports
+- Created socialjax/environments/wrappers/base_wrapper.py with:
+  - BaseWrapper class that wraps MultiAgentEnv
+  - Forwarding for reset, step, step_env, get_obs, get_avail_actions
+  - unwrapped() method for accessing underlying environment
+  - Proper attribute forwarding with __getattr__
+- Created socialjax/environments/wrappers/normalization.py with:
+  - RunningMeanStd dataclass for running statistics
+  - update_running_stats() and normalize() functions
+  - NormalizationWrapper with obs/reward normalization
+  - Configurable clip values and training mode
+- Created socialjax/environments/wrappers/frame_stack.py with:
+  - FrameStackState for storing stacked frames
+  - FrameStackWrapper with configurable num_frames
+  - Frame stacking along new dimension
+  - LazyFrames class for efficient storage
+- Created socialjax/environments/wrappers/time_limit.py with:
+  - TimeLimitWrapper with configurable max_steps
+  - Truncation signal in infos
+  - Step counter in state
+- Created comprehensive unit tests (39 tests):
+  - tests/test_environments/test_wrappers.py with:
+    - TestBaseWrapper (8 tests)
+    - TestNormalizationWrapper (8 tests)
+    - TestFrameStackWrapper (7 tests)
+    - TestTimeLimitWrapper (7 tests)
+    - TestWrapperChaining (3 tests)
+    - TestRunningMeanStd (2 tests)
+    - TestModuleExports (2 tests)
+
+### Tests passed:
+- [x] NormalizationWrapper normalizes observations and rewards
+- [x] FrameStackWrapper stacks multiple frames
+- [x] TimeLimitWrapper enforces episode length
+- [x] Wrappers chain correctly
+- [x] Unit tests exist: test_normalization, test_frame_stack, test_time_limit, test_wrapper_chain
+- [x] All unit tests pass: pytest tests/test_environments/test_wrappers.py -v (39 passed)
+- [x] Test coverage > 80% for socialjax/environments/wrappers/ (85% achieved)
+- [x] All project tests pass: pytest tests/ -v (1096 passed, 15 skipped)
+
+### Key features:
+```python
+# Create normalized environment
+from socialjax import make
+from socialjax.environments.wrappers import NormalizationWrapper
+env = make('coin_game', num_agents=5)
+env = NormalizationWrapper(env, normalize_obs=True, normalize_reward=True)
+
+# Create time-limited environment
+from socialjax.environments.wrappers import TimeLimitWrapper
+env = make('coin_game', num_agents=5)
+env = TimeLimitWrapper(env, max_steps=1000)
+
+# Create frame-stacked environment
+from socialjax.environments.wrappers import FrameStackWrapper
+env = make('coin_game', num_agents=5)
+env = FrameStackWrapper(env, num_frames=4)
+
+# Chain wrappers
+from socialjax.environments.wrappers import (
+    NormalizationWrapper,
+    FrameStackWrapper,
+    TimeLimitWrapper,
+)
+env = make('coin_game', num_agents=5)
+env = FrameStackWrapper(env, num_frames=4)
+env = TimeLimitWrapper(env, max_steps=1000)
+env = NormalizationWrapper(env)
+```
+
+### Files created:
+- socialjax/environments/wrappers/__init__.py
+- socialjax/environments/wrappers/base_wrapper.py
+- socialjax/environments/wrappers/normalization.py
+- socialjax/environments/wrappers/frame_stack.py
+- socialjax/environments/wrappers/time_limit.py
+- tests/test_environments/__init__.py
+- tests/test_environments/test_wrappers.py
+
+### Files modified:
+- agents/feature_list.json (marked P5-001 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P4-006: Implement MLP network architectures
+- P5-002: Implement evaluation system
+- P5-003: Write V2 API documentation
+
+---
+
 ## Session 2026-02-19-2600
 **Duration**: 30m
 **Feature**: P4-005 - Implement CNN network architectures
