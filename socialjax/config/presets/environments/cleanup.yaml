@@ -1,0 +1,19 @@
+# Clean Up Environment Configuration
+# A sequential social dilemma where agents must balance harvesting apples
+# and cleaning up pollution to maintain the apple spawning rate
+
+environment:
+  name: "clean_up"
+  num_agents: 7
+  max_steps: 500
+  kwargs:
+    # Apple spawning parameters
+    apple_spawn_rate: 0.05  # Probability of apple spawning per step
+    apple_reward: 1.0  # Reward for collecting an apple
+    # Waste/pollution parameters
+    waste_spawn_rate: 0.5  # Probability of waste spawning
+    waste_penalty: 0.0  # Penalty for waste accumulation (implicit via apple rate)
+    cleaning_reward: 0.0  # Direct reward for cleaning (optional)
+    # Environment size
+    width: 25
+    height: 18

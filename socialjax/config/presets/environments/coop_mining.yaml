@@ -1,0 +1,19 @@
+# Cooperative Mining Environment Configuration
+# A cooperative task where agents must work together to mine resources
+# Some mining tasks require multiple agents to cooperate
+
+environment:
+  name: "coop_mining"
+  num_agents: 4
+  max_steps: 500
+  kwargs:
+    # Mining parameters
+    mining_reward: 1.0  # Base reward for successful mining
+    # Cooperation requirements
+    min_agents_for_coop: 2  # Minimum agents needed for cooperative mining
+    coop_bonus: 0.5  # Bonus reward when cooperating
+    # Resource parameters
+    resource_spawn_rate: 0.1  # Rate of new resource spawning
+    # Environment size
+    width: 15
+    height: 15

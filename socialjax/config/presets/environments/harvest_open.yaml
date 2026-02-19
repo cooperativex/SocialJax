@@ -1,0 +1,21 @@
+# Harvest Common (Open) Environment Configuration
+# A common-pool resource dilemma where agents must balance harvesting
+# and replanting apples to maintain a sustainable resource pool
+
+environment:
+  name: "harvest_common_open"
+  num_agents: 7
+  max_steps: 1000
+  kwargs:
+    # Apple spawning parameters
+    apple_spawn_rate: 0.05  # Probability of apple spawning
+    apple_reward: 1.0  # Reward for collecting an apple
+    # Replanting parameters
+    replant_cost: 0.0  # Cost for replanting (if applicable)
+    replant_reward: 0.0  # Reward for replanting (optional)
+    # Environment size
+    width: 25
+    height: 18
+    # Visibility
+    view_width: 9
+    view_height: 9

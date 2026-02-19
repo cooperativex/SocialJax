@@ -1,0 +1,22 @@
+# MAPPO (Multi-Agent PPO) Algorithm Configuration
+# MAPPO uses centralized training with decentralized execution (CTDE)
+# - Centralized critic: has access to global information (all agent observations)
+# - Decentralized actor: only has access to local observations
+
+algorithm:
+  name: "mappo"
+  parameter_sharing: true
+  centralised_critic: true
+  training:
+    learning_rate: 0.0005
+    clip_eps: 0.2
+    ent_coef: 0.01
+    vf_coef: 0.5
+    # MAPPO-specific: scale clip_eps by num_agents
+    scale_clip_eps: true
+    # Populates critic value for all agents
+    populate_critic_value: true
+  network:
+    architecture: "cnn_actor_critic"
+    hidden_size: 64
+    activation: "relu"

@@ -1,0 +1,23 @@
+# SVO (Social Value Orientation) Algorithm Configuration
+# SVO incorporates social preferences into multi-agent RL
+# Agents balance between self-interest and collective welfare based on SVO angle
+
+algorithm:
+  name: "svo"
+  parameter_sharing: true
+  # SVO-specific parameters
+  svo_angle: 45.0  # SVO angle in degrees (0=selfish, 45=cooperative, 90=altruistic)
+  use_fairness_reward: true  # Whether to use fairness-aware reward shaping
+  fairness_weight: 0.1  # Weight for fairness component in reward
+  training:
+    learning_rate: 0.00025
+    clip_eps: 0.2
+    ent_coef: 0.01
+    gamma: 0.99
+    gae_lambda: 0.95
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+  network:
+    architecture: "cnn_actor_critic"
+    hidden_size: 64
+    activation: "relu"
