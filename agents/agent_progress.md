@@ -1,3 +1,82 @@
+## Session 2026-02-19-2500
+**Duration**: 45m
+**Feature**: P4-004 - Implement visualize.py script
+**Status**: completed
+
+### What was done:
+- Created scripts/visualize.py with visualization CLI:
+  - Argparse for --checkpoint, --env, --output (required)
+  - Argparse for --num-frames, --fps, --format (gif/mp4)
+  - Argparse for --mode (basic/actions/rewards/full)
+  - Argparse for --algorithm, --num-agents
+  - Argparse for --seed, --deterministic, --stochastic, --verbose
+- Implemented OutputFormat enum (GIF, MP4)
+- Implemented VisualizationMode enum (BASIC, ACTIONS, REWARDS, FULL)
+- Implemented detect_algorithm_from_checkpoint() for auto-detection
+- Implemented load_checkpoint() for loading V2 checkpoints
+- Implemented run_visualization() for episode execution with frame capture
+- Implemented apply_visualization_mode() for frame overlays
+- Implemented infer_format() for output format inference from file extension
+- Implemented save_gif() using PIL for GIF generation
+- Implemented save_mp4() using OpenCV for video generation
+- Implemented save_visualization() as unified save dispatcher
+- Created comprehensive unit tests (54 tests):
+  - tests/test_scripts/test_visualize_script.py with:
+    - TestOutputFormat (2 tests)
+    - TestVisualizationMode (4 tests)
+    - TestParseArgs (15 tests for CLI argument parsing)
+    - TestInferFormat (5 tests for format inference)
+    - TestDetectAlgorithmFromCheckpoint (6 tests for algorithm detection)
+    - TestSaveGif (5 tests for GIF output)
+    - TestSaveMp4 (2 tests, 1 skipped for OpenCV)
+    - TestSaveVisualization (2 tests for unified save)
+    - TestApplyVisualizationMode (4 tests for visualization modes)
+    - TestLoadCheckpoint (1 test for error handling)
+    - TestRunVisualization (1 test for execution)
+    - TestCLIIntegration (2 tests for CLI integration)
+    - TestEdgeCases (5 tests for edge cases)
+
+### Tests passed:
+- [x] python scripts/visualize.py --help works
+- [x] Visualization runs and captures frames
+- [x] GIF is generated at specified output path
+- [x] FPS and frame count are respected
+- [x] Unit tests exist: test_cli_args, test_gif_generation, test_output_format
+- [x] All unit tests pass: pytest tests/test_scripts/test_visualize_script.py -v (54 passed, 1 skipped)
+- [x] All project tests pass: pytest tests/ -v (1002 passed, 15 skipped)
+
+### Key features:
+```python
+# Generate a GIF from a checkpoint
+python scripts/visualize.py --checkpoint checkpoints/ippo_final --env coin_game --output output.gif
+
+# Custom frame count and FPS
+python scripts/visualize.py --checkpoint X --env clean_up --output output.gif --num-frames 250 --fps 15
+
+# Generate video (MP4) instead of GIF
+python scripts/visualize.py --checkpoint X --env coin_game --output output.mp4 --format mp4
+
+# Visualization mode: overlay actions
+python scripts/visualize.py --checkpoint X --env coin_game --output output.gif --mode actions
+```
+
+### Files created:
+- scripts/visualize.py
+- tests/test_scripts/test_visualize_script.py
+
+### Files modified:
+- agents/feature_list.json (marked P4-004 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P4-005: Implement CNN network architectures
+- P5-001: Implement environment wrappers
+- P5-002: Implement evaluation system
+
+---
+
 ## Session 2026-02-19-2400
 **Duration**: 30m
 **Feature**: P4-003 - Implement unified evaluate.py script
