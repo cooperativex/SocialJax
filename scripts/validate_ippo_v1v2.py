@@ -173,15 +173,22 @@ def run_v1_training(config):
 
 
 def run_v2_training(config):
-    """Run V2 IPPO training and return metrics."""
+    """Run V2 IPPO training and return metrics.
+
+    This function implements a proper training loop matching V1's approach:
+    1. Collect transitions with actions, log_probs, values
+    2. Compute GAE after rollouts
+    3. Update with actual data
+    """
     print("\n" + "="*60)
-    print("Running V2 IPPO Training")
+    print("Running V2 IPPO Training (Proper Implementation)")
     print("="*60)
 
     import socialjax
-    from socialjax.algorithms.ippo.algorithm import IPPOAlgorithm
+    from socialjax.algorithms.ippo.algorithm import IPPOAlgorithm, Transition
     from socialjax.algorithms.ippo.config import get_ippo_config
     from socialjax.wrappers.baselines import LogWrapper
+    from typing import NamedTuple
 
     # Create environment
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -190,6 +197,7 @@ def run_v2_training(config):
     # Get observation and action space info
     obs_shape = env.observation_space()[0].shape
     action_dim = env.action_space().n
+    num_agents = env.num_agents
 
     class DummyObsSpace:
         shape = obs_shape
@@ -219,7 +227,7 @@ def run_v2_training(config):
 
     num_envs = config['NUM_ENVS']
     num_steps = config['NUM_STEPS']
-    num_agents = env.num_agents
+    num_actors = num_agents * num_envs
 
     # Initialize
     rng = jax.random.PRNGKey(config['SEED'])
@@ -232,12 +240,25 @@ def run_v2_training(config):
 
     num_updates = config['TOTAL_TIMESTEPS'] // (num_steps * num_envs)
     print(f"Number of updates: {num_updates}")
+    print(f"Num actors: {num_actors}")
+    print(f"Num agents: {num_agents}")
 
     episode_returns = []
     start_train = time.time()
 
-    def env_step(carry, _):
-        algo_state, env_state, last_obs, rng = carry
+    # Helper to batchify rewards and dones
+    def batchify_rewards(reward, num_actors):
+        """Reshape reward from (num_envs, num_agents) to (num_actors,)."""
+        return reward.reshape((num_actors,))
+
+    def batchify_dones(done, num_agents, num_actors):
+        """Stack dones from all agents and reshape to (num_actors,)."""
+        # done has string keys like '0', '1', ... and shape (num_envs,) per agent
+        return jnp.stack([done[str(a)] for a in range(num_agents)]).reshape((num_actors,))
+
+    def env_step(runner_state, unused):
+        """Single environment step - collects transition data."""
+        algo_state, env_state, last_obs, rng = runner_state
 
         # Get actions for all agents
         rng, action_rng = jax.random.split(rng)
@@ -245,58 +266,131 @@ def run_v2_training(config):
         # Reshape observations: (num_envs, num_agents, ...) -> (num_envs * num_agents, ...)
         obs_batch = jnp.transpose(last_obs, (1, 0, 2, 3, 4)).reshape(-1, *obs_shape)
 
-        # Compute actions
+        # Compute actions with log_prob and value
         action, info = algo.compute_action(algo_state, obs_batch, action_rng)
+        log_prob = info['log_prob']
+        value = info['value']
 
-        # Reshape actions for environment
-        env_act = {}
-        for i, agent in enumerate(env.agents):
-            env_act[agent] = action[i * num_envs:(i + 1) * num_envs]
+        # Reshape actions for environment step
+        # action shape: (num_envs * num_agents,) -> (num_agents, num_envs)
+        action_reshaped = action.reshape(num_agents, num_envs)
+        env_act = [action_reshaped[i] for i in range(num_agents)]
 
         # Step environment
         rng, step_rng = jax.random.split(rng)
-        step_rng = jax.random.split(step_rng, num_envs)
+        step_rngs = jax.random.split(step_rng, num_envs)
 
         obsv, env_state, reward, done, info_env = jax.vmap(
             wrapped_env.step, in_axes=(0, 0, 0)
-        )(step_rng, env_state, [env_act[agent] for agent in env.agents])
+        )(step_rngs, env_state, env_act)
 
-        return (algo_state, env_state, obsv, rng), (obsv, reward, done, info_env)
+        # Batchify for transition storage
+        done_batch = batchify_dones(done, num_agents, num_actors)
+        reward_batch = batchify_rewards(reward, num_actors)
+
+        # Batchify info for episode returns tracking
+        info_batched = jax.tree_map(lambda x: x.reshape((num_actors,)), info_env)
+
+        # Create transition
+        transition = Transition(
+            done=done_batch,
+            action=action,
+            value=value.squeeze(),
+            reward=reward_batch,
+            log_prob=log_prob,
+            obs=obs_batch,
+            info=info_batched,
+        )
+
+        runner_state = (algo_state, env_state, obsv, rng)
+        return runner_state, transition
+
+    def compute_gae(traj_batch, last_val, gamma, gae_lambda):
+        """Compute GAE advantages and targets."""
+        def _get_advantages(gae_and_next_value, transition):
+            gae, next_value = gae_and_next_value
+            done, value, reward = transition.done, transition.value, transition.reward
+            delta = reward + gamma * next_value * (1 - done) - value
+            gae = delta + gamma * gae_lambda * (1 - done) * gae
+            return (gae, value), gae
+
+        _, advantages = jax.lax.scan(
+            _get_advantages,
+            (jnp.zeros_like(last_val), last_val),
+            traj_batch,
+            reverse=True,
+            unroll=16,
+        )
+        return advantages, advantages + traj_batch.value
 
     # Training loop
     for update in range(num_updates):
-        # Collect rollouts
+        # Collect rollouts using scan
         rng, rollout_rng = jax.random.split(rng)
 
-        carry = (algo_state, env_state, obsv, rollout_rng)
-        carry, trajectory = jax.lax.scan(env_step, carry, None, num_steps)
+        runner_state = (algo_state, env_state, obsv, rollout_rng)
+        runner_state, traj_batch = jax.lax.scan(env_step, runner_state, None, num_steps)
 
-        algo_state, env_state, obsv, _ = carry
-        obs_traj, reward_traj, done_traj, info_traj = trajectory
+        algo_state, env_state, last_obs, _ = runner_state
+
+        # Compute last value for GAE
+        last_obs_batch = jnp.transpose(last_obs, (1, 0, 2, 3, 4)).reshape(-1, *obs_shape)
+        _, last_val = algo.network.apply(algo_state.params, last_obs_batch)
+        last_val = last_val.squeeze()
+
+        # Compute GAE
+        gamma = config['GAMMA']
+        gae_lambda = config['GAE_LAMBDA']
+        advantages, targets = compute_gae(traj_batch, last_val, gamma, gae_lambda)
 
         # Extract episode returns from info
-        if 'returned_episode_returns' in info_traj:
-            returns = np.array(info_traj['returned_episode_returns'])
-            # returns shape: (num_steps, num_envs, num_agents)
+        if 'returned_episode_returns' in traj_batch.info:
+            returns = np.array(traj_batch.info['returned_episode_returns'])
             episode_returns.extend(returns.flatten().tolist())
 
-        # Prepare batch for update
-        obs_batch = jnp.transpose(obs_traj, (2, 0, 1, 3, 4, 5)).reshape(-1, *obs_shape)
+        # Flatten batch for updates
+        batch_size = num_steps * num_actors
 
-        # Create simple update batch (V2 needs proper GAE computation)
-        # For now, just run an update with dummy advantages
-        batch_size = num_steps * num_envs * num_agents
-        batch = {
-            'obs': obs_batch,
-            'actions': jnp.zeros(batch_size, dtype=jnp.int32),
-            'advantages': jnp.zeros(batch_size),
-            'targets': jnp.zeros(batch_size),
-            'old_log_probs': jnp.zeros(batch_size),
-            'values': jnp.zeros(batch_size),
-        }
+        # Update for multiple epochs with minibatches
+        update_epochs = config['UPDATE_EPOCHS']
+        num_minibatches = config['NUM_MINIBATCHES']
+        minibatch_size = batch_size // num_minibatches
 
-        # Update
-        algo_state, metrics = algo.update(algo_state, batch)
+        for epoch in range(update_epochs):
+            rng, perm_rng = jax.random.split(rng)
+            permutation = jax.random.permutation(perm_rng, batch_size)
+
+            # Flatten and shuffle
+            obs_flat = traj_batch.obs.reshape(batch_size, *obs_shape)
+            actions_flat = traj_batch.action.reshape(batch_size)
+            log_probs_flat = traj_batch.log_prob.reshape(batch_size)
+            values_flat = traj_batch.value.reshape(batch_size)
+            advantages_flat = advantages.reshape(batch_size)
+            targets_flat = targets.reshape(batch_size)
+
+            # Shuffle
+            obs_shuffled = jnp.take(obs_flat, permutation, axis=0)
+            actions_shuffled = jnp.take(actions_flat, permutation, axis=0)
+            log_probs_shuffled = jnp.take(log_probs_flat, permutation, axis=0)
+            values_shuffled = jnp.take(values_flat, permutation, axis=0)
+            advantages_shuffled = jnp.take(advantages_flat, permutation, axis=0)
+            targets_shuffled = jnp.take(targets_flat, permutation, axis=0)
+
+            # Split into minibatches
+            for mb in range(num_minibatches):
+                start_idx = mb * minibatch_size
+                end_idx = start_idx + minibatch_size
+
+                batch = {
+                    'obs': obs_shuffled[start_idx:end_idx],
+                    'actions': actions_shuffled[start_idx:end_idx],
+                    'advantages': advantages_shuffled[start_idx:end_idx],
+                    'targets': targets_shuffled[start_idx:end_idx],
+                    'old_log_probs': log_probs_shuffled[start_idx:end_idx],
+                    'values': values_shuffled[start_idx:end_idx],
+                }
+
+                algo_state, metrics = algo.update(algo_state, batch)
 
         if update % 10 == 0:
             print(f"Update {update}/{num_updates}, Loss: {metrics['total_loss']:.4f}")
