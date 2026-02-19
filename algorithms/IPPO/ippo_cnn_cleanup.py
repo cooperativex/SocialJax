@@ -76,6 +76,16 @@ def get_rollout(params, config):
 
     return state_seq
 
+class Transition(NamedTuple):
+    """Container for a single environment transition."""
+    done: jnp.ndarray
+    action: jnp.ndarray
+    value: jnp.ndarray
+    reward: jnp.ndarray
+    log_prob: jnp.ndarray
+    obs: jnp.ndarray
+    info: dict
+
 def batchify(x: dict, agent_list, num_actors):
     x = jnp.stack([x[:, a] for a in agent_list])
     return x.reshape((num_actors, -1))
