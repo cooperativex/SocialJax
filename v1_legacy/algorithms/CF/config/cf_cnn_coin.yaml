@@ -1,0 +1,61 @@
+"LR": 0.0005
+"REWARD_LR": 0.005
+"NUM_ENVS": 256
+"NUM_STEPS": 1000
+"TOTAL_TIMESTEPS": 1e9
+"UPDATE_EPOCHS": 2
+"NUM_MINIBATCHES": 500
+"GAMMA": 0.99
+"GAE_LAMBDA": 0.95
+"CLIP_EPS": 0.2
+"ENT_COEF": 0.01
+"VF_COEF": 0.5
+"MAX_GRAD_NORM": 0.5
+"ACTIVATION": "relu"
+"ENV_NAME": "coin_game"
+"REW_SHAPING_HORIZON": 2.5e6 # for how many timesteps add a shaping reward
+"ENV_KWARGS": 
+  "num_agents" : 2
+  "num_inner_steps" : 1000
+  "shared_rewards" : False  # Attention: switch to False for individual rewards 
+  "cnn" : True
+  "jit" : False 
+"ANNEAL_LR": False
+"SEED": 30
+"NUM_SEEDS": 1
+"TUNE": False
+"POLICY_STOP_STEP": 5000  # 5000步后停止策略更新
+"REWARD_SWITCH_START": 200  # 开始混合奖励的步数
+"REWARD_SWITCH_END": 400    # 完全切换到预测奖励的步数
+"REWARD_TRAIN_END_STEP": 1200  # 奖励模型训练结束步数
+"EARLY_TRAIN_BOOST_STEPS": 200  # 前400步加强训练权重
+"REWARD_MAE_THRESHOLD": 0.1  # reward model收敛阈值
+
+# 因果Reward Model配置
+"USE_CAUSAL_REWARD_MODEL": True  # 是否使用因果Reward Model
+"USE_CAUSAL_ATTENTION": True  # 是否使用因果注意力机制
+"NUM_ATTENTION_HEADS": 4  # 注意力头数
+"USE_CAUSAL_TRAINING": True  # 是否使用反事实数据增强和因果损失
+"CF_NUM_SAMPLES": 5  # 反事实样本数量
+"CAUSAL_CONSISTENCY_WEIGHT": 0.1  # 因果一致性损失权重
+"CAUSAL_MASK": null  # 可选的因果掩码，格式: [[0,0,0], [1,0,0], [1,1,0]] 或 null
+
+# Reward Model改进配置
+"USE_HUBER_LOSS": True  # 是否使用Huber损失（更鲁棒）
+"HUBER_DELTA": 1.0  # Huber损失阈值
+"COLLECTIVE_LOSS_WEIGHT": 0.5  # 集体奖励损失权重
+"CORRELATION_LOSS_WEIGHT": 0.1  # 相关性损失权重
+"ALLOW_CONTINUOUS_REWARD_TRAINING": True  # 允许持续训练reward model
+"REWARD_MAE_CONTINUE_THRESHOLD": 0.2  # MAE继续训练阈值
+"REWARD_CORRELATION_THRESHOLD": 0.7  # 相关性阈值
+"USE_ADAPTIVE_REWARD_LR": True  # 使用自适应学习率
+
+"REWARD": "individual" # individual; common
+"GIF_NUM_FRAMES": 250
+"REWARD_ALPHA": 1
+# WandB Params
+"ENTITY": ""
+"PROJECT": "cf_socialjax"
+"WANDB_MODE" : "online"
+"WANDB_TAGS":
+  - INDIVIDUAL_REWARD # COMMON_REWARD

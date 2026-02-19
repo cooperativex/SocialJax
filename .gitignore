@@ -1,9 +1,54 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project-specific
 Fixed_gifs/
 outputs/
 wandb/
 checkpoints/
 *.pickle
+
+# Validation results (large files)
+validation_results_*.json
+
+# V1 legacy code (optional - uncomment to exclude from git)
+# v1_legacy/
 
 # IQL evaluation outputs
 evaluation/iql/outputs/
@@ -16,3 +61,9 @@ ENGINEERING_CONTRIBUTIONS.md
 test_env.py
 test_lbf_env.py
 test_lbf_simple.py
+
+# Evaluation outputs
+evaluation/**/*.gif
+evaluation/**/*.mp4
+evaluation/**/*.png
+!evaluation/benchmarks/*.png
