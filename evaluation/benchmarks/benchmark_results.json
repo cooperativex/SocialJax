@@ -1,0 +1,143 @@
+{
+  "timestamp": "2026-02-19T09:54:38.052039",
+  "results": [
+    {
+      "algorithm": "ippo",
+      "environment": "clean_up",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 4.385878562927246,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "ippo",
+      "environment": "harvest_common_open",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 1.3174883238971233,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "ippo",
+      "environment": "coop_mining",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.590442381799221,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "mappo",
+      "environment": "clean_up",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.7625114396214485,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "mappo",
+      "environment": "harvest_common_open",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.6289440728724003,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "mappo",
+      "environment": "coop_mining",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.60993767157197,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "svo",
+      "environment": "clean_up",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.04596040025353432,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "svo",
+      "environment": "harvest_common_open",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.04532422497868538,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "svo",
+      "environment": "coop_mining",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.04495861381292343,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "vdn",
+      "environment": "clean_up",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.028979714959859848,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "vdn",
+      "environment": "harvest_common_open",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.029241390526294708,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    },
+    {
+      "algorithm": "vdn",
+      "environment": "coop_mining",
+      "test_type": "instantiation",
+      "success": true,
+      "error_message": "",
+      "training_time_seconds": 0.028812680393457413,
+      "forward_pass_time_ms": 0.0,
+      "update_time_ms": 0.0,
+      "memory_mb": 0.0
+    }
+  ],
+  "summary": {
+    "total_tests": 12,
+    "successful": 12,
+    "failed": 0,
+    "success_rate": 1.0
+  }
+}
