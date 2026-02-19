@@ -15,6 +15,12 @@ from socialjax.algorithms.registry import (
     AlgorithmNotFoundError,
 )
 
+# Import algorithm implementations to register them
+from socialjax.algorithms import ippo
+from socialjax.algorithms import mappo
+from socialjax.algorithms import vdn
+from socialjax.algorithms import svo
+
 __all__ = [
     # Registry functions
     "register_algorithm",
@@ -26,4 +32,9 @@ __all__ = [
     # Exceptions
     "AlgorithmAlreadyRegisteredError",
     "AlgorithmNotFoundError",
+    # Algorithm modules
+    "ippo",
+    "mappo",
+    "vdn",
+    "svo",
 ]

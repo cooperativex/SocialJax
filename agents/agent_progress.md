@@ -1,3 +1,69 @@
+## Session 2026-02-19-1900
+**Duration**: 45m
+**Feature**: P2-004 - Implement SVO algorithm in new architecture
+**Status**: completed
+
+### What was done:
+- Created socialjax/algorithms/svo/config.py with SVO_DEFAULT_CONFIG:
+  - SVO_ANGLE: 45.0 (cooperative by default)
+  - USE_FAIRNESS_REWARD: True
+  - FAIRNESS_WEIGHT: 0.1
+  - Helper functions: svo_angle_to_radians, get_svo_weights
+- Created socialjax/algorithms/svo/network.py with:
+  - SVOCNN: CNN feature extractor
+  - SVOActorCritic: Actor-Critic network registered as "svo_actor_critic"
+- Created socialjax/algorithms/svo/algorithm.py with:
+  - SVOAlgorithmState: params, optimizer_state, rng, timestep, update_step, svo_angle
+  - compute_svo_reward: Single-step SVO reward transformation
+  - compute_batch_svo_reward: Batch SVO reward transformation
+  - SVOAlgorithm: Registered with @register_algorithm("svo")
+- Updated socialjax/algorithms/__init__.py to auto-import algorithms for registration
+- Created comprehensive unit tests:
+  - tests/test_svo/test_config.py: 30 tests for config functions
+  - tests/test_svo/test_network.py: 25 tests for network forward pass
+  - tests/test_svo/test_algorithm.py: 46 tests for algorithm functionality
+
+### Tests passed:
+- [x] SVOAlgorithm inherits from BaseAlgorithm
+- [x] Can create SVO instance via get_algorithm('svo')
+- [x] SVO angle parameter affects behavior (0=selfish, 45=cooperative, 90=altruistic)
+- [x] Unit tests exist for config, network, algorithm
+- [x] All unit tests pass: pytest tests/test_svo/ -v (101 passed)
+- [x] Test coverage > 80% for socialjax/algorithms/svo/ (97% achieved)
+- [x] All project tests pass: pytest tests/ -v (634 passed, 14 skipped)
+
+### Key SVO Reward Transformation:
+```
+r_svo = w_self * r_self + w_other * r_other
+where:
+  w_self = cos(angle)
+  w_other = sin(angle)
+```
+
+### Files created:
+- socialjax/algorithms/svo/config.py
+- socialjax/algorithms/svo/network.py
+- socialjax/algorithms/svo/algorithm.py
+- socialjax/algorithms/svo/__init__.py (updated)
+- tests/test_svo/__init__.py
+- tests/test_svo/test_config.py
+- tests/test_svo/test_network.py
+- tests/test_svo/test_algorithm.py
+
+### Files modified:
+- socialjax/algorithms/__init__.py (added algorithm imports for registration)
+- agents/feature_list.json (marked P2-004 as passed)
+
+### Git commits:
+- (pending commit)
+
+### Next steps:
+- P2-005: Implement shared algorithm utilities
+- P3-005: Implement ProgressCallback
+- P4-003: Implement unified evaluate.py script
+
+---
+
 ## Session 2026-02-19-1800
 **Duration**: 30m
 **Feature**: P1-007 - Create configuration preset files
