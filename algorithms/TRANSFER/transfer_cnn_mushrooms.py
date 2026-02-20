@@ -216,7 +216,7 @@ def make_train(config):
 
                 # shaped_reward = info.pop("shaped_reward")
                 # current_timestep = update_step*config["NUM_STEPS"]*config["NUM_ENVS"]
-                # reward = jax.tree_map(lambda x,y: x+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
+                # reward = jax.tree.map(lambda x,y: x+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
 
                 info["value"] = value
                 # Handle info reshaping - preserve scalar values like s_interest
@@ -231,7 +231,7 @@ def make_train(config):
                     else:
                         # Try to reshape to NUM_ACTORS, but handle gracefully
                         return x.reshape(-1)[:config["NUM_ACTORS"]]
-                info = jax.tree_map(reshape_info_values, info)
+                info = jax.tree.map(reshape_info_values, info)
                 transition = Transition(
                     batchify_dict(done, env.agents, config["NUM_ACTORS"]).squeeze(),
                     action,
@@ -386,7 +386,7 @@ def make_train(config):
                 wandb.log(metric)
 
             update_step = update_step + 1
-            metric = jax.tree_map(lambda x: x.mean(), metric)
+            metric = jax.tree.map(lambda x: x.mean(), metric)
             metric["update_step"] = update_step
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
             metric["advantages"] = advantages.mean()
@@ -429,7 +429,7 @@ def single_run(config):
 
     print("** Saving Results **")
     filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}_reward_{config["REWARD"]}'
-    train_state = jax.tree_map(lambda x: x[0], out["runner_state"][0])
+    train_state = jax.tree.map(lambda x: x[0], out["runner_state"][0])
     save_path = f"./checkpoints/{filename}.pkl"
     save_params(train_state, save_path)
     params = load_params(save_path)
@@ -487,7 +487,7 @@ def tune(default_config):
         rngs = jax.random.split(rng, config["NUM_SEEDS"])
         train_vjit = jax.jit(jax.vmap(make_train(config)))
         outs = jax.block_until_ready(train_vjit(rngs))
-        train_state = jax.tree_map(lambda x: x[0], outs["runner_state"][0])
+        train_state = jax.tree.map(lambda x: x[0], outs["runner_state"][0])
 
         # Evaluate and log
         # params = load_params(train_state.params)

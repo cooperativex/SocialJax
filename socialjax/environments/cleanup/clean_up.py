@@ -1486,7 +1486,7 @@ class Clean_up(MultiAgentEnv):
             state_re = _reset_state(key)
 
             state_re = state_re.replace(outer_t=outer_t + 1)
-            state = jax.tree_map(
+            state = jax.tree.map(
                 lambda x, y: jnp.where(reset_inner, x, y),
                 state_re,
                 state_nxt,

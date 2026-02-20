@@ -218,7 +218,7 @@ class MPELogWrapper(LogWrapper):
         obs, env_state, reward, done, info = self._env.step(
             key, state.env_state, action
         )
-        rewardlog = jax.tree_map(lambda x: x*self._env.num_agents, reward)  # As per on-policy codebase
+        rewardlog = jax.tree.map(lambda x: x*self._env.num_agents, reward)  # As per on-policy codebase
         ep_done = done["__all__"]
         new_episode_return = state.episode_returns + self._batchify_floats(rewardlog)
         new_episode_length = state.episode_lengths + 1
