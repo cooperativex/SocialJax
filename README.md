@@ -55,14 +55,14 @@ cd SocialJax
 
 Second: Environment Setup.
 
-Option one: Using peotry, make sure you have python 3.10
-  1. Install Peotry
+Option one: Using poetry, make sure you have python 3.10
+  1. Install Poetry
        ```bash
        curl -sSL https://install.python-poetry.org | python3 -
        export PATH="$HOME/.local/bin:$PATH"
        ```
 
-  2. Install requirements     
+  2. Install requirements
        ```bash
        poetry install --no-root
        poetry run pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
@@ -72,7 +72,7 @@ Option one: Using peotry, make sure you have python 3.10
        ```
   3. Run code
        ```bash
-       poetry run python algothrims/IPPO/ippo_cnn_coins.py 
+       poetry run python scripts/train.py --algorithm ippo --env coin_game
        ```
 
 Option two: conda with requirements.txt
@@ -93,7 +93,7 @@ Option two: conda with requirements.txt
 
   3. Run code
        ```bash
-       python algothrims/IPPO/ippo_cnn_coins.py 
+       python scripts/train.py --algorithm ippo --env coin_game
        ```
 
 Option three: conda with environments.yml
@@ -108,12 +108,12 @@ Option three: conda with environments.yml
 
   2. Run code
        ```bash
-       python algothrims/IPPO/ippo_cnn_coins.py 
+       python scripts/train.py --algorithm ippo --env coin_game
        ```
 
 ## Environments
 
-We introduce the environments and use Schelling diagrams to demonstrate whether the environments are social dilemmas. 
+We introduce the environments and use Schelling diagrams to demonstrate whether the environments are social dilemmas.
 
 | Environment                | Description                                                                                      | Schelling Diagrams Proof |
 |----------------------------|--------------------------------------------------------------------------------------------------|:------------------------:|
@@ -128,51 +128,183 @@ We introduce the environments and use Schelling diagrams to demonstrate whether 
 - *Due to algorithmic limitations, agents may not always learn the optimal actions. As a result, Schelling diagrams can prove that the environment is social dilemmas, but they cannot definitively prove that the environment is not social dilemmas.*
 
 - *Territory might not be Social diagram, but as long as the agents' behaviors are interesting, Territory holds intrinsic value.*
-  
-## Quick Start
 
-SocialJax interfaces follow [JaxMARL](https://github.com/FLAIROx/JaxMARL/) which takes inspiration from the [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) and [Gymnax](https://github.com/RobertTLange/gymnax).
+## Quick Start (V2 API)
 
-### Make an Environment
-You can create an environment using the ```make``` function:
-```python
-import jax
-import socialjax
+SocialJax V2 provides a clean, modular interface for training multi-agent RL algorithms.
 
-env = make('clean_up')
-```
-
-### Example
-
-Find more fixed policy [examples](https://github.com/cooperativex/SocialJax/tree/main/fixed_policy).
+### Create an Environment
 
 ```python
-import jax
 import socialjax
-from socialjax import make
 
-num_agents = 7
-env = make('clean_up', num_agents=num_agents)
-rng = jax.random.PRNGKey(259)
-rng, _rng = jax.random.split(rng)
+# Create an environment
+env = socialjax.make('clean_up', num_agents=7)
 
-for t in range(100):
-     rng, *rngs = jax.random.split(rng, num_agents+1)
-     actions = [jax.random.choice(
-          rngs[a],
-          a=env.action_space(0).n,
-          p=jnp.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-     ) for a in range(num_agents)]
-
-     obs, state, reward, done, info = env.step_env(
-          rng, old_state, [a for a in actions]
-            )
+print(f"Number of agents: {env.num_agents}")
+print(f"Observation shape: {env.observation_space().shape}")
+print(f"Number of actions: {env.action_space().n}")
 ```
 
-### Speed test
+### Train with the Trainer API
 
-You can test the speed of our environments by running [speed_test_random.py](https://github.com/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.py) or using the [colab](https://colab.research.google.com/github/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.ipynb).
+```python
+from socialjax.training import Trainer
 
+# Create a trainer with IPPO on Clean Up
+trainer = Trainer(
+    algorithm='ippo',
+    env='clean_up',
+    num_agents=7,
+    config={
+        'total_timesteps': 100000,
+        'learning_rate': 0.0005,
+        'gamma': 0.99,
+    }
+)
+
+# Train the model
+metrics = trainer.train(total_timesteps=100000)
+print(f"Mean episode return: {metrics.get('mean_episode_return', 'N/A')}")
+```
+
+### Command Line Training
+
+```bash
+# Train IPPO on coin_game
+python scripts/train.py --algorithm ippo --env coin_game --timesteps 1000000
+
+# Train MAPPO on clean_up with WandB logging
+python scripts/train.py --algorithm mappo --env clean_up --timesteps 1000000 --wandb-project socialjax
+
+# Evaluate a trained model
+python scripts/evaluate.py --checkpoint checkpoints/ippo_final --env coin_game --episodes 50
+
+# Generate visualization
+python scripts/visualize.py --checkpoint checkpoints/ippo_final --env coin_game --output output.gif
+```
+
+## V2 API Reference
+
+### Available Algorithms
+
+| Algorithm | Description |
+|-----------|-------------|
+| `ippo` | Independent PPO (decentralized training and execution) |
+| `mappo` | Multi-Agent PPO (centralized training, decentralized execution) |
+| `vdn` | Value Decomposition Network (off-policy Q-learning) |
+| `svo` | Social Value Orientation (prosocial reward shaping) |
+
+### Available Environments
+
+| Environment | Description |
+|-------------|-------------|
+| `coin_game` | Multi-agent coin collection game |
+| `clean_up` | Public goods game with pollution |
+| `harvest_common_open` | Commons harvesting with open access |
+| `coop_mining` | Cooperative mining scenario |
+| `territory_open` | Territory control game |
+| `pd_arena` | Prisoner's dilemma arena |
+| `mushrooms` | Mushroom foraging game |
+| `gift` | Gift-giving coordination game |
+
+### Core Components
+
+```python
+# Algorithm Registry
+from socialjax.algorithms import (
+    get_algorithm,      # Get algorithm class by name
+    list_algorithms,    # List all registered algorithms
+    register_algorithm, # Register custom algorithm
+)
+
+# Network Registry
+from socialjax.networks import (
+    create_network,     # Create network by name
+    list_networks,      # List all registered networks
+    CNNSmall,           # CNN feature extractor
+    CNNActorCritic,     # CNN actor-critic network
+    CNNImpala,          # IMPALA-style CNN
+)
+
+# Buffers
+from socialjax.buffers import (
+    RolloutBuffer,           # On-policy buffer
+    ReplayBuffer,            # Off-policy replay buffer
+    PrioritizedReplayBuffer, # Prioritized experience replay
+)
+
+# Callbacks
+from socialjax.training import (
+    CheckpointCallback,  # Save checkpoints periodically
+    EvalCallback,        # Periodic evaluation
+    ProgressCallback,    # Progress bar display
+    WandbCallback,       # WandB logging
+)
+```
+
+### Custom Algorithm Example
+
+```python
+from socialjax.core import BaseAlgorithm, AlgorithmState
+from socialjax.algorithms import register_algorithm
+
+@register_algorithm('my_algorithm')
+class MyAlgorithm(BaseAlgorithm):
+    def _build_network(self):
+        # Define your network architecture
+        pass
+
+    def _build_optimizer(self):
+        # Define your optimizer
+        pass
+
+    def compute_action(self, state, observation, rng):
+        # Compute action given observation
+        pass
+
+    def update(self, state, batch):
+        # Update algorithm parameters
+        pass
+```
+
+### Evaluation and Visualization
+
+```python
+from socialjax.evaluation import (
+    Evaluator,
+    save_gif,
+    compute_cooperation_rate,
+)
+
+# Evaluate trained agent
+evaluator = Evaluator(algorithm, env)
+metrics = evaluator.evaluate(n_episodes=50)
+
+print(f"Mean return: {metrics.mean_return}")
+print(f"Cooperation rate: {compute_cooperation_rate(metrics)}")
+
+# Generate GIF
+save_gif(frames, "output.gif", fps=10)
+```
+
+## Legacy V1 Code
+
+The original V1 implementation has been moved to `v1_legacy/` for reference. For V1 usage, see:
+- `v1_legacy/algorithms/` - Original algorithm implementations
+- `v1_legacy/fixed_policy/` - Fixed policy examples
+- `v1_legacy/speed_test/` - Speed benchmark scripts
+
+For migration from V1 to V2, see [docs/migration_guide.md](docs/migration_guide.md).
+
+## Tutorials
+
+Interactive tutorials are available in the `tutorials/` directory:
+1. `01_quickstart.ipynb` - Getting started with V2 API
+2. `02_custom_algorithm.ipynb` - Implementing custom algorithms
+3. `03_custom_network.ipynb` - Creating custom network architectures
+4. `04_callbacks.ipynb` - Using callbacks for logging and monitoring
+5. `05_advanced_config.ipynb` - Advanced configuration options
 
 ## See Also
 
