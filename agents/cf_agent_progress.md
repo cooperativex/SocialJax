@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-IMPL-007 Complete (M7 Policy Learning implemented)
+**Active Task**: CF-IMPL-008 Complete (M8 Causal Attention implemented)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 7 / 21
-**Pending Tasks**: 14
+**Completed Tasks**: 8 / 21
+**Pending Tasks**: 13
 
 ## Module Dependencies
 
@@ -22,7 +22,7 @@ M1 (Generative Model) ✓
 │                       └── M9 (Trainer)
 │                           └── M10 (Adapters)
 │
-└── M8 (Causal Attention) [Optional]
+└── M8 (Causal Attention) ✓ [Optional Enhancement]
 ```
 
 ## Task Summary
@@ -38,7 +38,7 @@ M1 (Generative Model) ✓
 | CF-IMPL-005 | 内在奖励构造 | M5 | Eq.10 | high | **DONE** |
 | CF-IMPL-006 | 奖励塑形 | M6 | Eq.11 | high | **DONE** |
 | CF-IMPL-007 | 策略学习 (PPO) | M7 | Eq.12 | high | **DONE** |
-| CF-IMPL-008 | 因果注意力机制 | M8 | Appendix | medium | pending |
+| CF-IMPL-008 | 因果注意力机制 | M8 | Appendix | medium | **DONE** |
 | CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | pending |
 | CF-IMPL-010 | CF环境适配器 | Env | - | medium | pending |
 
@@ -70,6 +70,58 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-2200
+**Duration**: ~30 minutes
+**Task**: CF-IMPL-008 (因果注意力机制)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/causal_attention.py` module
+- Implemented M8 (Causal Attention) - Appendix enhancement:
+  - `create_causal_mask`: Generate lower triangular causal mask
+  - `create_attention_mask_for_causal`: Create additive attention mask for scaled dot-product
+  - `CausalMultiHeadAttention`: Multi-head self-attention with optional causal masking
+  - `AgentFeatureExtractor`: CNN-based feature extraction for each agent
+  - `TransformerBlock`: Self-attention + FFN with residual connections and LayerNorm
+  - `CausalRewardModel`: Full reward model using attention over agent embeddings
+  - `compute_causal_reward_model_loss`: MSE loss computation
+  - `create_causal_reward_model_train_state`: Training state creation with AdamW optimizer
+  - `verify_attention_weights`: Validation function for attention properties
+  - `get_attention_statistics`: Statistics computation for attention analysis
+- Updated `__init__.py` with new exports
+- Created comprehensive test file: `tests/test_cf/test_causal_attention.py`
+  - 53 tests covering:
+    - TestCreateCausalMask (3 tests - shape, triangular, values)
+    - TestCreateAttentionMaskForCausal (3 tests - shape, values, non-causal)
+    - TestCausalMultiHeadAttention (8 tests - output shape, attention shape, sum to 1, causal masking, NaN/Inf, causal vs non, batch sizes, num agents)
+    - TestAgentFeatureExtractor (3 tests - output shape, hidden dims, NaN/Inf)
+    - TestTransformerBlock (4 tests - output shape, residual, attention shape, causal masking)
+    - TestCausalRewardModel (10 tests - output shape, attention shape, NaN/Inf, batch sizes, num agents, action dims, causal vs non, sum to 1, causal masking)
+    - TestComputeCausalRewardModelLoss (4 tests - scalar, non-negative, zero prediction, differentiable)
+    - TestCreateCausalRewardModelTrainState (2 tests - creates state, rng split)
+    - TestVerifyAttentionWeights (4 tests - valid, NaN, Inf, sum not one)
+    - TestGetAttentionStatistics (3 tests - returns dict, mean, min/max)
+    - TestIntegration (4 tests - full forward pass, training step, JIT compilation, obs sizes)
+    - TestEdgeCases (4 tests - single agent, large num agents, batch size 1, extreme values)
+    - TestCompatibilityWithRewardModel (2 tests - shape matches, same loss function)
+  - All tests passing
+
+### Test criteria verified:
+- [x] 注意力权重和为1
+- [x] 因果掩码正确应用
+- [x] 输出形状与RewardModel兼容
+- [x] 无NaN/Inf
+
+### Bug fix during implementation:
+- Fixed output shape issue: Initially model output [batch, num_agents, num_agents] instead of [batch, num_agents]
+- Solution: Flatten agent embeddings before final MLP projection
+
+### Next steps:
+- CF-IMPL-009 (完整CF训练循环) - Create cf_trainer.py module
+- Need to integrate all modules (M1-M7) into complete training loop
+
+---
 
 ### Session 2026-02-21-2000
 **Duration**: ~30 minutes
@@ -658,6 +710,131 @@ def get_value(
     """
     Get value estimate for observation.
     Returns: value [batch]
+    """
+```
+
+#### M8: Causal Attention
+```python
+def create_causal_mask(num_agents: int) -> jnp.ndarray:
+    """
+    Create a causal attention mask for agent interactions.
+    Returns: [num_agents, num_agents] lower triangular mask
+    """
+
+def create_attention_mask_for_causal(
+    num_agents: int,
+    causal: bool = True
+) -> jnp.ndarray:
+    """
+    Create attention mask for use in scaled dot-product attention.
+    Returns: [1, 1, num_agents, num_agents] additive mask (0 for valid, -inf for masked)
+    """
+
+class CausalMultiHeadAttention(nn.Module):
+    """Multi-head self-attention with optional causal masking."""
+    num_heads: int = 4
+    head_dim: int = 16
+    dropout_rate: float = 0.0
+    causal: bool = True
+
+    def __call__(
+        self,
+        x: jnp.ndarray,  # [batch, num_agents, embed_dim]
+        mask: Optional[jnp.ndarray] = None,
+        deterministic: bool = True
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Returns: (output [batch, num_agents, embed_dim], attention_weights [batch, num_heads, num_agents, num_agents])
+        """
+
+class AgentFeatureExtractor(nn.Module):
+    """Extracts features for each agent independently."""
+    cnn_features: Sequence[int] = (32, 32, 32)
+    cnn_kernels: Sequence[Tuple[int, int]] = ((5, 5), (3, 3), (3, 3))
+    hidden_dim: int = 64
+    action_dim: int = 4
+    activation: str = "relu"
+
+    def __call__(
+        self,
+        obs: jnp.ndarray,  # [batch, num_agents, H, W, C]
+        actions: jnp.ndarray,  # [batch, num_agents]
+    ) -> jnp.ndarray:
+        """
+        Returns: embeddings [batch, num_agents, hidden_dim]
+        """
+
+class TransformerBlock(nn.Module):
+    """Single transformer block with self-attention and feed-forward layers."""
+    num_heads: int = 4
+    head_dim: int = 16
+    mlp_dim: int = 128
+    dropout_rate: float = 0.0
+    causal: bool = True
+    activation: str = "relu"
+
+    def __call__(
+        self,
+        x: jnp.ndarray,  # [batch, num_agents, embed_dim]
+        mask: Optional[jnp.ndarray] = None,
+        deterministic: bool = True
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Returns: (output, attention_weights)
+        """
+
+class CausalRewardModel(nn.Module):
+    """Causal Reward Model with Multi-Head Self-Attention."""
+    num_agents: int
+    action_dim: int
+    cnn_features: Sequence[int] = (32, 32, 32)
+    cnn_kernels: Sequence[Tuple[int, int]] = ((5, 5), (3, 3), (3, 3))
+    hidden_dim: int = 64
+    num_heads: int = 4
+    num_layers: int = 2
+    mlp_dim: int = 128
+    causal: bool = True
+    dropout_rate: float = 0.0
+    activation: str = "relu"
+
+    def __call__(
+        self,
+        obs: jnp.ndarray,  # [batch, num_agents, H, W, C]
+        actions: jnp.ndarray,  # [batch, num_agents]
+        deterministic: bool = True
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Predict rewards for all agents using causal attention.
+        Returns: (predicted_rewards [batch, num_agents], attention_weights)
+        """
+
+def compute_causal_reward_model_loss(
+    params: dict,
+    model: CausalRewardModel,
+    obs: jnp.ndarray,
+    actions: jnp.ndarray,
+    rewards: jnp.ndarray,
+    mask: Optional[jnp.ndarray] = None,
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Compute the loss for CausalRewardModel.
+    Returns: (loss, predicted_rewards, attention_weights)
+    """
+
+def verify_attention_weights(
+    attention_weights: jnp.ndarray,
+    eps: float = 1e-5
+) -> Tuple[bool, str]:
+    """
+    Verify that attention weights satisfy expected properties.
+    Checks: NaN/Inf, sum to 1, non-negative, <= 1
+    Returns: (is_valid, message)
+    """
+
+def get_attention_statistics(attention_weights: jnp.ndarray) -> dict:
+    """
+    Compute statistics about attention weights for analysis.
+    Returns: dict with mean, std, min, max, entropy
     """
 ```
 

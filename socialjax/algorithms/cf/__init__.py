@@ -102,8 +102,21 @@ from socialjax.algorithms.cf.policy import (
     make_get_value_jit,
 )
 
-# M8-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.causal_attention import ...
+# M8: Causal Attention (implemented)
+from socialjax.algorithms.cf.causal_attention import (
+    create_causal_mask,
+    create_attention_mask_for_causal,
+    CausalMultiHeadAttention,
+    AgentFeatureExtractor,
+    TransformerBlock,
+    CausalRewardModel,
+    compute_causal_reward_model_loss,
+    create_causal_reward_model_train_state,
+    verify_attention_weights,
+    get_attention_statistics,
+)
+
+# M9-M10: Other modules (to be implemented)
 # from socialjax.algorithms.cf.cf_trainer import ...
 # from socialjax.algorithms.cf.env_adapters import ...
 
@@ -164,4 +177,15 @@ __all__ = [
     "make_get_action_jit",
     "make_get_action_deterministic_jit",
     "make_get_value_jit",
+    # M8: Causal Attention
+    "create_causal_mask",
+    "create_attention_mask_for_causal",
+    "CausalMultiHeadAttention",
+    "AgentFeatureExtractor",
+    "TransformerBlock",
+    "CausalRewardModel",
+    "compute_causal_reward_model_loss",
+    "create_causal_reward_model_train_state",
+    "verify_attention_weights",
+    "get_attention_statistics",
 ]

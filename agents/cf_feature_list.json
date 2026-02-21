@@ -243,6 +243,7 @@
       "module": "M8",
       "equation": "Attention(Q,K,V) with causal mask",
       "file": "socialjax/algorithms/cf/causal_attention.py",
+      "test_file": "tests/test_cf/test_causal_attention.py",
       "depends_on": ["CF-IMPL-001"],
       "steps": [
         "创建 causal_attention.py 模块",
@@ -259,8 +260,10 @@
         "输出形状与RewardModel兼容",
         "无NaN/Inf"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 53,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-009",
