@@ -121,6 +121,7 @@
       "module": "M4",
       "equation": "Regret_t^i = max_{a^{cf}}[R^{-i,cf}] - R^{-i}",
       "file": "socialjax/algorithms/cf/regret.py",
+      "test_file": "tests/test_cf/test_regret.py",
       "depends_on": ["CF-IMPL-003"],
       "steps": [
         "创建 regret.py 模块",
@@ -137,8 +138,10 @@
         "存在更优动作时后悔 > 0",
         "输出形状: [batch, num_agents]"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 25,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-005",

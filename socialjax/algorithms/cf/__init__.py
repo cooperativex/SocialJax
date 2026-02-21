@@ -48,10 +48,15 @@ from socialjax.algorithms.cf.counterfactual import (
     get_counterfactual_analysis,
 )
 
-# M4-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.regret import (
-#     compute_counterfactual_regret,
-# )
+# M4: Regret (implemented)
+from socialjax.algorithms.cf.regret import (
+    compute_counterfactual_regret,
+    compute_regret_with_best_action,
+    compute_normalized_regret,
+    get_regret_statistics,
+)
+
+# M5-M10: Other modules (to be implemented)
 # from socialjax.algorithms.cf.intrinsic_reward import (
 #     compute_intrinsic_reward,
 # )
@@ -75,8 +80,11 @@ __all__ = [
     "compute_collective_cf_reward",
     "compute_actual_collective_reward",
     "get_counterfactual_analysis",
-    # M4: Regret (TODO)
-    # "compute_counterfactual_regret",
+    # M4: Regret
+    "compute_counterfactual_regret",
+    "compute_regret_with_best_action",
+    "compute_normalized_regret",
+    "get_regret_statistics",
     # M5: Intrinsic Reward (TODO)
     # "compute_intrinsic_reward",
     # M6: Reward Shaping (TODO)
