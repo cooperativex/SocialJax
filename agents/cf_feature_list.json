@@ -385,8 +385,10 @@
         "max操作正确",
         "无数值问题"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 35,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-DEBUG-004",

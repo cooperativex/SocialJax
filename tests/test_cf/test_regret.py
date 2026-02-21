@@ -513,5 +513,266 @@ class TestEdgeCases:
         assert jnp.all(regret >= -1e-6)
 
 
+class TestCFDebug003Verification:
+    """CF-DEBUG-003: Verify regret non-negativity and numerical stability"""
+
+    def test_regret_strictly_non_negative_with_epsilon(self):
+        """Test that regret is always >= -epsilon after clamping"""
+        num_agents = 4
+        action_dim = 8
+        batch_size = 16
+
+        key = jax.random.PRNGKey(42)
+        key, subkey = jax.random.split(key)
+
+        # Generate random collective CF rewards
+        collective_cf = jax.random.uniform(subkey, (num_agents, action_dim, batch_size), minval=-10.0, maxval=10.0)
+
+        # Generate actual collective rewards that could be larger than max (edge case)
+        key, subkey = jax.random.split(key)
+        actual_collective = jax.random.uniform(subkey, (batch_size, num_agents), minval=-10.0, maxval=10.0)
+
+        epsilon = 1e-6
+        regret = compute_counterfactual_regret(collective_cf, actual_collective, epsilon=epsilon)
+
+        # All regret values should be >= -epsilon
+        assert jnp.all(regret >= -epsilon), \
+            f"Regret should be >= -epsilon ({epsilon}), got min {float(jnp.min(regret))}"
+
+    def test_regret_exactly_zero_at_boundary(self):
+        """Test that regret is exactly 0 when max_cf equals actual (within epsilon)"""
+        num_agents = 3
+        action_dim = 4
+        batch_size = 8
+
+        # Create collective CF rewards where all actions give same reward
+        # This means max_cf == actual_collective for each
+        collective_cf = jnp.full((num_agents, action_dim, batch_size), 5.0)
+
+        # Actual collective equals the max
+        actual_collective = jnp.full((batch_size, num_agents), 5.0)
+
+        regret = compute_counterfactual_regret(collective_cf, actual_collective)
+
+        # All regret should be exactly 0 (within tolerance)
+        assert jnp.allclose(regret, 0.0, atol=1e-6), \
+            f"Regret should be 0 when max_cf == actual, got {regret}"
+
+    def test_max_operation_identifies_correct_best(self):
+        """Test that max operation correctly identifies the best CF reward"""
+        num_agents = 2
+        action_dim = 5
+        batch_size = 1
+
+        # Create known CF rewards where we know the max
+        collective_cf = jnp.array([
+            [[1.0], [3.0], [5.0], [2.0], [4.0]],  # agent 0: max is action 2 (5.0)
+            [[0.5], [1.5], [0.8], [2.0], [1.0]],  # agent 1: max is action 3 (2.0)
+        ])
+
+        # Actual collective is lower than max
+        actual_collective = jnp.array([[1.0, 0.5]])  # agent 0 took action 0, agent 1 took action 0
+
+        regret = compute_counterfactual_regret(collective_cf, actual_collective)
+
+        # Expected regret: max - actual
+        # Agent 0: 5.0 - 1.0 = 4.0
+        # Agent 1: 2.0 - 0.5 = 1.5
+        expected_regret = jnp.array([[4.0, 1.5]])
+
+        assert jnp.allclose(regret, expected_regret, atol=1e-6), \
+            f"Expected regret {expected_regret}, got {regret}"
+
+    def test_max_operation_correctness_with_best_action_function(self):
+        """Test that compute_regret_with_best_action identifies correct best action"""
+        num_agents = 2
+        action_dim = 5
+        batch_size = 1
+
+        # Create CF rewards where we know the best action
+        collective_cf = jnp.array([
+            [[1.0], [3.0], [5.0], [2.0], [4.0]],  # agent 0: best is action 2
+            [[0.5], [1.5], [0.8], [2.0], [1.0]],  # agent 1: best is action 3
+        ])
+
+        actual_collective = jnp.array([[1.0, 0.5]])
+        actual_actions = jnp.array([[0, 0]])
+
+        regret, best_actions = compute_regret_with_best_action(
+            collective_cf, actual_collective, actual_actions
+        )
+
+        # Best actions should be [2, 3]
+        expected_best = jnp.array([[2, 3]])
+        assert jnp.array_equal(best_actions, expected_best), \
+            f"Expected best actions {expected_best}, got {best_actions}"
+
+    def test_numerical_stability_extreme_values(self):
+        """Test numerical stability with extreme values"""
+        num_agents = 3
+        action_dim = 4
+        batch_size = 4
+
+        # Test with very large values
+        large_cf = jnp.full((num_agents, action_dim, batch_size), 1e10)
+        large_actual = jnp.full((batch_size, num_agents), 1e10)
+
+        regret_large = compute_counterfactual_regret(large_cf, large_actual)
+        assert jnp.all(jnp.isfinite(regret_large)), "Regret should be finite with large values"
+        assert jnp.all(regret_large >= -1e-6), "Regret should be non-negative with large values"
+
+        # Test with very small values
+        small_cf = jnp.full((num_agents, action_dim, batch_size), 1e-10)
+        small_actual = jnp.zeros((batch_size, num_agents))
+
+        regret_small = compute_counterfactual_regret(small_cf, small_actual)
+        assert jnp.all(jnp.isfinite(regret_small)), "Regret should be finite with small values"
+        assert jnp.all(regret_small >= -1e-6), "Regret should be non-negative with small values"
+
+    def test_numerical_stability_mixed_signs(self):
+        """Test numerical stability with mixed positive/negative values"""
+        num_agents = 3
+        action_dim = 4
+        batch_size = 4
+
+        # Create CF rewards with mixed signs
+        collective_cf = jnp.array([
+            [[1.0, -2.0, 3.0, -4.0],
+             [2.0, -1.0, 4.0, -3.0],
+             [3.0, 0.0, 2.0, -1.0],
+             [0.0, 1.0, -1.0, 2.0]],
+            [[-1.0, 2.0, -3.0, 4.0],
+             [3.0, -2.0, 1.0, 0.0],
+             [2.0, 1.0, -2.0, 3.0],
+             [1.0, 0.0, -1.0, -2.0]],
+            [[0.5, -0.5, 1.0, -1.0],
+             [1.5, 0.5, -0.5, 0.0],
+             [0.0, 1.0, 0.5, -0.5],
+             [-0.5, 0.0, 1.5, 0.5]],
+        ])
+
+        # Actual collective with mixed signs
+        actual_collective = jnp.array([
+            [0.0, -1.0, 0.5],
+            [-2.0, 1.0, -0.5],
+            [1.0, 0.0, 0.0],
+            [-1.0, -2.0, 0.5],
+        ])
+
+        regret = compute_counterfactual_regret(collective_cf, actual_collective)
+
+        assert jnp.all(jnp.isfinite(regret)), "Regret should be finite with mixed signs"
+        assert jnp.all(regret >= -1e-6), \
+            f"Regret should be non-negative, got min {float(jnp.min(regret))}"
+
+    def test_regret_non_negative_stress_test(self):
+        """Stress test with many random configurations"""
+        key = jax.random.PRNGKey(0)
+
+        for trial in range(100):
+            key, subkey1 = jax.random.split(key)
+            key, subkey2 = jax.random.split(key)
+
+            # Random configuration
+            num_agents = jax.random.randint(subkey1, (), 2, 8)
+            action_dim = jax.random.randint(subkey1, (), 2, 10)
+            batch_size = jax.random.randint(subkey1, (), 1, 32)
+
+            # Generate random CF rewards and actual collective
+            collective_cf = jax.random.uniform(
+                subkey1, (int(num_agents), int(action_dim), int(batch_size)),
+                minval=-100.0, maxval=100.0
+            )
+            actual_collective = jax.random.uniform(
+                subkey2, (int(batch_size), int(num_agents)),
+                minval=-100.0, maxval=100.0
+            )
+
+            regret = compute_counterfactual_regret(collective_cf, actual_collective)
+
+            # Verify non-negativity
+            min_regret = float(jnp.min(regret))
+            assert min_regret >= -1e-6, \
+                f"Trial {trial}: Regret should be >= -1e-6, got min {min_regret}"
+
+    def test_epsilon_parameter_effect(self):
+        """Test that epsilon parameter correctly clamps small negative values"""
+        num_agents = 2
+        action_dim = 3
+        batch_size = 1
+
+        # Create a scenario where max - actual might be slightly negative due to floating point
+        # (this is artificial but tests the epsilon parameter)
+        collective_cf = jnp.array([
+            [[1.0], [1.0], [1.0]],
+            [[1.0], [1.0], [1.0]],
+        ])
+        actual_collective = jnp.array([[1.0, 1.0]])
+
+        # With small epsilon
+        regret_small = compute_counterfactual_regret(collective_cf, actual_collective, epsilon=1e-8)
+        assert jnp.all(regret_small >= -1e-8), "Regret should respect small epsilon"
+
+        # With large epsilon
+        regret_large = compute_counterfactual_regret(collective_cf, actual_collective, epsilon=1e-2)
+        assert jnp.all(regret_large >= -1e-2), "Regret should respect large epsilon"
+
+    def test_jit_preserves_non_negativity(self):
+        """Test that JIT compilation doesn't affect non-negativity"""
+        num_agents = 3
+        action_dim = 4
+        batch_size = 8
+
+        key = jax.random.PRNGKey(42)
+        collective_cf = jax.random.uniform(key, (num_agents, action_dim, batch_size))
+        actual_collective = jax.random.uniform(key, (batch_size, num_agents))
+
+        # Non-JIT version
+        regret_regular = compute_counterfactual_regret(collective_cf, actual_collective)
+
+        # JIT version
+        jit_regret_fn = jax.jit(compute_counterfactual_regret)
+        regret_jit = jit_regret_fn(collective_cf, actual_collective)
+
+        # Both should be non-negative
+        assert jnp.all(regret_regular >= -1e-6), "Regular regret should be non-negative"
+        assert jnp.all(regret_jit >= -1e-6), "JIT regret should be non-negative"
+
+        # Results should be identical
+        assert jnp.allclose(regret_regular, regret_jit, atol=1e-7), \
+            "JIT and regular results should be identical"
+
+    def test_vmap_preserves_non_negativity(self):
+        """Test that vmap doesn't affect non-negativity"""
+        num_agents = 3
+        action_dim = 4
+        batch_size = 8
+
+        key = jax.random.PRNGKey(42)
+        collective_cf = jax.random.uniform(key, (num_agents, action_dim, batch_size))
+        actual_collective = jax.random.uniform(key, (batch_size, num_agents))
+
+        # Batch version
+        regret_batch = compute_counterfactual_regret(collective_cf, actual_collective)
+
+        # Per-batch-element version using vmap
+        def single_element_regret(cf_single, actual_single):
+            # cf_single: [num_agents, action_dim]
+            # actual_single: [num_agents]
+            cf_expanded = cf_single[:, :, jnp.newaxis]  # [num_agents, action_dim, 1]
+            actual_expanded = actual_single[jnp.newaxis, :]  # [1, num_agents]
+            return compute_counterfactual_regret(cf_expanded, actual_expanded)[0]
+
+        vmapped_regret = jax.vmap(single_element_regret, in_axes=(2, 0))(collective_cf, actual_collective)
+
+        # Both should be non-negative
+        assert jnp.all(regret_batch >= -1e-6), "Batch regret should be non-negative"
+        assert jnp.all(vmapped_regret >= -1e-6), "Vmapped regret should be non-negative"
+
+        # Results should be similar
+        assert jnp.allclose(regret_batch, vmapped_regret, atol=1e-6), \
+            f"Batch and vmapped results should be similar. Max diff: {float(jnp.max(jnp.abs(regret_batch - vmapped_regret)))}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
