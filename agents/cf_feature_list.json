@@ -363,8 +363,10 @@
         "vmap效率提升",
         "其他agent不受影响"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 10,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-DEBUG-003",
