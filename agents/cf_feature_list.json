@@ -341,8 +341,10 @@
         "所有值有限",
         "不同配置都能工作"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 33,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-DEBUG-002",
