@@ -18,10 +18,10 @@ Modules:
     regret: Counterfactual regret calculation (M4)
     intrinsic_reward: Intrinsic reward construction (M5)
     reward_shaping: Shaped reward combination (M6)
-    policy: ActorCritic and PPO (M7) - TODO
-    causal_attention: Optional CausalRewardModel (M8) - TODO
-    cf_trainer: Training loop (M9) - TODO
-    env_adapters: Environment adapters (M10) - TODO
+    policy: ActorCritic and PPO (M7)
+    causal_attention: Optional CausalRewardModel (M8)
+    cf_trainer: Training loop (M9)
+    env_adapters: Environment adapters (M10)
 
 Reference:
     Counterfactual/cf_method
@@ -128,8 +128,19 @@ from socialjax.algorithms.cf.cf_trainer import (
     make_jitted_update_step,
 )
 
-# M10: Environment adapters (to be implemented)
-# from socialjax.algorithms.cf.env_adapters import ...
+# M10: Environment adapters (implemented)
+from socialjax.algorithms.cf.env_adapters import (
+    CFEnvSpec,
+    BaseCFAdapter,
+    CoinGameCFAdapter,
+    CleanupCFAdapter,
+    HarvestCommonCFAdapter,
+    create_cf_adapter,
+    get_adapter_for_env,
+    list_available_adapters,
+    get_env_spec,
+    verify_adapter_compatibility,
+)
 
 __all__ = [
     # M1: Generative Model
@@ -208,4 +219,15 @@ __all__ = [
     "create_cf_trainer",
     "train_cf",
     "make_jitted_update_step",
+    # M10: Environment Adapters
+    "CFEnvSpec",
+    "BaseCFAdapter",
+    "CoinGameCFAdapter",
+    "CleanupCFAdapter",
+    "HarvestCommonCFAdapter",
+    "create_cf_adapter",
+    "get_adapter_for_env",
+    "list_available_adapters",
+    "get_env_spec",
+    "verify_adapter_compatibility",
 ]
