@@ -14,9 +14,9 @@ Key Components:
 
 Modules:
     generative_model: RewardModel implementation (M1)
-    counterfactual: Counterfactual reward generation (M2, M3) - TODO
-    regret: Counterfactual regret calculation (M4) - TODO
-    intrinsic_reward: Intrinsic reward construction (M5) - TODO
+    counterfactual: Counterfactual reward generation (M2, M3)
+    regret: Counterfactual regret calculation (M4)
+    intrinsic_reward: Intrinsic reward construction (M5)
     reward_shaping: Shaped reward combination (M6) - TODO
     policy: ActorCritic and PPO (M7) - TODO
     causal_attention: Optional CausalRewardModel (M8) - TODO
@@ -56,10 +56,16 @@ from socialjax.algorithms.cf.regret import (
     get_regret_statistics,
 )
 
-# M5-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.intrinsic_reward import (
-#     compute_intrinsic_reward,
-# )
+# M5: Intrinsic Reward (implemented)
+from socialjax.algorithms.cf.intrinsic_reward import (
+    compute_intrinsic_reward,
+    compute_intrinsic_reward_from_cf,
+    compute_scaled_intrinsic_reward,
+    get_intrinsic_reward_statistics,
+    compute_intrinsic_reward_gradient,
+)
+
+# M6-M10: Other modules (to be implemented)
 # from socialjax.algorithms.cf.reward_shaping import (
 #     compute_shaped_reward,
 # )
@@ -85,8 +91,12 @@ __all__ = [
     "compute_regret_with_best_action",
     "compute_normalized_regret",
     "get_regret_statistics",
-    # M5: Intrinsic Reward (TODO)
-    # "compute_intrinsic_reward",
+    # M5: Intrinsic Reward
+    "compute_intrinsic_reward",
+    "compute_intrinsic_reward_from_cf",
+    "compute_scaled_intrinsic_reward",
+    "get_intrinsic_reward_statistics",
+    "compute_intrinsic_reward_gradient",
     # M6: Reward Shaping (TODO)
     # "compute_shaped_reward",
 ]
