@@ -4,17 +4,17 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-IMPL-001 Complete
+**Active Task**: CF-IMPL-003 Complete (M2, M3 implemented together)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 1 / 21
-**Pending Tasks**: 20
+**Completed Tasks**: 3 / 21
+**Pending Tasks**: 18
 
 ## Module Dependencies
 
 ```
 M1 (Generative Model) ✓
-├── M2 (Counterfactual Reward)
-│   └── M3 (Collective CF Reward)
+├── M2 (Counterfactual Reward) ✓
+│   └── M3 (Collective CF Reward) ✓
 │       └── M4 (Regret Calculation)
 │           └── M5 (Intrinsic Reward)
 │               └── M6 (Shaped Reward)
@@ -32,8 +32,8 @@ M1 (Generative Model) ✓
 | ID | Name | Module | Equation | Priority | Status |
 |----|------|--------|----------|----------|--------|
 | CF-IMPL-001 | 生成模型 Φ_m (RewardModel) | M1 | Eq.6 | high | **DONE** |
-| CF-IMPL-002 | 反事实奖励生成 | M2 | Eq.7 | high | pending |
-| CF-IMPL-003 | 集体反事实奖励计算 | M3 | Eq.8 | high | pending |
+| CF-IMPL-002 | 反事实奖励生成 | M2 | Eq.7 | high | **DONE** |
+| CF-IMPL-003 | 集体反事实奖励计算 | M3 | Eq.8 | high | **DONE** |
 | CF-IMPL-004 | 反事实后悔计算 | M4 | Eq.9 | high | pending |
 | CF-IMPL-005 | 内在奖励构造 | M5 | Eq.10 | high | pending |
 | CF-IMPL-006 | 奖励塑形 | M6 | Eq.11 | high | pending |
@@ -71,6 +71,54 @@ M1 (Generative Model) ✓
 
 ## Sessions
 
+### Session 2026-02-21-1200
+**Duration**: ~45 minutes
+**Task**: CF-IMPL-002, CF-IMPL-003 (反事实奖励生成 & 集体反事实奖励计算)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/counterfactual.py` module
+- Implemented M2 (Counterfactual Reward) - Eq.7:
+  - `enumerate_counterfactual_actions`: Enumerate all possible actions for an agent
+  - `generate_counterfactual_rewards_single_agent`: Generate CF rewards for one agent
+  - `generate_counterfactual_rewards_vmap`: Efficient vmap version for all agents
+  - `generate_counterfactual_rewards`: Main entry point
+- Implemented M3 (Collective CF Reward) - Eq.8:
+  - `compute_collective_cf_reward`: Sum rewards for other agents (exclude ego)
+  - `compute_actual_collective_reward`: Compute actual collective rewards
+  - `get_counterfactual_analysis`: Convenience function combining all operations
+- Updated `__init__.py` with new exports
+- Fixed bug: reshape was losing `num_agents` dimension in counterfactual reward generation
+- Created comprehensive test file: `tests/test_cf/test_counterfactual.py`
+  - 26 tests covering:
+    - EnumerateCounterfactualActions (7 tests)
+    - EnumerateAllAgentsCounterfactualActions (2 tests)
+    - GenerateCounterfactualRewards (7 tests - shapes, batch sizes, NaN checks)
+    - CollectiveCounterfactualReward (4 tests)
+    - ActualCollectiveReward (2 tests)
+    - GetCounterfactualAnalysis (2 tests)
+    - JITCompilation (2 tests)
+    - VmapEfficiency (1 test - verifies vmap matches sequential)
+  - All tests passing
+
+### Test criteria verified:
+- [x] 枚举所有 |A| 个动作
+- [x] 输出形状: [batch, num_actions, num_agents] and [num_agents, action_dim, batch, num_agents]
+- [x] 其他agent的动作保持不变
+- [x] 使用vmap实现高效计算
+- [x] 无NaN/Inf
+
+### Key bug fix:
+- Fixed reshape in `generate_counterfactual_rewards_single_agent`:
+  - Bug: `obs_flat = obs_expanded.reshape(-1, *obs.shape[2:])` lost `num_agents` dim
+  - Fix: `obs_flat = obs_expanded.reshape(-1, *obs.shape[1:])` keeps `num_agents` dim
+
+### Next steps:
+- CF-IMPL-004 (反事实后悔计算) - Create regret.py module
+- Need to implement `compute_counterfactual_regret` function
+
+---
+
 ### Session 2026-02-21-1000
 **Duration**: ~30 minutes
 **Task**: CF-IMPL-001 (实现生成模型 Φ_m)
@@ -102,10 +150,6 @@ M1 (Generative Model) ✓
 - [x] 支持不同batch_size (1, 8, 32, 64)
 - [x] 支持不同num_agents (2, 3, 4, 5, 7)
 - [x] 无NaN/Inf
-
-### Next steps:
-- CF-IMPL-002 (反事实奖励生成)
-- Need to create counterfactual.py module
 
 ---
 
@@ -157,6 +201,77 @@ def compute_generative_model_loss(
     mask: Optional[jnp.ndarray] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Functional loss computation with model forward pass"""
+```
+
+#### M2: Counterfactual Reward Generation
+```python
+def enumerate_counterfactual_actions(
+    actual_actions: jnp.ndarray,  # [batch, num_agents]
+    agent_id: int,
+    action_dim: int,
+) -> jnp.ndarray:
+    """
+    Enumerate all possible actions for a specific agent.
+    Returns: [action_dim, batch, num_agents]
+    """
+
+def generate_counterfactual_rewards_single_agent(
+    reward_model_apply,
+    params: dict,
+    obs: jnp.ndarray,          # [batch, num_agents, H, W, C]
+    agent_id: int,
+    action_dim: int,
+    actual_actions: jnp.ndarray,  # [batch, num_agents]
+) -> jnp.ndarray:
+    """
+    Generate CF rewards for one agent. (Eq.7)
+    Returns: [action_dim, batch, num_agents]
+    """
+
+def generate_counterfactual_rewards_vmap(
+    reward_model_apply,
+    params: dict,
+    action_dim: int,
+    obs: jnp.ndarray,          # [batch, num_agents, H, W, C]
+    actual_actions: jnp.ndarray,  # [batch, num_agents]
+) -> jnp.ndarray:
+    """
+    Generate CF rewards for all agents using vmap. (Eq.7)
+    Returns: [num_agents, action_dim, batch, num_agents]
+    """
+```
+
+#### M3: Collective Counterfactual Reward
+```python
+def compute_collective_cf_reward(
+    cf_rewards: jnp.ndarray,  # [num_agents, action_dim, batch, num_agents]
+    exclude_self: bool = True,
+) -> jnp.ndarray:
+    """
+    Compute collective CF rewards (sum of other agents' rewards). (Eq.8)
+    Returns: [num_agents, action_dim, batch]
+    """
+
+def compute_actual_collective_reward(
+    rewards: jnp.ndarray,  # [batch, num_agents]
+) -> jnp.ndarray:
+    """
+    Compute actual collective reward for each agent.
+    Returns: [batch, num_agents]
+    """
+
+def get_counterfactual_analysis(
+    reward_model_apply,
+    params: dict,
+    obs: jnp.ndarray,
+    actions: jnp.ndarray,
+    rewards: jnp.ndarray,
+    action_dim: int,
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Complete counterfactual analysis combining M2 and M3.
+    Returns: (cf_rewards, collective_cf_rewards, actual_collective)
+    """
 ```
 
 ---

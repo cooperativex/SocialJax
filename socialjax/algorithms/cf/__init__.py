@@ -36,11 +36,19 @@ from socialjax.algorithms.cf.generative_model import (
     create_reward_model_train_state,
 )
 
-# M2-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.counterfactual import (
-#     generate_counterfactual_rewards,
-#     compute_collective_cf_reward,
-# )
+# M2, M3: Counterfactual (implemented)
+from socialjax.algorithms.cf.counterfactual import (
+    enumerate_counterfactual_actions,
+    enumerate_all_agents_counterfactual_actions,
+    generate_counterfactual_rewards,
+    generate_counterfactual_rewards_vmap,
+    generate_counterfactual_rewards_single_agent,
+    compute_collective_cf_reward,
+    compute_actual_collective_reward,
+    get_counterfactual_analysis,
+)
+
+# M4-M10: Other modules (to be implemented)
 # from socialjax.algorithms.cf.regret import (
 #     compute_counterfactual_regret,
 # )
@@ -58,9 +66,15 @@ __all__ = [
     "generative_model_loss",
     "compute_generative_model_loss",
     "create_reward_model_train_state",
-    # M2, M3: Counterfactual (TODO)
-    # "generate_counterfactual_rewards",
-    # "compute_collective_cf_reward",
+    # M2, M3: Counterfactual
+    "enumerate_counterfactual_actions",
+    "enumerate_all_agents_counterfactual_actions",
+    "generate_counterfactual_rewards",
+    "generate_counterfactual_rewards_vmap",
+    "generate_counterfactual_rewards_single_agent",
+    "compute_collective_cf_reward",
+    "compute_actual_collective_reward",
+    "get_counterfactual_analysis",
     # M4: Regret (TODO)
     # "compute_counterfactual_regret",
     # M5: Intrinsic Reward (TODO)

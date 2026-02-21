@@ -78,8 +78,10 @@
         "其他agent的动作保持不变",
         "使用vmap实现高效计算"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 26,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-003",
@@ -105,8 +107,10 @@
         "2-agent场景: R^{-0} = r_1",
         "N-agent场景: R^{-i} = Σ_{j≠i} r_j"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 26,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-004",
