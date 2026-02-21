@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-IMPL-004 Complete (M4 Regret Calculation implemented)
+**Active Task**: CF-IMPL-006 Complete (M6 Reward Shaping implemented)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 4 / 21
-**Pending Tasks**: 17
+**Completed Tasks**: 6 / 21
+**Pending Tasks**: 15
 
 ## Module Dependencies
 
@@ -16,8 +16,8 @@ M1 (Generative Model) ✓
 ├── M2 (Counterfactual Reward) ✓
 │   └── M3 (Collective CF Reward) ✓
 │       └── M4 (Regret Calculation) ✓
-│           └── M5 (Intrinsic Reward)
-│               └── M6 (Shaped Reward)
+│           └── M5 (Intrinsic Reward) ✓
+│               └── M6 (Shaped Reward) ✓
 │                   └── M7 (Policy Learning)
 │                       └── M9 (Trainer)
 │                           └── M10 (Adapters)
@@ -35,8 +35,8 @@ M1 (Generative Model) ✓
 | CF-IMPL-002 | 反事实奖励生成 | M2 | Eq.7 | high | **DONE** |
 | CF-IMPL-003 | 集体反事实奖励计算 | M3 | Eq.8 | high | **DONE** |
 | CF-IMPL-004 | 反事实后悔计算 | M4 | Eq.9 | high | **DONE** |
-| CF-IMPL-005 | 内在奖励构造 | M5 | Eq.10 | high | pending |
-| CF-IMPL-006 | 奖励塑形 | M6 | Eq.11 | high | pending |
+| CF-IMPL-005 | 内在奖励构造 | M5 | Eq.10 | high | **DONE** |
+| CF-IMPL-006 | 奖励塑形 | M6 | Eq.11 | high | **DONE** |
 | CF-IMPL-007 | 策略学习 (PPO) | M7 | Eq.12 | high | pending |
 | CF-IMPL-008 | 因果注意力机制 | M8 | Appendix | medium | pending |
 | CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | pending |
@@ -70,6 +70,94 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-1800
+**Duration**: ~15 minutes
+**Task**: CF-IMPL-006 (奖励塑形)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/reward_shaping.py` module
+- Implemented M6 (Reward Shaping) - Eq.11:
+  - `compute_shaped_reward`: Main shaped reward function (r̂ = r_ex + α * r_in)
+  - `compute_shaped_reward_from_regret`: Convenience function combining M4->M5->M6
+  - `compute_alpha_n_minus_1`: Suggested alpha = N-1 based on paper
+  - `compute_shaped_reward_auto_alpha`: Automatic alpha selection
+  - `normalize_shaped_reward`: Optional normalization for stability
+  - `compute_shaped_reward_normalized`: Combined function with normalization
+  - `get_shaped_reward_statistics`: Statistics for logging
+  - `compute_shaped_reward_with_components`: Component breakdown for analysis
+  - `verify_shaped_reward_properties`: Property verification helper
+  - `compute_shaped_reward_gradient`: Gradient verification helper
+  - JIT-compiled versions for performance
+- Updated `__init__.py` with new exports
+- Created comprehensive test file: `tests/test_cf/test_reward_shaping.py`
+  - 40 tests covering:
+    - TestComputeShapedReward (9 tests - basic formula, alpha values, batch, multi-agent)
+    - TestComputeShapedRewardFromRegret (3 tests)
+    - TestComputeAlphaNMinus1 (4 tests - different agent counts)
+    - TestComputeShapedRewardAutoAlpha (1 test)
+    - TestNormalizeShapedReward (4 tests - zero mean, unit variance, shape)
+    - TestComputeShapedRewardNormalized (1 test)
+    - TestGetShapedRewardStatistics (2 tests)
+    - TestComputeShapedRewardWithComponents (3 tests)
+    - TestVerifyShapedRewardProperties (2 tests)
+    - TestGradientFlow (3 tests - gradient w.r.t. extrinsic/intrinsic/regret)
+    - TestJITCompilation (2 tests)
+    - TestNumericalStability (3 tests - large/small/mixed values)
+    - TestIntegrationWithPreviousModules (2 tests - pipeline M4->M5->M6)
+    - TestDefaultAlpha (1 test)
+  - All tests passing
+
+### Test criteria verified:
+- [x] 塑形奖励 = 外在 + α * 内在
+- [x] 支持不同 alpha 值
+- [x] 无数值溢出
+- [x] 梯度流正确
+
+### Next steps:
+- CF-IMPL-007 (策略学习) - Create policy.py module
+- Need to implement ActorCritic network and PPO loss function
+
+---
+
+### Session 2026-02-21-1600
+**Duration**: ~20 minutes
+**Task**: CF-IMPL-005 (内在奖励构造)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/intrinsic_reward.py` module
+- Implemented M5 (Intrinsic Reward) - Eq.10:
+  - `compute_intrinsic_reward`: Main intrinsic reward function (r^{in} = -Regret)
+  - `compute_intrinsic_reward_from_cf`: Convenience function combining M4 and M5
+  - `compute_scaled_intrinsic_reward`: Scaled intrinsic with alpha parameter
+  - `get_intrinsic_reward_statistics`: Statistics for logging
+  - `compute_intrinsic_reward_gradient`: Gradient verification helper
+- Updated `__init__.py` with new exports
+- Created comprehensive test file: `tests/test_cf/test_intrinsic_reward.py`
+  - 33 tests covering:
+    - TestComputeIntrinsicReward (10 tests - negative regret, optimal, suboptimal, shapes)
+    - TestIntrinsicRewardFromCF (2 tests - pipeline M4->M5)
+    - TestScaledIntrinsicReward (4 tests - alpha scaling)
+    - TestIntrinsicRewardStatistics (3 tests)
+    - TestGradientFlow (4 tests - gradient verification)
+    - TestJITCompilation (3 tests)
+    - TestEdgeCases (6 tests)
+    - TestIntegrationWithRegret (2 tests)
+  - All tests passing
+
+### Test criteria verified:
+- [x] 内在奖励 = -后悔
+- [x] 最优动作时内在奖励 = 0
+- [x] 非最优动作时内在奖励 < 0
+- [x] 梯度流正确
+
+### Next steps:
+- CF-IMPL-006 (奖励塑形) - Create reward_shaping.py module
+- Need to implement `compute_shaped_reward` function (shaped = extrinsic + alpha * intrinsic)
+
+---
 
 ### Session 2026-02-21-1400
 **Duration**: ~30 minutes
@@ -339,6 +427,111 @@ def get_regret_statistics(
     """
     Compute statistics over regret values.
     Returns: (mean_regret, max_regret, zero_regret_ratio) all [num_agents]
+    """
+```
+
+#### M5: Intrinsic Reward
+```python
+def compute_intrinsic_reward(
+    regret: jnp.ndarray,  # [batch, num_agents]
+) -> jnp.ndarray:
+    """
+    Compute intrinsic reward from counterfactual regret. (Eq.10)
+    r_t^{i,in} = -Regret_t^i
+    Returns: [batch, num_agents], always <= 0
+    """
+
+def compute_intrinsic_reward_from_cf(
+    collective_cf_rewards: jnp.ndarray,  # [num_agents, action_dim, batch]
+    actual_collective: jnp.ndarray,      # [batch, num_agents]
+    epsilon: float = 1e-6,
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """
+    Convenience function: M4 + M5 combined.
+    Returns: (regret, intrinsic_reward) both [batch, num_agents]
+    """
+
+def compute_scaled_intrinsic_reward(
+    regret: jnp.ndarray,  # [batch, num_agents]
+    alpha: float = 1.0,
+) -> jnp.ndarray:
+    """
+    Compute scaled intrinsic reward: alpha * (-Regret)
+    Returns: [batch, num_agents]
+    """
+
+def get_intrinsic_reward_statistics(
+    intrinsic_reward: jnp.ndarray,  # [batch, num_agents]
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Compute statistics over intrinsic reward values.
+    Returns: (mean_intrinsic, min_intrinsic, zero_intrinsic_ratio) all [num_agents]
+    """
+```
+
+#### M6: Reward Shaping
+```python
+def compute_shaped_reward(
+    extrinsic_reward: jnp.ndarray,  # [batch, num_agents]
+    intrinsic_reward: jnp.ndarray,  # [batch, num_agents]
+    alpha: float = 1.0,
+) -> jnp.ndarray:
+    """
+    Compute shaped reward by combining extrinsic and intrinsic rewards. (Eq.11)
+    r̂_t^i = r_t^{i,ex} + α * r_t^{i,in}
+    Returns: [batch, num_agents]
+    """
+
+def compute_shaped_reward_from_regret(
+    extrinsic_reward: jnp.ndarray,  # [batch, num_agents]
+    regret: jnp.ndarray,           # [batch, num_agents]
+    alpha: float = 1.0,
+) -> jnp.ndarray:
+    """
+    Convenience function: M4 -> M5 -> M6 combined.
+    Returns: [batch, num_agents]
+    """
+
+def compute_alpha_n_minus_1(num_agents: int) -> float:
+    """
+    Compute suggested alpha = N-1 based on paper.
+    """
+
+def compute_shaped_reward_auto_alpha(
+    extrinsic_reward: jnp.ndarray,  # [batch, num_agents]
+    intrinsic_reward: jnp.ndarray,  # [batch, num_agents]
+    num_agents: int,
+) -> jnp.ndarray:
+    """
+    Compute shaped reward with automatic alpha = N-1.
+    Returns: [batch, num_agents]
+    """
+
+def normalize_shaped_reward(
+    shaped_reward: jnp.ndarray,  # [batch, num_agents]
+    eps: float = 1e-8,
+) -> jnp.ndarray:
+    """
+    Normalize shaped rewards to have zero mean and unit variance.
+    Returns: [batch, num_agents]
+    """
+
+def get_shaped_reward_statistics(
+    shaped_reward: jnp.ndarray,  # [batch, num_agents]
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Compute statistics over shaped reward values.
+    Returns: (mean, std, min, max) all [num_agents]
+    """
+
+def compute_shaped_reward_with_components(
+    extrinsic_reward: jnp.ndarray,
+    intrinsic_reward: jnp.ndarray,
+    alpha: float = 1.0,
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Compute shaped reward and return all components for analysis.
+    Returns: (shaped, extrinsic_component, intrinsic_component)
     """
 ```
 

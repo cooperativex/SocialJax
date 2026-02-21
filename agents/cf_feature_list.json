@@ -152,6 +152,7 @@
       "module": "M5",
       "equation": "r_t^{i,in} = -Regret_t^i",
       "file": "socialjax/algorithms/cf/intrinsic_reward.py",
+      "test_file": "tests/test_cf/test_intrinsic_reward.py",
       "depends_on": ["CF-IMPL-004"],
       "steps": [
         "创建 intrinsic_reward.py 模块",
@@ -167,8 +168,10 @@
         "非最优动作时内在奖励 < 0",
         "梯度流正确"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 33,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-006",
@@ -195,8 +198,10 @@
         "无数值溢出",
         "梯度流正确"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 40,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-007",
