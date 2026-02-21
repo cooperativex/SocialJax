@@ -1,0 +1,514 @@
+{
+  "project": "CF Algorithm Implementation and Debugging Tasks",
+  "version": "2.0",
+  "description": "Modular implementation and debugging tasks for Counterfactual Regret algorithm",
+  "paper_reference": "Counterfactual/cf_method",
+  "algorithms": ["CF"],
+  "environments": [
+    {"name": "coin_game", "agents": 3},
+    {"name": "coin_game", "agents": 4},
+    {"name": "clean_up", "agents": 5},
+    {"name": "clean_up", "agents": 7}
+  ],
+  "modules": {
+    "M1": {"name": "Generative Model (Φ_m)", "equation": "Eq.6", "description": "Predict rewards from joint obs/actions"},
+    "M2": {"name": "Counterfactual Reward", "equation": "Eq.7", "description": "Generate rewards for alternative actions"},
+    "M3": {"name": "Collective CF Reward", "equation": "Eq.8", "description": "Sum rewards for other agents"},
+    "M4": {"name": "Counterfactual Regret", "equation": "Eq.9", "description": "Max CF reward minus actual"},
+    "M5": {"name": "Intrinsic Reward", "equation": "Eq.10", "description": "Negative regret"},
+    "M6": {"name": "Shaped Reward", "equation": "Eq.11", "description": "Extrinsic + alpha * Intrinsic"},
+    "M7": {"name": "Policy Learning", "equation": "Eq.12", "description": "PPO with shaped reward"},
+    "M8": {"name": "Causal Attention", "equation": "Appendix", "description": "Optional: CausalRewardModel"}
+  },
+  "features": [
+    {
+      "id": "CF-IMPL-001",
+      "name": "实现生成模型 Φ_m (RewardModel)",
+      "description": "实现生成模型 Φ_m: O^N × A^N → R^N，输入联合观察和联合动作，输出所有agent的奖励预测。对应论文Eq.6",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M1",
+      "equation": "L_m^i = E[||Φ_m^i(o_t, a_t) - r_t^ex||^2]",
+      "file": "socialjax/algorithms/cf/generative_model.py",
+      "test_file": "tests/test_cf/test_generative_model.py",
+      "steps": [
+        "创建 socialjax/algorithms/cf/ 目录结构",
+        "实现 RewardModel 类，继承 nn.Module",
+        "实现 CNN 特征提取器处理观察",
+        "实现动作 one-hot 编码",
+        "拼接特征和动作，输出 N 维奖励预测",
+        "实现 MSE 损失函数 L_m",
+        "编写单元测试验证输出形状 [batch, num_agents]",
+        "编写单元测试验证梯度流"
+      ],
+      "test_criteria": [
+        "输出形状正确: [batch, num_agents]",
+        "MSE损失可计算且可微分",
+        "支持不同batch_size",
+        "支持不同num_agents",
+        "无NaN/Inf"
+      ],
+      "status": "completed",
+      "passes": true,
+      "test_count": 33,
+      "completed_at": "2026-02-21"
+    },
+    {
+      "id": "CF-IMPL-002",
+      "name": "实现反事实奖励生成",
+      "description": "实现反事实奖励生成: r_t^{i,cf} = Φ_m^i(o_t, a_t^{i,cf}, a_t^{-i})。枚举所有可能的动作，保持其他agent动作不变。对应论文Eq.7",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M2",
+      "equation": "r_t^{i,cf} = Φ_m^i(o_t, a_t^{i,cf}, a_t^{-i})",
+      "file": "socialjax/algorithms/cf/counterfactual.py",
+      "depends_on": ["CF-IMPL-001"],
+      "steps": [
+        "创建 counterfactual.py 模块",
+        "实现 enumerate_counterfactual_actions 函数",
+        "实现 generate_counterfactual_rewards 函数",
+        "使用 jax.lax.map 或 vmap 高效枚举所有动作",
+        "返回形状 [batch, num_actions, num_agents] 的反事实奖励",
+        "编写单元测试验证枚举完整性",
+        "编写单元测试验证形状正确"
+      ],
+      "test_criteria": [
+        "枚举所有 |A| 个动作",
+        "输出形状: [batch, num_actions, num_agents]",
+        "其他agent的动作保持不变",
+        "使用vmap实现高效计算"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-003",
+      "name": "实现集体反事实奖励计算",
+      "description": "计算其他agent的集体反事实奖励: R^{-i,cf} = Σ_{j≠i} r_{j,t}^{i,cf}。对应论文Eq.8的中间步骤",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M3",
+      "equation": "R^{-i,cf}_t = Σ_{j≠i} r_{j,t}^{i,cf}",
+      "file": "socialjax/algorithms/cf/counterfactual.py",
+      "depends_on": ["CF-IMPL-002"],
+      "steps": [
+        "实现 compute_collective_cf_reward 函数",
+        "对每个agent i，求和其他agent j≠i 的奖励",
+        "返回形状 [batch, num_agents, num_actions] 或 [batch, num_agents]",
+        "使用 jnp.sum 配合 mask 排除自身",
+        "编写单元测试验证求和正确性",
+        "验证2-agent和multi-agent场景"
+      ],
+      "test_criteria": [
+        "正确排除agent自身",
+        "输出形状正确",
+        "2-agent场景: R^{-0} = r_1",
+        "N-agent场景: R^{-i} = Σ_{j≠i} r_j"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-004",
+      "name": "实现反事实后悔计算",
+      "description": "计算反事实后悔: Regret_t^i = max_{a^{cf}} [R^{-i,cf}] - R^{-i}。后悔值衡量当前动作与最优亲社会动作的差距。对应论文Eq.9",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M4",
+      "equation": "Regret_t^i = max_{a^{cf}}[R^{-i,cf}] - R^{-i}",
+      "file": "socialjax/algorithms/cf/regret.py",
+      "depends_on": ["CF-IMPL-003"],
+      "steps": [
+        "创建 regret.py 模块",
+        "实现 compute_counterfactual_regret 函数",
+        "使用 jnp.max 找到最大集体反事实奖励",
+        "计算 max_cf_reward - actual_reward",
+        "验证后悔值始终 >= 0 (允许浮点误差)",
+        "编写单元测试验证后悔值非负",
+        "测试边界情况(当前动作最优时后悔为0)"
+      ],
+      "test_criteria": [
+        "后悔值 >= -1e-6 (允许浮点误差)",
+        "当前动作最优时后悔 ≈ 0",
+        "存在更优动作时后悔 > 0",
+        "输出形状: [batch, num_agents]"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-005",
+      "name": "实现内在奖励构造",
+      "description": "构造内在奖励: r^{in} = -Regret。负后悔作为内在奖励，鼓励agent选择亲社会行为。对应论文Eq.10",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M5",
+      "equation": "r_t^{i,in} = -Regret_t^i",
+      "file": "socialjax/algorithms/cf/intrinsic_reward.py",
+      "depends_on": ["CF-IMPL-004"],
+      "steps": [
+        "创建 intrinsic_reward.py 模块",
+        "实现 compute_intrinsic_reward 函数",
+        "内在奖励 = -后悔值",
+        "当agent选择最优亲社会动作时，内在奖励最大化",
+        "编写单元测试验证符号正确",
+        "验证与后悔的关系"
+      ],
+      "test_criteria": [
+        "内在奖励 = -后悔",
+        "最优动作时内在奖励 = 0",
+        "非最优动作时内在奖励 < 0",
+        "梯度流正确"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-006",
+      "name": "实现奖励塑形",
+      "description": "组合外在奖励和内在奖励: r̂ = r^{ex} + α * r^{in}。α是超参数控制对其他agent的关心程度。对应论文Eq.11",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M6",
+      "equation": "r̂_t^i = r_t^{i,ex} + α * r_t^{i,in}",
+      "file": "socialjax/algorithms/cf/reward_shaping.py",
+      "depends_on": ["CF-IMPL-005"],
+      "steps": [
+        "创建 reward_shaping.py 模块",
+        "实现 compute_shaped_reward 函数",
+        "接受 extrinsic_reward, intrinsic_reward, alpha 参数",
+        "实现可配置的 alpha (默认值和建议范围)",
+        "添加奖励归一化选项 (可选)",
+        "编写单元测试验证组合公式",
+        "测试不同 alpha 值的效果"
+      ],
+      "test_criteria": [
+        "塑形奖励 = 外在 + α * 内在",
+        "支持不同 alpha 值",
+        "无数值溢出",
+        "梯度流正确"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-007",
+      "name": "实现策略学习 (PPO with Shaped Reward)",
+      "description": "使用塑形奖励训练策略，PPO损失函数。对应论文Eq.12",
+      "priority": "high",
+      "category": "implementation",
+      "module": "M7",
+      "equation": "L_π = E[min(r̂(θ)A, clip(r̂(θ), 1-ε, 1+ε)A)]",
+      "file": "socialjax/algorithms/cf/policy.py",
+      "depends_on": ["CF-IMPL-006"],
+      "steps": [
+        "创建 policy.py 模块",
+        "实现 ActorCritic 网络 (CNN + MLP)",
+        "实现 PPO 损失函数",
+        "实现 GAE (Generalized Advantage Estimation)",
+        "实现价值函数损失",
+        "实现熵正则化",
+        "整合塑形奖励到训练流程",
+        "编写单元测试验证PPO损失"
+      ],
+      "test_criteria": [
+        "PPO损失可计算",
+        "梯度裁剪正确",
+        "GAE计算正确",
+        "使用塑形奖励计算advantage"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-008",
+      "name": "实现因果注意力机制 (CausalRewardModel)",
+      "description": "可选增强: 使用因果注意力建模agent间因果关系，提升奖励预测准确性",
+      "priority": "medium",
+      "category": "implementation",
+      "module": "M8",
+      "equation": "Attention(Q,K,V) with causal mask",
+      "file": "socialjax/algorithms/cf/causal_attention.py",
+      "depends_on": ["CF-IMPL-001"],
+      "steps": [
+        "创建 causal_attention.py 模块",
+        "实现 CausalAttention 类 (Multi-head attention)",
+        "实现因果掩码生成",
+        "实现 CausalRewardModel 继承 RewardModel",
+        "添加残差连接和LayerNorm",
+        "编写单元测试验证注意力权重",
+        "对比有无因果注意力的性能"
+      ],
+      "test_criteria": [
+        "注意力权重和为1",
+        "因果掩码正确应用",
+        "输出形状与RewardModel兼容",
+        "无NaN/Inf"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-009",
+      "name": "实现完整CF训练循环",
+      "description": "整合所有模块，实现完整的CF算法训练循环，对应论文Algorithm 1",
+      "priority": "high",
+      "category": "implementation",
+      "module": "Full Pipeline",
+      "equation": "Algorithm 1 in paper",
+      "file": "socialjax/algorithms/cf/cf_trainer.py",
+      "depends_on": ["CF-IMPL-001", "CF-IMPL-002", "CF-IMPL-003", "CF-IMPL-004", "CF-IMPL-005", "CF-IMPL-006", "CF-IMPL-007"],
+      "steps": [
+        "创建 cf_trainer.py 模块",
+        "实现 CFTrainer 类",
+        "实现训练循环: 收集经验 → 计算反事实后悔 → 更新模型",
+        "实现经验回放缓冲区",
+        "实现模型保存/加载",
+        "实现WandB日志记录",
+        "编写集成测试 (1000步smoke test)"
+      ],
+      "test_criteria": [
+        "训练循环正常运行",
+        "所有模块正确集成",
+        "损失下降或稳定",
+        "无内存泄漏"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-IMPL-010",
+      "name": "实现CF环境适配器",
+      "description": "为不同环境(Coin, Cleanup, Harvest)实现CF适配器",
+      "priority": "medium",
+      "category": "implementation",
+      "module": "Environment",
+      "file": "socialjax/algorithms/cf/env_adapters.py",
+      "steps": [
+        "创建 env_adapters.py 模块",
+        "实现 CoinGameCFAdapter",
+        "实现 CleanupCFAdapter",
+        "实现 HarvestCommonCFAdapter",
+        "统一观察和动作空间处理",
+        "编写适配器测试"
+      ],
+      "test_criteria": [
+        "各环境正确加载",
+        "观察形状正确",
+        "动作空间正确",
+        "奖励正确返回"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+
+    {
+      "id": "CF-DEBUG-001",
+      "name": "调试: RewardModel输出形状验证",
+      "description": "验证RewardModel输出形状正确，检查不同batch_size和num_agents配置",
+      "priority": "high",
+      "category": "debugging",
+      "depends_on": ["CF-IMPL-001"],
+      "steps": [
+        "创建测试文件 tests/test_cf/test_reward_model.py",
+        "测试batch_size=1,8,32",
+        "测试num_agents=2,3,4,7",
+        "检查所有输出有限(无NaN/Inf)"
+      ],
+      "test_criteria": [
+        "输出形状 [batch, num_agents]",
+        "所有值有限",
+        "不同配置都能工作"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-DEBUG-002",
+      "name": "调试: 反事实奖励生成验证",
+      "description": "验证反事实奖励枚举完整性，确保所有动作都被评估",
+      "priority": "high",
+      "category": "debugging",
+      "depends_on": ["CF-IMPL-002"],
+      "steps": [
+        "测试所有离散动作都被枚举",
+        "验证vmap正确性",
+        "检查其他agent动作保持不变"
+      ],
+      "test_criteria": [
+        "枚举 |A| 个动作",
+        "vmap效率提升",
+        "其他agent不受影响"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-DEBUG-003",
+      "name": "调试: 后悔值非负性验证",
+      "description": "验证后悔值始终非负，检查数值稳定性",
+      "priority": "high",
+      "category": "debugging",
+      "depends_on": ["CF-IMPL-004"],
+      "steps": [
+        "测试后悔值 >= -1e-6",
+        "测试边界情况",
+        "检查max操作正确性"
+      ],
+      "test_criteria": [
+        "后悔值非负",
+        "max操作正确",
+        "无数值问题"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-DEBUG-004",
+      "name": "调试: 生成模型训练损失",
+      "description": "调试生成模型训练，确保损失下降且无NaN",
+      "priority": "high",
+      "category": "debugging",
+      "depends_on": ["CF-IMPL-001"],
+      "steps": [
+        "监控训练损失曲线",
+        "添加中间值日志",
+        "检查输入归一化",
+        "验证损失计算匹配Eq.6"
+      ],
+      "test_criteria": [
+        "损失下降",
+        "无NaN/Inf",
+        "学习率合适"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-DEBUG-005",
+      "name": "调试: 因果注意力权重",
+      "description": "验证因果注意力权重分布正确，权重和为1",
+      "priority": "medium",
+      "category": "debugging",
+      "depends_on": ["CF-IMPL-008"],
+      "steps": [
+        "测试注意力权重归一化",
+        "验证因果掩码应用",
+        "检查无NaN"
+      ],
+      "test_criteria": [
+        "权重和=1",
+        "掩码正确",
+        "值在[0,1]范围"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+
+    {
+      "id": "CF-TEST-001",
+      "name": "测试: Coin Game 1000步冒烟测试",
+      "description": "在coin_game环境运行CF算法1000步，验证基本功能",
+      "priority": "high",
+      "category": "integration_test",
+      "depends_on": ["CF-IMPL-009"],
+      "steps": [
+        "运行 cf_trainer.py --env coin_game --num_steps 1000",
+        "检查运行时错误",
+        "验证损失稳定",
+        "检查NaN/Inf"
+      ],
+      "test_criteria": [
+        "无错误完成",
+        "无NaN/Inf",
+        "checkpoint保存"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-TEST-002",
+      "name": "测试: Coin Game 100K步稳定性测试",
+      "description": "在coin_game环境运行CF算法100K步，验证训练稳定性",
+      "priority": "medium",
+      "category": "integration_test",
+      "depends_on": ["CF-TEST-001"],
+      "steps": [
+        "运行 cf_trainer.py --env coin_game --num_steps 100000",
+        "监控损失曲线",
+        "验证奖励模型损失下降",
+        "检查集体奖励趋势"
+      ],
+      "test_criteria": [
+        "训练完成",
+        "损失下降",
+        "学习信号可见",
+        "无内存问题"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-TEST-003",
+      "name": "测试: Cleanup环境测试",
+      "description": "在cleanup环境运行CF算法，验证多agent场景",
+      "priority": "medium",
+      "category": "integration_test",
+      "depends_on": ["CF-IMPL-010", "CF-TEST-001"],
+      "steps": [
+        "运行 cf_trainer.py --env clean_up --num_steps 1000",
+        "测试5-agent和7-agent配置",
+        "验证环境适配器"
+      ],
+      "test_criteria": [
+        "Cleanup环境正常",
+        "多agent工作",
+        "checkpoint保存"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-BENCH-001",
+      "name": "基准: CF vs IPPO on Coin Game",
+      "description": "对比CF和IPPO在coin_game上的性能",
+      "priority": "medium",
+      "category": "benchmark",
+      "depends_on": ["CF-TEST-002"],
+      "steps": [
+        "运行CF 1M步",
+        "运行IPPO 1M步",
+        "比较集体奖励",
+        "分析合作指标"
+      ],
+      "test_criteria": [
+        "两个算法都完成",
+        "结果记录到WandB",
+        "对比指标可用"
+      ],
+      "status": "pending",
+      "passes": false
+    },
+    {
+      "id": "CF-BENCH-002",
+      "name": "基准: Alpha参数消融实验",
+      "description": "测试不同alpha值对性能的影响",
+      "priority": "medium",
+      "category": "benchmark",
+      "depends_on": ["CF-IMPL-006", "CF-TEST-001"],
+      "steps": [
+        "测试 alpha = [0.5, 1, 2, 5, 10]",
+        "运行每个配置",
+        "记录集体奖励和后悔值",
+        "分析最优alpha"
+      ],
+      "test_criteria": [
+        "所有alpha值测试完成",
+        "趋势分析可用",
+        "最优alpha确定"
+      ],
+      "status": "pending",
+      "passes": false
+    }
+  ]
+}

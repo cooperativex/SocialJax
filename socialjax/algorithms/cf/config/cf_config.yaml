@@ -1,0 +1,94 @@
+# CF Algorithm Configuration
+# Counterfactual Regret for Multi-Agent Reinforcement Learning
+# Reference: Counterfactual/cf_method (ICML 2026)
+
+# Environment Settings
+env:
+  name: coin_game
+  num_agents: 3
+  max_steps: 100
+
+# Generative Model (M1)
+generative_model:
+  hidden_dim: 64
+  cnn_features: [32, 32, 32]
+  cnn_kernels: [[5, 5], [3, 3], [3, 3]]
+  activation: relu
+  learning_rate: 0.001
+
+# Counterfactual Settings (M2, M3)
+counterfactual:
+  enumerate_all: true  # Enumerate all actions (discrete case)
+  num_samples: null    # For continuous action spaces
+
+# Regret Settings (M4)
+regret:
+  epsilon: 1e-6  # Tolerance for non-negativity
+
+# Intrinsic Reward Settings (M5)
+intrinsic_reward:
+  normalize: false
+
+# Reward Shaping Settings (M6)
+reward_shaping:
+  alpha: 2.0  # Weight for intrinsic reward (paper suggests ≈ N-1)
+  normalize_reward: false
+  reward_scale: 1.0
+
+# Policy Settings (M7)
+policy:
+  # Network Architecture
+  hidden_dim: 64
+  cnn_features: [32, 32, 32]
+  cnn_kernels: [[5, 5], [3, 3], [3, 3]]
+  activation: relu
+
+  # PPO Settings
+  learning_rate: 0.0003
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_eps: 0.2
+  entropy_coef: 0.01
+  value_coef: 0.5
+  max_grad_norm: 0.5
+
+# Causal Attention Settings (M8) - Optional
+causal_attention:
+  enabled: false
+  num_heads: 4
+  head_dim: 16
+  use_causal_mask: true
+
+# Training Settings (M9)
+training:
+  num_steps: 10000000
+  num_envs: 8
+  update_epochs: 4
+  num_minibatches: 4
+  buffer_size: 2048
+
+  # Model Update Frequency
+  generative_update_freq: 1  # Update generative model every N episodes
+
+  # Logging
+  log_interval: 1000
+  save_interval: 100000
+  eval_interval: 50000
+
+  # WandB
+  use_wandb: true
+  wandb_project: socialjax-cf
+  wandb_entity: null
+
+  # Checkpointing
+  save_dir: checkpoints/cf
+  load_checkpoint: null
+
+# Evaluation Settings
+evaluation:
+  num_episodes: 10
+  render: false
+  save_gif: false
+
+# Seed
+seed: 42
