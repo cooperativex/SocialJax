@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-DEBUG-003 Complete (后悔值非负性验证)
+**Active Task**: CF-DEBUG-004 Complete (生成模型训练损失)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 13 / 21
-**Pending Tasks**: 8
+**Completed Tasks**: 14 / 21
+**Pending Tasks**: 7
 
 ## Module Dependencies
 
@@ -42,14 +42,14 @@ M1 (Generative Model) ✓
 | CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | **DONE** |
 | CF-IMPL-010 | CF环境适配器 | Env | - | medium | **DONE** |
 
-### Debugging Tasks (5 tasks) - 3 COMPLETE
+### Debugging Tasks (5 tasks) - 4 COMPLETE
 
 | ID | Name | Priority | Status |
 |----|------|----------|--------|
 | CF-DEBUG-001 | RewardModel输出形状验证 | high | **DONE** |
 | CF-DEBUG-002 | 反事实奖励生成验证 | high | **DONE** |
 | CF-DEBUG-003 | 后悔值非负性验证 | high | **DONE** |
-| CF-DEBUG-004 | 生成模型训练损失 | high | pending |
+| CF-DEBUG-004 | 生成模型训练损失 | high | **DONE** |
 | CF-DEBUG-005 | 因果注意力权重 | medium | pending |
 
 ### Testing Tasks (3 tasks)
@@ -70,6 +70,43 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-3000
+**Duration**: ~30 minutes
+**Task**: CF-DEBUG-004 (生成模型训练损失)
+**Status**: completed
+
+### What was done:
+- Reviewed generative_model.py implementation (Eq.6 MSE loss)
+- Added 8 new CF-DEBUG-004 specific verification tests to test_generative_model.py:
+  - `test_loss_decreases_over_training` - Verifies loss decreases over 50 training steps
+  - `test_no_nan_inf_during_training` - Verifies no NaN/Inf during 100 training steps
+  - `test_learning_rate_appropriate` - Tests different learning rates (0.0001-0.01)
+  - `test_loss_matches_eq6_mse` - Verifies MSE calculation matches Eq.6
+  - `test_loss_computation_with_real_data` - Tests with learnable reward patterns
+  - `test_training_with_environment_data` - Tests with real coin_game environment
+  - `test_gradient_norm_is_reasonable` - Verifies gradient norm is not too large/small
+  - `test_training_stability_over_many_steps` - Tests stability over 500 steps
+- All 41 tests passing (33 original + 8 new)
+- Fixed test bug: environment step returns 5 values (obs, state, rewards, dones, infos)
+- Updated cf_feature_list.json to mark CF-DEBUG-004 as complete
+
+### Test criteria verified:
+- [x] 损失下降 - Loss decreases during training (50 steps, 100 steps, 500 steps tests)
+- [x] 无NaN/Inf - No NaN/Inf during training (checked in all tests)
+- [x] 学习率合适 - Learning rate 0.001 works well, tested range 0.0001-0.01
+
+### Key findings:
+- MSE loss matches Eq.6 exactly: `L_m = mean((predicted - actual)^2)`
+- Loss decreases consistently during training
+- No numerical issues with standard Adam optimizer and learning rate 0.001
+- Gradient norms are reasonable (no vanishing or exploding gradients)
+- Training is stable over 500 steps
+
+### Next steps:
+- CF-DEBUG-005 (因果注意力权重)
+
+---
 
 ### Session 2026-02-21-2900
 **Duration**: ~20 minutes

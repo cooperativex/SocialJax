@@ -408,8 +408,10 @@
         "无NaN/Inf",
         "学习率合适"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 8,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-DEBUG-005",
