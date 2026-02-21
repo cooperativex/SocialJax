@@ -116,8 +116,19 @@ from socialjax.algorithms.cf.causal_attention import (
     get_attention_statistics,
 )
 
-# M9-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.cf_trainer import ...
+# M9: CF Trainer (implemented)
+from socialjax.algorithms.cf.cf_trainer import (
+    CFConfig,
+    CFTrainer,
+    CFRunnerState,
+    CFUpdateState,
+    TransitionBuffer,
+    create_cf_trainer,
+    train_cf,
+    make_jitted_update_step,
+)
+
+# M10: Environment adapters (to be implemented)
 # from socialjax.algorithms.cf.env_adapters import ...
 
 __all__ = [
@@ -188,4 +199,13 @@ __all__ = [
     "create_causal_reward_model_train_state",
     "verify_attention_weights",
     "get_attention_statistics",
+    # M9: CF Trainer
+    "CFConfig",
+    "CFTrainer",
+    "CFRunnerState",
+    "CFUpdateState",
+    "TransitionBuffer",
+    "create_cf_trainer",
+    "train_cf",
+    "make_jitted_update_step",
 ]
