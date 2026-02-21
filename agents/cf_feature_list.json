@@ -478,8 +478,10 @@
         "学习信号可见",
         "无内存问题"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 1,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-TEST-003",
