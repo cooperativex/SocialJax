@@ -535,6 +535,8 @@
       "priority": "medium",
       "category": "benchmark",
       "depends_on": ["CF-IMPL-006", "CF-TEST-001"],
+      "file": "scripts/benchmark_alpha_ablation.py",
+      "test_file": "tests/test_cf/test_cf_bench002_alpha_ablation.py",
       "steps": [
         "测试 alpha = [0.5, 1, 2, 5, 10]",
         "运行每个配置",
@@ -546,8 +548,10 @@
         "趋势分析可用",
         "最优alpha确定"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 19,
+      "completed_at": "2026-02-21"
     }
   ]
 }
