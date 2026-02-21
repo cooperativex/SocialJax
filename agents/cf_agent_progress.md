@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-IMPL-006 Complete (M6 Reward Shaping implemented)
+**Active Task**: CF-IMPL-007 Complete (M7 Policy Learning implemented)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 6 / 21
-**Pending Tasks**: 15
+**Completed Tasks**: 7 / 21
+**Pending Tasks**: 14
 
 ## Module Dependencies
 
@@ -18,7 +18,7 @@ M1 (Generative Model) ✓
 │       └── M4 (Regret Calculation) ✓
 │           └── M5 (Intrinsic Reward) ✓
 │               └── M6 (Shaped Reward) ✓
-│                   └── M7 (Policy Learning)
+│                   └── M7 (Policy Learning) ✓
 │                       └── M9 (Trainer)
 │                           └── M10 (Adapters)
 │
@@ -37,7 +37,7 @@ M1 (Generative Model) ✓
 | CF-IMPL-004 | 反事实后悔计算 | M4 | Eq.9 | high | **DONE** |
 | CF-IMPL-005 | 内在奖励构造 | M5 | Eq.10 | high | **DONE** |
 | CF-IMPL-006 | 奖励塑形 | M6 | Eq.11 | high | **DONE** |
-| CF-IMPL-007 | 策略学习 (PPO) | M7 | Eq.12 | high | pending |
+| CF-IMPL-007 | 策略学习 (PPO) | M7 | Eq.12 | high | **DONE** |
 | CF-IMPL-008 | 因果注意力机制 | M8 | Appendix | medium | pending |
 | CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | pending |
 | CF-IMPL-010 | CF环境适配器 | Env | - | medium | pending |
@@ -70,6 +70,57 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-2000
+**Duration**: ~30 minutes
+**Task**: CF-IMPL-007 (策略学习 PPO)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/policy.py` module
+- Implemented M7 (Policy Learning) - Eq.12:
+  - `CNNFeatureExtractor`: CNN backbone for visual observations
+  - `ActorCritic`: Combined actor-critic network with separate heads
+  - `Transition`: Named tuple for trajectory data
+  - `compute_gae`: Generalized Advantage Estimation implementation
+  - `compute_ppo_loss`: PPO clipped surrogate objective with value loss and entropy
+  - `compute_ppo_loss_with_shaped_reward`: Convenience function combining GAE + PPO
+  - `clip_gradients`: Gradient clipping by global norm
+  - `create_actor_critic_train_state`: Training state creation with optimizer
+  - `ppo_update_step`: Single PPO update step with gradient computation
+  - `ppo_update_epoch`: Multiple update epochs with minibatching
+  - `get_action`: Action sampling from policy (stochastic/deterministic)
+  - `get_value`: Value estimation
+  - JIT factory functions: `make_compute_ppo_loss_jit`, `make_get_action_jit`, `make_get_value_jit`
+- Updated `__init__.py` with new exports
+- Created comprehensive test file: `tests/test_cf/test_policy.py`
+  - 47 tests covering:
+    - TestCNNFeatureExtractor (4 tests - shapes, batch sizes, hidden dims, NaN)
+    - TestActorCritic (8 tests - shapes, sampling, log prob, entropy, NaN, deterministic)
+    - TestComputeGAE (5 tests - shapes, zero reward, positive reward, done reset, JIT)
+    - TestComputePPOLoss (6 tests - scalar, aux info, entropy, differentiable, clip eps, NaN)
+    - TestComputePPOLossWithShapedReward (2 tests - shapes, positive reward)
+    - TestClipGradients (3 tests - no clip, clip large, grad norm)
+    - TestCreateActorCriticTrainState (3 tests - creation, learning rates, annealing)
+    - TestGetAction (3 tests - stochastic, deterministic, reproducible)
+    - TestGetValue (2 tests - shape, reproducible)
+    - TestPPOUpdateStep (2 tests - update step, params change)
+    - TestIntegrationWithShapedReward (2 tests - pipeline, advantage effect)
+    - TestJITCompilation (4 tests - GAE, value, action, PPO loss)
+    - TestEdgeCases (3 tests - single step, batch 1, large trajectory)
+  - All tests passing
+
+### Test criteria verified:
+- [x] PPO损失可计算
+- [x] 梯度裁剪正确
+- [x] GAE计算正确
+- [x] 使用塑形奖励计算advantage
+
+### Next steps:
+- CF-IMPL-009 (完整CF训练循环) - Create cf_trainer.py module
+- Need to integrate all modules (M1-M7) into complete training loop
+
+---
 
 ### Session 2026-02-21-1800
 **Duration**: ~15 minutes
@@ -532,6 +583,81 @@ def compute_shaped_reward_with_components(
     """
     Compute shaped reward and return all components for analysis.
     Returns: (shaped, extrinsic_component, intrinsic_component)
+    """
+```
+
+#### M7: Policy Learning
+```python
+class ActorCritic(nn.Module):
+    """Combined Actor-Critic network for CF algorithm."""
+    action_dim: int
+    cnn_features: Sequence[int] = (32, 32, 32)
+    cnn_kernels: Sequence[Tuple[int, int]] = ((5, 5), (3, 3), (3, 3))
+    hidden_dim: int = 64
+    activation: str = "relu"
+
+    def __call__(self, obs: jnp.ndarray) -> Tuple[distrax.Categorical, jnp.ndarray]:
+        """
+        Forward pass.
+        Args: obs [batch, H, W, C]
+        Returns: (policy distribution, value estimate)
+        """
+
+class Transition(NamedTuple):
+    """Container for a single environment transition."""
+    done: jnp.ndarray          # [num_steps, batch]
+    action: jnp.ndarray        # [num_steps, batch]
+    value: jnp.ndarray         # [num_steps, batch]
+    reward: jnp.ndarray        # [num_steps, batch]
+    log_prob: jnp.ndarray      # [num_steps, batch]
+    obs: jnp.ndarray           # [num_steps, batch, H, W, C]
+
+def compute_gae(
+    traj_batch: Transition,
+    last_value: jnp.ndarray,
+    gamma: float = 0.99,
+    gae_lambda: float = 0.95,
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """
+    Compute Generalized Advantage Estimation.
+    Returns: (advantages, targets) both [num_steps, batch]
+    """
+
+def compute_ppo_loss(
+    params: dict,
+    apply_fn: callable,
+    traj_batch: Transition,
+    advantages: jnp.ndarray,
+    targets: jnp.ndarray,
+    clip_eps: float = 0.2,
+    vf_coef: float = 0.5,
+    ent_coef: float = 0.01,
+) -> Tuple[jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
+    """
+    Compute PPO loss with value function and entropy regularization. (Eq.12)
+    Returns: (total_loss, (value_loss, actor_loss, entropy))
+    """
+
+def get_action(
+    params: dict,
+    apply_fn: callable,
+    obs: jnp.ndarray,
+    rng: jax.random.PRNGKey,
+    deterministic: bool = False,
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Sample action from policy.
+    Returns: (action, log_prob, value)
+    """
+
+def get_value(
+    params: dict,
+    apply_fn: callable,
+    obs: jnp.ndarray,
+) -> jnp.ndarray:
+    """
+    Get value estimate for observation.
+    Returns: value [batch]
     """
 ```
 

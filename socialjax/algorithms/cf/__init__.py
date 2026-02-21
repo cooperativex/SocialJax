@@ -81,10 +81,31 @@ from socialjax.algorithms.cf.reward_shaping import (
     DEFAULT_ALPHA,
 )
 
-# M7-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.policy import (
-#     ActorCritic,
-# )
+# M7: Policy Learning (implemented)
+from socialjax.algorithms.cf.policy import (
+    ActorCritic,
+    CNNFeatureExtractor,
+    Transition,
+    compute_gae,
+    compute_ppo_loss,
+    compute_ppo_loss_with_shaped_reward,
+    clip_gradients,
+    create_actor_critic_train_state,
+    ppo_update_step,
+    ppo_update_epoch,
+    get_action,
+    get_value,
+    compute_gae_jit,
+    make_compute_ppo_loss_jit,
+    make_get_action_jit,
+    make_get_action_deterministic_jit,
+    make_get_value_jit,
+)
+
+# M8-M10: Other modules (to be implemented)
+# from socialjax.algorithms.cf.causal_attention import ...
+# from socialjax.algorithms.cf.cf_trainer import ...
+# from socialjax.algorithms.cf.env_adapters import ...
 
 __all__ = [
     # M1: Generative Model
@@ -126,4 +147,21 @@ __all__ = [
     "compute_shaped_reward_gradient",
     "compute_shaped_reward_jit",
     "DEFAULT_ALPHA",
+    # M7: Policy Learning
+    "ActorCritic",
+    "Transition",
+    "compute_gae",
+    "compute_ppo_loss",
+    "compute_ppo_loss_with_shaped_reward",
+    "clip_gradients",
+    "create_actor_critic_train_state",
+    "ppo_update_step",
+    "ppo_update_epoch",
+    "get_action",
+    "get_value",
+    "compute_gae_jit",
+    "make_compute_ppo_loss_jit",
+    "make_get_action_jit",
+    "make_get_action_deterministic_jit",
+    "make_get_value_jit",
 ]

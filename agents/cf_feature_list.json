@@ -229,8 +229,10 @@
         "GAE计算正确",
         "使用塑形奖励计算advantage"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 47,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-008",
