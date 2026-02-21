@@ -17,7 +17,7 @@ Modules:
     counterfactual: Counterfactual reward generation (M2, M3)
     regret: Counterfactual regret calculation (M4)
     intrinsic_reward: Intrinsic reward construction (M5)
-    reward_shaping: Shaped reward combination (M6) - TODO
+    reward_shaping: Shaped reward combination (M6)
     policy: ActorCritic and PPO (M7) - TODO
     causal_attention: Optional CausalRewardModel (M8) - TODO
     cf_trainer: Training loop (M9) - TODO
@@ -65,9 +65,25 @@ from socialjax.algorithms.cf.intrinsic_reward import (
     compute_intrinsic_reward_gradient,
 )
 
-# M6-M10: Other modules (to be implemented)
-# from socialjax.algorithms.cf.reward_shaping import (
-#     compute_shaped_reward,
+# M6: Reward Shaping (implemented)
+from socialjax.algorithms.cf.reward_shaping import (
+    compute_shaped_reward,
+    compute_shaped_reward_from_regret,
+    compute_alpha_n_minus_1,
+    compute_shaped_reward_auto_alpha,
+    normalize_shaped_reward,
+    compute_shaped_reward_normalized,
+    get_shaped_reward_statistics,
+    compute_shaped_reward_with_components,
+    verify_shaped_reward_properties,
+    compute_shaped_reward_gradient,
+    compute_shaped_reward_jit,
+    DEFAULT_ALPHA,
+)
+
+# M7-M10: Other modules (to be implemented)
+# from socialjax.algorithms.cf.policy import (
+#     ActorCritic,
 # )
 
 __all__ = [
@@ -97,6 +113,17 @@ __all__ = [
     "compute_scaled_intrinsic_reward",
     "get_intrinsic_reward_statistics",
     "compute_intrinsic_reward_gradient",
-    # M6: Reward Shaping (TODO)
-    # "compute_shaped_reward",
+    # M6: Reward Shaping
+    "compute_shaped_reward",
+    "compute_shaped_reward_from_regret",
+    "compute_alpha_n_minus_1",
+    "compute_shaped_reward_auto_alpha",
+    "normalize_shaped_reward",
+    "compute_shaped_reward_normalized",
+    "get_shaped_reward_statistics",
+    "compute_shaped_reward_with_components",
+    "verify_shaped_reward_properties",
+    "compute_shaped_reward_gradient",
+    "compute_shaped_reward_jit",
+    "DEFAULT_ALPHA",
 ]
