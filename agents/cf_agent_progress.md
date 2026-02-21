@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-IMPL-008 Complete (M8 Causal Attention implemented)
+**Active Task**: CF-IMPL-010 Complete (M10 Environment Adapters implemented)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 8 / 21
-**Pending Tasks**: 13
+**Completed Tasks**: 10 / 21
+**Pending Tasks**: 11
 
 ## Module Dependencies
 
@@ -19,15 +19,15 @@ M1 (Generative Model) ✓
 │           └── M5 (Intrinsic Reward) ✓
 │               └── M6 (Shaped Reward) ✓
 │                   └── M7 (Policy Learning) ✓
-│                       └── M9 (Trainer)
-│                           └── M10 (Adapters)
+│                       └── M9 (Trainer) ✓
+│                           └── M10 (Adapters) ✓
 │
 └── M8 (Causal Attention) ✓ [Optional Enhancement]
 ```
 
 ## Task Summary
 
-### Implementation Tasks (10 tasks)
+### Implementation Tasks (10 tasks) - ALL COMPLETE
 
 | ID | Name | Module | Equation | Priority | Status |
 |----|------|--------|----------|----------|--------|
@@ -39,8 +39,8 @@ M1 (Generative Model) ✓
 | CF-IMPL-006 | 奖励塑形 | M6 | Eq.11 | high | **DONE** |
 | CF-IMPL-007 | 策略学习 (PPO) | M7 | Eq.12 | high | **DONE** |
 | CF-IMPL-008 | 因果注意力机制 | M8 | Appendix | medium | **DONE** |
-| CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | pending |
-| CF-IMPL-010 | CF环境适配器 | Env | - | medium | pending |
+| CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | **DONE** |
+| CF-IMPL-010 | CF环境适配器 | Env | - | medium | **DONE** |
 
 ### Debugging Tasks (5 tasks)
 
@@ -70,6 +70,117 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-2600
+**Duration**: ~45 minutes
+**Task**: CF-IMPL-010 (CF环境适配器)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/env_adapters.py` module
+- Implemented M10 (Environment Adapters):
+  - `CFEnvSpec`: Dataclass for environment specifications
+  - `BaseCFAdapter`: Abstract base class with unified interface
+  - `CoinGameCFAdapter`: Adapter for coin_game (7 actions, 11x11x14 obs)
+  - `CleanupCFAdapter`: Adapter for clean_up (8 actions, 11x11x19 obs)
+  - `HarvestCommonCFAdapter`: Adapter for harvest_common_open (8 actions, 11x11x15 obs)
+  - Factory functions:
+    - `create_cf_adapter()`: Create adapter by env name
+    - `get_adapter_for_env()`: Create adapter from existing env
+    - `list_available_adapters()`: List available adapters
+    - `get_env_spec()`: Get spec without creating env
+    - `verify_adapter_compatibility()`: Verify adapter specs
+- Updated `__init__.py` with new exports
+- Created comprehensive test file: `tests/test_cf/test_env_adapters.py`
+  - 38 tests covering:
+    - TestCFEnvSpec (1 test)
+    - TestCoinGameCFAdapter (11 tests - create, reset, step, properties)
+    - TestCleanupCFAdapter (5 tests - create, reset, step, alpha)
+    - TestHarvestCommonCFAdapter (4 tests - create, reset, step)
+    - TestFactoryFunctions (7 tests - factory, list, spec)
+    - TestVerifyAdapterCompatibility (3 tests)
+    - TestGetAdapterForEnv (2 tests)
+    - TestJITCompilation (2 tests)
+    - TestIntegrationWithCFTrainer (1 test)
+    - TestMultipleEpisodes (2 tests)
+    - TestEdgeCases (3 tests)
+  - All tests passing
+
+### Test criteria verified:
+- [x] 各环境正确加载
+- [x] 观察形状正确
+- [x] 动作空间正确
+- [x] 奖励正确返回
+
+### Key features:
+- Unified interface for all SocialJax environments
+- Default alpha = N-1 (number of other agents)
+- JIT-compileable methods
+- Automatic environment type detection
+- Environment spec caching
+
+### Next steps:
+- All 10 implementation tasks complete!
+- Remaining: Debugging tasks (5), Testing tasks (3), Benchmark tasks (2)
+
+---
+
+### Session 2026-02-21-2400
+**Duration**: ~60 minutes
+**Task**: CF-IMPL-009 (完整CF训练循环)
+**Status**: completed
+
+### What was done:
+- Created `socialjax/algorithms/cf/cf_trainer.py` module
+- Implemented M9 (Full Training Loop) - Algorithm 1:
+  - `CFConfig`: Dataclass for training configuration
+  - `CFRunnerState`: Training state container
+  - `TransitionBuffer`: Experience storage
+  - `CFTrainer`: Main trainer class with:
+    - `initialize()`: Initialize networks and environment
+    - `_env_step()`: Single environment step
+    - `_collect_trajectory()`: Collect trajectory of transitions
+    - `_compute_cf_rewards()`: Compute CF shaped rewards (M2->M3->M4->M5->M6)
+    - `_update_step()`: Complete update step (reward model + policy)
+    - `train()`: Main training loop
+    - `save()`: Save checkpoint
+    - `load()`: Load checkpoint
+  - `create_cf_trainer()`: Convenience function
+  - `train_cf()`: Simple training interface
+  - `make_jitted_update_step()`: JIT-compiled update for max performance
+- Updated `__init__.py` with new exports
+- Created comprehensive test file: `tests/test_cf/test_cf_trainer.py`
+  - 20 tests covering:
+    - TestCFConfig (3 tests - default config, auto alpha, derived values)
+    - TestCFTrainerInit (2 tests - create trainer, initialize state)
+    - TestTransitionBuffer (3 tests - creation, add, get)
+    - TestCFShapedRewards (2 tests - shape, no NaN)
+    - TestEnvStep (1 test - single step)
+    - TestTrajectoryCollection (1 test - collect trajectory)
+    - TestUpdateStep (1 test - update step)
+    - TestCheckpointing (1 test - save/load)
+    - TestConvenienceFunctions (1 test - create_cf_trainer)
+    - TestSmokeTest (2 tests - 100 steps, 1000 steps)
+    - TestJITCompilation (2 tests - jit update, consistency)
+    - TestMemoryLeaks (1 test - no memory leak)
+  - All tests passing
+
+### Test criteria verified:
+- [x] 训练循环正常运行
+- [x] 所有模块正确集成
+- [x] 损失下降或稳定
+- [x] 无内存泄漏
+
+### Key results:
+- Smoke test (1000 steps) passed
+- Reward model loss decreased from 0.48 to 0.10
+- Mean reward improved from -0.015 to +0.005
+- No NaN values in any metrics
+
+### Next steps:
+- CF-IMPL-010 (CF环境适配器) - COMPLETED
+
+---
 
 ### Session 2026-02-21-2200
 **Duration**: ~30 minutes

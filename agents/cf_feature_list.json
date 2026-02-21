@@ -290,8 +290,10 @@
         "损失下降或稳定",
         "无内存泄漏"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 20,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-IMPL-010",
@@ -315,8 +317,10 @@
         "动作空间正确",
         "奖励正确返回"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 38,
+      "completed_at": "2026-02-21"
     },
 
     {
