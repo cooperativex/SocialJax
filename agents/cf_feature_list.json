@@ -430,8 +430,10 @@
         "掩码正确",
         "值在[0,1]范围"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 21,
+      "completed_at": "2026-02-21"
     },
 
     {

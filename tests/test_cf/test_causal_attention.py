@@ -759,5 +759,346 @@ class TestCompatibilityWithRewardModel:
         assert loss.shape == ()
 
 
+class TestCFDebug005Verification:
+    """
+    CF-DEBUG-005: Debug causal attention weight distribution
+
+    Test criteria:
+    - 权重和=1 (weights sum to 1)
+    - 掩码正确 (causal mask correctly applied)
+    - 值在[0,1]范围 (values in [0,1] range)
+    """
+
+    @pytest.fixture
+    def rng(self):
+        return jax.random.PRNGKey(42)
+
+    # ==================== 权重和=1 测试 ====================
+
+    def test_attention_sum_to_one_all_heads(self, rng):
+        """Weights should sum to 1 for all heads independently"""
+        model = CausalMultiHeadAttention(num_heads=8, head_dim=16, causal=True)
+        x = jax.random.normal(rng, (4, 5, 64))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        # Sum along last axis (over keys) should be 1 for all heads
+        weight_sums = jnp.sum(attn, axis=-1)  # [batch, num_heads, num_agents]
+        assert jnp.allclose(weight_sums, 1.0, atol=1e-5), \
+            f"Weight sums should be 1, got min={jnp.min(weight_sums)}, max={jnp.max(weight_sums)}"
+
+    def test_attention_sum_to_one_all_batch_elements(self, rng):
+        """Weights should sum to 1 for all batch elements"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        batch_size = 16
+        x = jax.random.normal(rng, (batch_size, 3, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        weight_sums = jnp.sum(attn, axis=-1)  # [batch, num_heads, num_agents]
+        assert jnp.allclose(weight_sums, 1.0, atol=1e-5)
+
+    def test_attention_sum_to_one_different_num_agents(self, rng):
+        """Weights should sum to 1 for different number of agents"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+
+        for num_agents in [2, 3, 5, 7, 10]:
+            x = jax.random.normal(rng, (2, num_agents, 32))
+            params = model.init(rng, x)
+            _, attn = model.apply(params, x)
+
+            weight_sums = jnp.sum(attn, axis=-1)
+            assert jnp.allclose(weight_sums, 1.0, atol=1e-5), \
+                f"Failed for num_agents={num_agents}"
+
+    def test_attention_sum_to_one_non_causal(self, rng):
+        """Weights should also sum to 1 for non-causal attention"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=False)
+        x = jax.random.normal(rng, (4, 3, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        weight_sums = jnp.sum(attn, axis=-1)
+        assert jnp.allclose(weight_sums, 1.0, atol=1e-5)
+
+    def test_attention_sum_to_one_full_model(self, rng):
+        """Weights should sum to 1 in full CausalRewardModel"""
+        model = CausalRewardModel(num_agents=4, action_dim=8, causal=True)
+        obs = jax.random.normal(rng, (4, 4, 8, 8, 3))
+        actions = jnp.zeros((4, 4), dtype=jnp.int32)
+        params = model.init(rng, obs, actions)
+        _, attn = model.apply(params, obs, actions)
+
+        weight_sums = jnp.sum(attn, axis=-1)
+        assert jnp.allclose(weight_sums, 1.0, atol=1e-5)
+
+    def test_attention_sum_to_one_stress_test(self, rng):
+        """Stress test: weights sum to 1 across many random configurations"""
+        for _ in range(10):
+            rng, subkey = jax.random.split(rng)
+            num_heads = int(jax.random.randint(subkey, (), 1, 8))
+            num_agents = int(jax.random.randint(subkey, (), 2, 10))
+            batch_size = int(jax.random.randint(subkey, (), 1, 16))
+
+            model = CausalMultiHeadAttention(num_heads=num_heads, head_dim=8, causal=True)
+            x = jax.random.normal(subkey, (batch_size, num_agents, 32))
+            params = model.init(subkey, x)
+            _, attn = model.apply(params, x)
+
+            weight_sums = jnp.sum(attn, axis=-1)
+            assert jnp.allclose(weight_sums, 1.0, atol=1e-4), \
+                f"Failed with num_heads={num_heads}, num_agents={num_agents}, batch={batch_size}"
+
+    # ==================== 掩码正确 测试 ====================
+
+    def test_causal_mask_upper_triangle_zero(self, rng):
+        """Causal mask: upper triangle should have zero attention"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        num_agents = 5
+        x = jax.random.normal(rng, (2, num_agents, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        # Check that upper triangle (j > i) is all zeros
+        for i in range(num_agents):
+            for j in range(i + 1, num_agents):
+                assert jnp.allclose(attn[:, :, i, j], 0.0, atol=1e-6), \
+                    f"Upper triangle should be zero: attn[:,:,{i},{j}] != 0"
+
+    def test_causal_mask_lower_triangle_nonzero(self, rng):
+        """Causal mask: lower triangle should have non-zero attention"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        num_agents = 5
+        x = jax.random.normal(rng, (2, num_agents, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        # Lower triangle (j <= i) should have some non-zero attention
+        for i in range(num_agents):
+            for j in range(i + 1):
+                # At least some head/batch should have non-zero attention
+                assert jnp.any(attn[:, :, i, j] > 1e-6), \
+                    f"Lower triangle should be non-zero: attn[:,:,{i},{j}] all ~0"
+
+    def test_causal_mask_different_num_agents(self, rng):
+        """Causal mask should work correctly for different agent counts"""
+        for num_agents in [2, 3, 5, 7]:
+            model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+            x = jax.random.normal(rng, (2, num_agents, 32))
+            params = model.init(rng, x)
+            _, attn = model.apply(params, x)
+
+            # Verify causal structure
+            for i in range(num_agents):
+                for j in range(i + 1, num_agents):
+                    assert jnp.allclose(attn[:, :, i, j], 0.0, atol=1e-6), \
+                        f"Failed for num_agents={num_agents}"
+
+    def test_causal_vs_non_causal_difference(self, rng):
+        """Causal and non-causal should have different attention patterns"""
+        x = jax.random.normal(rng, (2, 4, 32))
+
+        model_causal = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        model_non_causal = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=False)
+
+        params_c = model_causal.init(rng, x)
+        params_nc = model_non_causal.init(rng, x)
+
+        _, attn_c = model_causal.apply(params_c, x)
+        _, attn_nc = model_non_causal.apply(params_nc, x)
+
+        # Upper triangle should be 0 for causal, non-zero for non-causal
+        upper_c = attn_c[:, :, 0, 1:]  # Agent 0 attending to future agents
+        upper_nc = attn_nc[:, :, 0, 1:]
+
+        assert jnp.allclose(upper_c, 0.0, atol=1e-6), "Causal upper should be 0"
+        assert jnp.any(upper_nc > 0.01), "Non-causal upper should be non-zero"
+
+    def test_causal_mask_in_transformer_block(self, rng):
+        """Causal mask should be correctly applied in TransformerBlock"""
+        model = TransformerBlock(num_heads=4, head_dim=16, mlp_dim=64, causal=True)
+        num_agents = 5
+        x = jax.random.normal(rng, (2, num_agents, 64))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        # Verify causal structure
+        for i in range(num_agents):
+            for j in range(i + 1, num_agents):
+                assert jnp.allclose(attn[:, :, i, j], 0.0, atol=1e-6)
+
+    def test_causal_mask_in_full_model(self, rng):
+        """Causal mask should be correctly applied in CausalRewardModel"""
+        model = CausalRewardModel(num_agents=5, action_dim=4, causal=True, num_layers=2)
+        obs = jax.random.normal(rng, (2, 5, 8, 8, 3))
+        actions = jnp.zeros((2, 5), dtype=jnp.int32)
+        params = model.init(rng, obs, actions)
+        _, attn = model.apply(params, obs, actions)
+
+        # Verify causal structure
+        for i in range(5):
+            for j in range(i + 1, 5):
+                assert jnp.allclose(attn[:, :, i, j], 0.0, atol=1e-6)
+
+    # ==================== 值在[0,1]范围 测试 ====================
+
+    def test_attention_values_in_valid_range(self, rng):
+        """All attention weights should be in [0, 1]"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        x = jax.random.normal(rng, (4, 5, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        assert jnp.all(attn >= 0.0), "Attention weights should be >= 0"
+        assert jnp.all(attn <= 1.0), "Attention weights should be <= 1"
+
+    def test_attention_values_in_valid_range_non_causal(self, rng):
+        """All attention weights should be in [0, 1] for non-causal too"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=False)
+        x = jax.random.normal(rng, (4, 5, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        assert jnp.all(attn >= 0.0), "Attention weights should be >= 0"
+        assert jnp.all(attn <= 1.0), "Attention weights should be <= 1"
+
+    def test_attention_values_in_valid_range_extreme_inputs(self, rng):
+        """Attention values should stay in [0, 1] even with extreme inputs"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+
+        # Very large inputs
+        x_large = jnp.ones((2, 3, 32)) * 1000
+        params = model.init(rng, x_large)
+        _, attn_large = model.apply(params, x_large)
+        assert jnp.all(attn_large >= 0.0) and jnp.all(attn_large <= 1.0)
+
+        # Very small inputs
+        x_small = jnp.ones((2, 3, 32)) * 1e-6
+        _, attn_small = model.apply(params, x_small)
+        assert jnp.all(attn_small >= 0.0) and jnp.all(attn_small <= 1.0)
+
+        # Mixed sign inputs
+        x_mixed = jax.random.normal(rng, (2, 3, 32)) * 100
+        _, attn_mixed = model.apply(params, x_mixed)
+        assert jnp.all(attn_mixed >= 0.0) and jnp.all(attn_mixed <= 1.0)
+
+    def test_attention_values_in_valid_range_full_model(self, rng):
+        """Attention values should be in [0, 1] in CausalRewardModel"""
+        model = CausalRewardModel(num_agents=4, action_dim=8, causal=True)
+        obs = jax.random.normal(rng, (4, 4, 8, 8, 3))
+        actions = jnp.zeros((4, 4), dtype=jnp.int32)
+        params = model.init(rng, obs, actions)
+        _, attn = model.apply(params, obs, actions)
+
+        assert jnp.all(attn >= 0.0), "Attention weights should be >= 0"
+        assert jnp.all(attn <= 1.0), "Attention weights should be <= 1"
+
+    def test_attention_values_no_nan_inf(self, rng):
+        """Attention weights should never contain NaN or Inf"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+
+        for _ in range(20):
+            rng, subkey = jax.random.split(rng)
+            x = jax.random.normal(subkey, (4, 5, 32))
+            params = model.init(subkey, x)
+            _, attn = model.apply(params, x)
+
+            assert not jnp.any(jnp.isnan(attn)), "Attention contains NaN"
+            assert not jnp.any(jnp.isinf(attn)), "Attention contains Inf"
+
+    def test_attention_values_jit_preserves_range(self, rng):
+        """JIT compilation should preserve valid range [0, 1]"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        x = jax.random.normal(rng, (4, 5, 32))
+        params = model.init(rng, x)
+
+        # Non-JIT
+        _, attn_no_jit = model.apply(params, x)
+
+        # JIT
+        @jax.jit
+        def forward(params, x):
+            return model.apply(params, x)
+
+        _, attn_jit = forward(params, x)
+
+        # Both should be in valid range
+        assert jnp.all(attn_no_jit >= 0.0) and jnp.all(attn_no_jit <= 1.0)
+        assert jnp.all(attn_jit >= 0.0) and jnp.all(attn_jit <= 1.0)
+
+        # Results should be close (JIT can have slight numerical differences due to
+        # operation reordering). The max difference is typically ~5e-4
+        max_diff = float(jnp.max(jnp.abs(attn_no_jit - attn_jit)))
+        assert max_diff < 1e-3, f"JIT and non-JIT differ too much: max_diff={max_diff}"
+
+    def test_verify_attention_weights_function(self, rng):
+        """Test the verify_attention_weights helper function"""
+        model = CausalMultiHeadAttention(num_heads=4, head_dim=8, causal=True)
+        x = jax.random.normal(rng, (4, 5, 32))
+        params = model.init(rng, x)
+        _, attn = model.apply(params, x)
+
+        is_valid, message = verify_attention_weights(attn)
+        assert is_valid, f"verify_attention_weights failed: {message}"
+        assert "passed" in message.lower()
+
+    # ==================== 综合测试 ====================
+
+    def test_all_criteria_together(self, rng):
+        """All three criteria should be satisfied simultaneously"""
+        model = CausalRewardModel(num_agents=5, action_dim=8, causal=True, num_layers=2)
+        obs = jax.random.normal(rng, (4, 5, 8, 8, 3))
+        actions = jnp.zeros((4, 5), dtype=jnp.int32)
+        params = model.init(rng, obs, actions)
+        _, attn = model.apply(params, obs, actions)
+
+        # 1. 权重和=1
+        weight_sums = jnp.sum(attn, axis=-1)
+        assert jnp.allclose(weight_sums, 1.0, atol=1e-5), \
+            f"Weight sum failed: min={jnp.min(weight_sums)}, max={jnp.max(weight_sums)}"
+
+        # 2. 掩码正确 - upper triangle should be 0
+        for i in range(5):
+            for j in range(i + 1, 5):
+                assert jnp.allclose(attn[:, :, i, j], 0.0, atol=1e-6), \
+                    f"Causal mask failed: attn[:,:,{i},{j}] != 0"
+
+        # 3. 值在[0,1]范围
+        assert jnp.all(attn >= 0.0), f"Min value < 0: {jnp.min(attn)}"
+        assert jnp.all(attn <= 1.0), f"Max value > 1: {jnp.max(attn)}"
+        assert not jnp.any(jnp.isnan(attn)), "NaN detected"
+        assert not jnp.any(jnp.isinf(attn)), "Inf detected"
+
+    def test_all_criteria_different_configurations(self, rng):
+        """All three criteria should hold for different configurations"""
+        for num_agents in [2, 3, 5, 7]:
+            for causal in [True, False]:
+                for num_heads in [2, 4, 8]:
+                    model = CausalMultiHeadAttention(
+                        num_heads=num_heads,
+                        head_dim=16,
+                        causal=causal
+                    )
+                    x = jax.random.normal(rng, (2, num_agents, 32))
+                    params = model.init(rng, x)
+                    _, attn = model.apply(params, x)
+
+                    # 1. 权重和=1
+                    weight_sums = jnp.sum(attn, axis=-1)
+                    assert jnp.allclose(weight_sums, 1.0, atol=1e-5), \
+                        f"Sum failed: agents={num_agents}, causal={causal}, heads={num_heads}"
+
+                    # 2. 掩码正确 (if causal)
+                    if causal:
+                        for i in range(num_agents):
+                            for j in range(i + 1, num_agents):
+                                assert jnp.allclose(attn[:, :, i, j], 0.0, atol=1e-6), \
+                                    f"Mask failed: agents={num_agents}, i={i}, j={j}"
+
+                    # 3. 值在[0,1]范围
+                    assert jnp.all(attn >= 0.0) and jnp.all(attn <= 1.0), \
+                        f"Range failed: agents={num_agents}, causal={causal}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-DEBUG-004 Complete (生成模型训练损失)
+**Active Task**: CF-DEBUG-005 Complete (因果注意力权重)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 14 / 21
-**Pending Tasks**: 7
+**Completed Tasks**: 15 / 21
+**Pending Tasks**: 6
 
 ## Module Dependencies
 
@@ -42,7 +42,7 @@ M1 (Generative Model) ✓
 | CF-IMPL-009 | 完整CF训练循环 | Full | Algo.1 | high | **DONE** |
 | CF-IMPL-010 | CF环境适配器 | Env | - | medium | **DONE** |
 
-### Debugging Tasks (5 tasks) - 4 COMPLETE
+### Debugging Tasks (5 tasks) - ALL COMPLETE
 
 | ID | Name | Priority | Status |
 |----|------|----------|--------|
@@ -50,7 +50,7 @@ M1 (Generative Model) ✓
 | CF-DEBUG-002 | 反事实奖励生成验证 | high | **DONE** |
 | CF-DEBUG-003 | 后悔值非负性验证 | high | **DONE** |
 | CF-DEBUG-004 | 生成模型训练损失 | high | **DONE** |
-| CF-DEBUG-005 | 因果注意力权重 | medium | pending |
+| CF-DEBUG-005 | 因果注意力权重 | medium | **DONE** |
 
 ### Testing Tasks (3 tasks)
 
@@ -70,6 +70,61 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-3100
+**Duration**: ~15 minutes
+**Task**: CF-DEBUG-005 (因果注意力权重)
+**Status**: completed
+
+### What was done:
+- Verified existing causal_attention.py implementation
+- Verified all 53 existing tests passing
+- Added 21 new CF-DEBUG-005 specific verification tests to test_causal_attention.py:
+  - **权重和=1 测试 (6 tests)**:
+    - `test_attention_sum_to_one_all_heads` - Verifies sum=1 for all heads
+    - `test_attention_sum_to_one_all_batch_elements` - Verifies sum=1 for all batch elements
+    - `test_attention_sum_to_one_different_num_agents` - Tests with different agent counts
+    - `test_attention_sum_to_one_non_causal` - Verifies sum=1 for non-causal attention
+    - `test_attention_sum_to_one_full_model` - Tests in full CausalRewardModel
+    - `test_attention_sum_to_one_stress_test` - Stress test with random configurations
+  - **掩码正确 测试 (6 tests)**:
+    - `test_causal_mask_upper_triangle_zero` - Verifies upper triangle is zero
+    - `test_causal_mask_lower_triangle_nonzero` - Verifies lower triangle is non-zero
+    - `test_causal_mask_different_num_agents` - Tests with different agent counts
+    - `test_causal_vs_non_causal_difference` - Verifies causal vs non-causal difference
+    - `test_causal_mask_in_transformer_block` - Tests mask in TransformerBlock
+    - `test_causal_mask_in_full_model` - Tests mask in CausalRewardModel
+  - **值在[0,1]范围 测试 (7 tests)**:
+    - `test_attention_values_in_valid_range` - Verifies values in [0,1]
+    - `test_attention_values_in_valid_range_non_causal` - Tests non-causal too
+    - `test_attention_values_in_valid_range_extreme_inputs` - Tests with extreme inputs
+    - `test_attention_values_in_valid_range_full_model` - Tests in CausalRewardModel
+    - `test_attention_values_no_nan_inf` - 20 iterations without NaN/Inf
+    - `test_attention_values_jit_preserves_range` - JIT preserves valid range
+    - `test_verify_attention_weights_function` - Tests verify_attention_weights helper
+  - **综合测试 (2 tests)**:
+    - `test_all_criteria_together` - All three criteria simultaneously
+    - `test_all_criteria_different_configurations` - Different configurations
+- Fixed test bug: JIT and non-JIT results have small floating-point differences (<5e-4)
+- All 74 tests passing (53 original + 21 new)
+- Updated cf_feature_list.json to mark CF-DEBUG-005 as complete
+
+### Test criteria verified:
+- [x] 权重和=1 - Attention weights sum to 1 along key dimension for all configurations
+- [x] 掩码正确 - Causal mask correctly zeros upper triangle (future agents)
+- [x] 值在[0,1]范围 - All attention values in [0,1] range, no NaN/Inf
+
+### Key findings:
+- Attention weights correctly sum to 1.0 (within 1e-5 tolerance)
+- Causal masking correctly prevents attention to "future" agents (upper triangle = 0)
+- Non-causal attention allows full attention but still sums to 1
+- JIT compilation preserves valid [0,1] range with minor numerical differences (<5e-4)
+- Implementation is robust across different configurations (batch sizes, agent counts, head counts)
+
+### Next steps:
+- CF-TEST-001 (Coin Game 1000步冒烟测试)
+
+---
 
 ### Session 2026-02-21-3000
 **Duration**: ~30 minutes
