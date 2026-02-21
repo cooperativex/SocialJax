@@ -454,8 +454,10 @@
         "无NaN/Inf",
         "checkpoint保存"
       ],
-      "status": "pending",
-      "passes": false
+      "status": "completed",
+      "passes": true,
+      "test_count": 3,
+      "completed_at": "2026-02-21"
     },
     {
       "id": "CF-TEST-002",

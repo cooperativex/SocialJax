@@ -4,10 +4,10 @@ This file tracks the progress of the CF Agent for implementing and debugging the
 
 ## Current Status
 
-**Active Task**: CF-DEBUG-005 Complete (因果注意力权重)
+**Active Task**: CF-TEST-001 Complete (Coin Game 1000步冒烟测试)
 **Last Session**: 2026-02-21
-**Completed Tasks**: 15 / 21
-**Pending Tasks**: 6
+**Completed Tasks**: 16 / 21
+**Pending Tasks**: 5
 
 ## Module Dependencies
 
@@ -56,7 +56,7 @@ M1 (Generative Model) ✓
 
 | ID | Name | Priority | Status |
 |----|------|----------|--------|
-| CF-TEST-001 | Coin Game 1000步冒烟测试 | high | pending |
+| CF-TEST-001 | Coin Game 1000步冒烟测试 | high | **DONE** |
 | CF-TEST-002 | Coin Game 100K步稳定性测试 | medium | pending |
 | CF-TEST-003 | Cleanup环境测试 | medium | pending |
 
@@ -70,6 +70,43 @@ M1 (Generative Model) ✓
 ---
 
 ## Sessions
+
+### Session 2026-02-21-3200
+**Duration**: ~10 minutes
+**Task**: CF-TEST-001 (Coin Game 1000步冒烟测试)
+**Status**: completed
+
+### What was done:
+- Verified JAX environment (melting-jax conda env with 3 CUDA devices)
+- Verified coin_game environment loading correctly
+- Ran CF smoke test on coin_game for 1000 steps:
+  - Configuration: num_agents=3, num_envs=8, num_steps=125 (1000 steps total)
+  - Completed successfully with no runtime errors
+- Verified all metrics are finite (no NaN/Inf):
+  - Reward Model Loss: 0.060999
+  - Policy Loss: 3.498859
+  - Value Loss: 7.036695
+  - Mean Reward: -0.005000
+  - Mean Shaped Reward: -0.197573
+- Verified checkpoint save/load works correctly
+- Ran pytest tests: test_smoke_100_steps and test_smoke_1000_steps both passed
+- Updated cf_feature_list.json to mark CF-TEST-001 as complete
+
+### Test criteria verified:
+- [x] 无错误完成 - Smoke test completed without errors
+- [x] 无NaN/Inf - All metrics are finite
+- [x] checkpoint保存 - Save/load verified successfully
+
+### Key results:
+- test_smoke_100_steps: PASSED
+- test_smoke_1000_steps: PASSED
+- Checkpoint test: PASSED
+- Total test time: ~2 minutes for smoke tests
+
+### Next steps:
+- CF-TEST-002 (Coin Game 100K步稳定性测试)
+
+---
 
 ### Session 2026-02-21-3100
 **Duration**: ~15 minutes
