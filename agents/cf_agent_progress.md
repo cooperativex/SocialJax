@@ -99,7 +99,12 @@ M1 (Generative Model) ✓
 
 ---
 
-### Session 2026-02-21-2600
+## Current Status
+
+**Active Task**: CF-DEBUG-002 (反事实奖励生成验证)
+**Last Session**: 2026-02-21
+**Completed Tasks**: 12 / 21
+**Pending Tasks**: 9
 **Duration**: ~45 minutes
 **Task**: CF-IMPL-010 (CF环境适配器)
 **Status**: completed
