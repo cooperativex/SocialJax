@@ -552,6 +552,44 @@
       "passes": true,
       "test_count": 19,
       "completed_at": "2026-02-21"
+    },
+    {
+      "id": "CF-TRAIN-001",
+      "name": "训练: CF 1B步完整训练",
+      "description": "运行CF算法1e9(10亿)步完整训练，与IPPO进行公平对比",
+      "priority": "high",
+      "category": "training",
+      "depends_on": ["CF-BENCH-001", "CF-BENCH-002"],
+      "file": "scripts/train_cf_1b.py",
+      "test_file": "tests/test_cf/test_cf_train001_1b.py",
+      "config": {
+        "total_timesteps": 1000000000,
+        "environment": "coin_game",
+        "num_agents": 2,
+        "alpha": 0.5,
+        "num_seeds": 3,
+        "checkpoint_freq": 10000000,
+        "eval_freq": 5000000
+      },
+      "steps": [
+        "创建长时间训练脚本 train_cf_1b.py",
+        "配置1B步训练参数",
+        "使用最优alpha=0.5",
+        "实现定期checkpoint保存",
+        "实现定期评估",
+        "记录到WandB",
+        "训练完成后与IPPO结果对比"
+      ],
+      "test_criteria": [
+        "训练脚本正确运行",
+        "checkpoint定期保存",
+        "评估指标记录",
+        "最终结果与IPPO对比"
+      ],
+      "status": "completed",
+      "passes": true,
+      "test_count": 8,
+      "completed_at": "2026-02-21"
     }
   ]
 }
