@@ -42,6 +42,23 @@ SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 
+## 🚀 Quick Start in Google Colab
+
+Try SocialJax instantly in your browser with free GPU/TPU! No installation required.
+
+| Tutorial | Description | Link |
+|:---------|:------------|:----:|
+| **01. Quickstart** | Get started with SocialJax in minutes | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/01_quickstart_colab.ipynb) |
+| **02. Custom Algorithm** | Implement your own MARL algorithm | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/02_custom_algorithm_colab.ipynb) |
+| **03. Custom Network** | Create custom neural network architectures | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/03_custom_network_colab.ipynb) |
+| **04. Callbacks** | Logging, checkpointing, and monitoring | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/04_callbacks_colab.ipynb) |
+| **05. Advanced Config** | Fine-tune your experiments | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/05_advanced_config_colab.ipynb) |
+
+**Features:**
+- ✅ Free GPU/TPU acceleration
+- ✅ Auto-install all dependencies
+- ✅ No local setup needed
+- ✅ Interactive learning experience
 
 
 ## Installation
@@ -300,11 +317,14 @@ For migration from V1 to V2, see [docs/migration_guide.md](docs/migration_guide.
 ## Tutorials
 
 Interactive tutorials are available in the `tutorials/` directory:
-1. `01_quickstart.ipynb` - Getting started with V2 API
-2. `02_custom_algorithm.ipynb` - Implementing custom algorithms
-3. `03_custom_network.ipynb` - Creating custom network architectures
-4. `04_callbacks.ipynb` - Using callbacks for logging and monitoring
-5. `05_advanced_config.ipynb` - Advanced configuration options
+
+| # | Tutorial | Local | Colab |
+|:-:|:---------|:-----:|:-----:|
+| 1 | Quickstart - Getting started with V2 API | [📖](tutorials/01_quickstart.ipynb) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/01_quickstart_colab.ipynb) |
+| 2 | Custom Algorithm - Implement your own algorithm | [📖](tutorials/02_custom_algorithm.ipynb) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/02_custom_algorithm_colab.ipynb) |
+| 3 | Custom Network - Create neural network architectures | [📖](tutorials/03_custom_network.ipynb) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/03_custom_network_colab.ipynb) |
+| 4 | Callbacks - Logging and monitoring | [📖](tutorials/04_callbacks.ipynb) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/04_callbacks_colab.ipynb) |
+| 5 | Advanced Config - Fine-tune experiments | [📖](tutorials/05_advanced_config.ipynb) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cooperativex/SocialJax/blob/v2/tutorials/05_advanced_config_colab.ipynb) |
 
 ## See Also
 
