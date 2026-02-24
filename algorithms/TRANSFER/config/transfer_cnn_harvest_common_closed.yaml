@@ -1,5 +1,5 @@
 "LR": 0.0005
-"NUM_ENVS": 256
+"NUM_ENVS": 200
 "NUM_STEPS": 1000
 "TOTAL_TIMESTEPS": 3e8
 "UPDATE_EPOCHS": 2
@@ -49,7 +49,7 @@
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "transfer_socialjax"
+"PROJECT": "transfer_fixed_socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
   - INDIVIDUAL_REWARD # COMMON_REWARD

@@ -15,7 +15,7 @@ defaults:
   "svo_w": 0.5
   "svo_ideal_angle_degrees": 90
   "interest": True
-  "s_interest_change_every": 30000000
+  "s_interest_change_every": 3e8
   "map_ASCII": ["AAA    A  WW  A    AAA",
               "AA    AAA WW AAA    AA",
               "A    AAAAAWWAAAAA    A",

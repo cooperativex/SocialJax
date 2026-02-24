@@ -162,9 +162,9 @@ def calculate_s_interest_schedule(n_agents=7):
     Returns:
         List of s_interest values to cycle through
     """
-    ratio = [20, 10, 5, 3, 5/2, 2, 5/3, 4/3, 1]
-    s = [1] + [r / (n_agents + r - 1) for r in ratio]
-    # s = [2 / (n_agents + 1)] * (len(ratio) + 1)
+    proportion = [1/8 * r for r in range(9)]
+    proportion = [3/4]
+    s = [1 / (1 + p * (n_agents - 1)) for p in proportion]
     return s
 
 def group_and_distribute_sum(array):
@@ -189,7 +189,7 @@ def make_train(config):
     if config["ENV_KWARGS"].get("interest", False):
         s_interest_schedule = calculate_s_interest_schedule(config["ENV_KWARGS"]["num_agents"])
         config["ENV_KWARGS"]["s_interest_schedule"] = s_interest_schedule
-        config["ENV_KWARGS"]["s_interest_change_every"] = config["ENV_KWARGS"].get("s_interest_change_every", 30000000)
+        config["ENV_KWARGS"]["s_interest_change_every"] = int(config["ENV_KWARGS"].get("s_interest_change_every", 30000000))
         print(f"Using s_interest schedule: {s_interest_schedule}")
         print(f"Changing every {config['ENV_KWARGS']['s_interest_change_every']} timesteps")
 
