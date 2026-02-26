@@ -2,7 +2,7 @@
 defaults:
   - vdn_base
 
-"ENV_NAME": "harvest_common_closed"
+"ENV_NAME": "harvest_common_open"
 "ENV_KWARGS":
   "num_agents": 7
   "num_inner_steps": 1000
