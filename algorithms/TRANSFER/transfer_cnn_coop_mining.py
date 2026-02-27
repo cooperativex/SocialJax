@@ -466,8 +466,7 @@ def make_train(config):
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
             metric["advantages"] = advantages.mean()
             # Clean up specific metrics for coop_mining environment
-            metric["iron_collected"] = metric.get("iron_collected", 0) * config["ENV_KWARGS"]["num_inner_steps"]
-            metric["gold_collected"] = metric.get("gold_collected", 0) * config["ENV_KWARGS"]["num_inner_steps"]
+            metric["mining_gold"] = metric["mining_gold"] * config["ENV_KWARGS"]["num_inner_steps"]
 
             # metric["original_rewards"] = metric["original_rewards"].mean() * config["NUM_STEPS"]
             # metric["shaped_rewards"] = metric["shaped_rewards"].mean() * config["NUM_STEPS"]
