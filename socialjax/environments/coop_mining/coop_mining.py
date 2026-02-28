@@ -735,13 +735,13 @@ class CoopMining(MultiAgentEnv):
             rewards = (current_s_interest * original_flat +
                     (1 - current_s_interest) / (self.num_agents - 1) * others_reward)
             
-            final_rewards = rewards
 
             info = {
                 "original_rewards": final_rewards.squeeze(),
                 "shaped_rewards": rewards.squeeze(),
                 "s_interest": current_s_interest,
             }
+            final_rewards = rewards
         else:
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
             info = {}
