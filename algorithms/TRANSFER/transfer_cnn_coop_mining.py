@@ -165,6 +165,8 @@ def calculate_s_interest_schedule(n_agents=6):
     proportion = [1/8 * r for r in range(9)]
     proportion = [4/4]
     s = [1 / (1 + p * (n_agents - 1)) for p in proportion]
+    return [1 / n_agents]
+
     return s
 
 def group_and_distribute_sum(array):

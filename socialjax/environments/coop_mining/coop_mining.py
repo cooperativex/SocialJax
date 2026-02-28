@@ -719,6 +719,8 @@ class CoopMining(MultiAgentEnv):
                 "svo_theta": theta.squeeze(),
                 "shaped_rewards": rewards.squeeze(),
             }
+            final_rewards = rewards
+
         elif self.interest:
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
 
@@ -732,6 +734,8 @@ class CoopMining(MultiAgentEnv):
 
             rewards = (current_s_interest * original_flat +
                     (1 - current_s_interest) / (self.num_agents - 1) * others_reward)
+            
+            final_rewards = rewards
 
             info = {
                 "original_rewards": final_rewards.squeeze(),

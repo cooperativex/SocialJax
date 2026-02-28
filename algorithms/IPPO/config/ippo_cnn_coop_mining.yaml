@@ -18,7 +18,7 @@
 "ENV_KWARGS":
   "num_agents" : 6
   "num_inner_steps" : 1000
-  "shared_rewards" : False
+  "shared_rewards" : True
   "num_outer_steps" : 1
   "max_miners" : 4  # how many miners can we store per gold cell
   "min_gold_miners" : 2  # how many distinct miners needed to finalize gold
