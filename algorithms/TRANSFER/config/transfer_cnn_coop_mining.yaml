@@ -45,7 +45,7 @@
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "transfer_fixed_coop"
+"PROJECT": "transfer_fixed_socialjax"
 "WANDB_MODE" : "online"
 "WANDB_TAGS":
   - INDIVIDUAL_REWARD # COMMON_REWARD
