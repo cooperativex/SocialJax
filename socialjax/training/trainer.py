@@ -265,7 +265,7 @@ class Trainer:
                 (jnp.zeros_like(last_val), last_val),
                 (traj_batch.done, traj_batch.value, traj_batch.reward),
                 reverse=True,
-                unroll=16,
+                unroll=1,
             )
             targets = advantages + traj_batch.value
 

@@ -347,7 +347,7 @@ class SVOAlgorithm(BaseAlgorithm):
             (jnp.zeros_like(last_value), last_value),
             traj_batch,
             reverse=True,
-            unroll=16,
+            unroll=1,
         )
         return advantages, advantages + traj_batch.value
 

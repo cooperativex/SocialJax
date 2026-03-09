@@ -100,7 +100,7 @@ def compute_gae(
         (jnp.zeros_like(last_value), last_value),
         traj_batch,
         reverse=True,
-        unroll=16,  # Unroll for performance
+        unroll=1,
     )
 
     # Value targets = advantages + values
