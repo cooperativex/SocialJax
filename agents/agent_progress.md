@@ -1,3 +1,60 @@
+## Session 2026-03-09-0539
+**Duration**: ~15 min
+**Feature**: T-004 - IPPO-harvest_common_closed
+**Status**: 🔄 IN PROGRESS (training running in background)
+
+### What was done:
+- ✅ Completed session startup checklist
+  - Working directory: /home/shuqing/SocialJax
+  - Recent commits reviewed
+  - Environment verified
+
+- ✅ Resolved GPU memory issue:
+  - Original script `--num-envs 1024` causes OOM
+  - Default 256 envs also causes OOM (requires 7.08 GiB)
+  - Solution: Used `--num-envs 128` which fits in memory
+
+- ✅ Training started and progressing:
+  - PID: 639067 (actual training process)
+  - Log: agents/logs/T004_ippo_harvest_common_closed_20260309_054036.log
+  - Command: `CUDA_VISIBLE_DEVICES=1 scripts/train.py --algorithm ippo --env harvest_common_closed --timesteps 100000000 --num-envs 128 --seed 0`
+  - GPU: GPU 1 (~23.8 GB / 24 GB)
+  - Progress: 28/781 updates (3.6% done)
+  - Steps: 3,584,000 / 100,000,000
+  - SPS: ~21,427
+  - Elapsed: 167 seconds
+  - Estimated remaining: ~75 minutes
+
+### Configuration:
+- Algorithm: ippo
+- Environment: harvest_common_closed (7 agents)
+- Batch size: 128 envs × 1000 steps = 128K
+- Total updates: 781
+- Seed: 0
+
+### Test criteria status:
+- [x] Training runs for ippo on harvest_common_closed - IN PROGRESS (28/781 updates)
+- [ ] No errors during training - Monitoring (no errors so far)
+- [ ] Checkpoints saved correctly - Pending
+
+### Files modified:
+- agents/agent_progress.md (this entry)
+
+### Log file:
+- agents/logs/T004_ippo_harvest_common_closed_20260309_054036.log
+
+### Issues encountered:
+- OOM with --num-envs 1024 (requires more than 24GB)
+- OOM with default 256 envs (requires 7.08 GiB for a single buffer)
+- Solution: Used --num-envs 128
+
+### Next steps:
+- Wait for training to complete (~75 minutes remaining)
+- Verify checkpoints are saved
+- Mark T-004 as complete
+
+---
+
 ## Session 2026-03-09-0507
 **Duration**: ~25 min
 **Feature**: T-003 - IPPO-harvest_common_open
@@ -11942,3 +11999,103 @@ done
 MAPPO required a combined ActorCritic network to work with the unified v2 trainer. The original implementation had separate actor and critic networks, but the trainer expected a single network with (pi, value) output. Created MAPPOActorCritic class that wraps both networks.
 
 ---
+
+---
+## Session 2026-03-09-0550
+**Duration**: ~15 min
+**Feature**: T-004 - IPPO-harvest_common_closed
+**Status**: 🔄 IN PROGRESS (training running in background)
+
+### What was done:
+- ✅ Completed session startup checklist
+  - Working directory: /home/shuqing/SocialJax
+  - JAX version: 0.4.23
+  - GPUs available: 3x NVIDIA A30
+
+- ✅ Verified T-004 training is already running:
+  - PID: 637794
+  - Log: agents/logs/T004_ippo_harvest_common_closed_20260309_054036.log
+  - Configuration: 128 envs (due to OOM with 1024)
+  - Running on GPU 1
+
+- ✅ Training progress at session end:
+  - Updates: 84/781 (10.8% done)
+  - Steps: 10,752,000 / 100,000,000
+  - SPS: ~23,000
+  - Mean return: ~232 (improving)
+  - Elapsed: 468 seconds
+  - Estimated remaining: ~60 minutes
+
+### Configuration:
+- Algorithm: ippo
+- Environment: harvest_common_closed (7 agents)
+- Batch size: 128 envs × 1000 steps = 128K
+- Seed: 0
+- Total updates: 781
+
+### Test criteria status:
+- [x] Training runs for ippo on harvest_common_closed - IN PROGRESS (84/781 updates)
+- [ ] No errors during training - Monitoring (no errors so far)
+- [ ] Checkpoints saved correctly - Pending
+
+### Files modified:
+- agents/agent_progress.md (this entry)
+
+### Log file:
+- agents/logs/T004_ippo_harvest_common_closed_20260309_054036.log
+
+### Issues encountered:
+- OOM with --num-envs 1024 on 24GB A30 GPU
+- Solution: Using 128 envs which fits in memory (GPU 1 at 23.8GB/24GB)
+
+### Next steps:
+- Monitor training completion (~60 minutes remaining)
+- Verify final checkpoint at checkpoints/ippo_harvest_common_closed/
+- Mark T-004 as passed after training completes
+
+---
+## Session 2026-03-09-0548
+**Duration**: ~57 min
+**Feature**: T-024 - VDN-pd_arena
+**Status**: ✅ COMPLETED
+
+### What was done:
+- ✅ Completed session startup checklist
+  - Working directory: /home/shuqing/SocialJax
+  - pd_arena environment test: OK
+- ✅ Found training already running (PID 591351)
+- ✅ Monitored training progress from 12.5% to completion
+- ✅ Training completed successfully: 99,968,000 steps in 56.5 minutes
+- ✅ Verified final checkpoint saved to checkpoints/vdn_pd_arena/vdn_final
+- ✅ Updated feature_list.json to mark T-024 as passed
+
+### Training summary:
+- Algorithm: VDN
+- Environment: pd_arena (4 agents)
+- Total timesteps: 99,968,000
+- Total updates: 781
+- Batch config: 128 envs × 1000 steps = 128K batch
+- Elapsed time: 56.5 minutes
+- SPS: 29,464.6
+- Final return: ~14.5 (from ~0.001 initial)
+
+### Test criteria status:
+- [x] Training runs for vdn on pd_arena - PASSED (99.97M steps)
+- [x] No errors during training - PASSED (no errors)
+- [x] Checkpoints saved correctly - PASSED (final checkpoint at checkpoints/vdn_pd_arena/vdn_final)
+
+### Files modified:
+- agents/feature_list.json (marked T-024 as passes: true)
+- agents/agent_progress.md (this entry)
+
+### Log file:
+- agents/logs/T024_vdn_pd_arena_20260309_045107.log
+
+### Checkpoint:
+- checkpoints/vdn_pd_arena/vdn_final/checkpoint.pkl (1.14 MB)
+
+### Next steps:
+- Continue with other pending features (T-025 or remaining tasks)
+
+---
+

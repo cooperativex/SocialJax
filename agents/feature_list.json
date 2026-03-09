@@ -100,9 +100,9 @@
       "environment": "harvest_common_closed",
       "num_agents": 7,
       "script": "scripts/train.py --algorithm ippo --env harvest_common_closed --timesteps 100000000 --num-envs 1024",
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "notes": "NEEDS RE-RUN: previous run used wrong hyperparameters."
+      "notes": "Training running: PID 637794, log: T004_ippo_harvest_common_closed_20260309_054036.log, 128 envs (OOM with 1024), ~60 min remaining"
     },
     {
       "id": "T-005",
@@ -473,9 +473,9 @@
       "environment": "pd_arena",
       "num_agents": 4,
       "script": "scripts/train.py --algorithm vdn --env pd_arena --timesteps 100000000 --num-envs 128",
-      "status": "in_progress",
-      "passes": false,
-      "notes": "TRAINING IN PROGRESS: PID 591351, log: T024_vdn_pd_arena_20260309_045107.log. Modified from 1024 to 128 envs due to OOM on 24GB GPU. Estimated 60 min remaining.",
+      "status": "completed",
+      "passes": true,
+      "notes": "TRAINING COMPLETE: 99.97M steps in 56.5 min, final return ~14.5, checkpoint at checkpoints/vdn_pd_arena/vdn_final",
       "requirements": {
         "timesteps": 100000000,
         "num_seeds": 1,
