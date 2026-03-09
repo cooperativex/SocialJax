@@ -1,0 +1,7 @@
+# Coin Game Environment Configuration
+environment:
+  name: "coin_game"
+  num_agents: 2
+  max_steps: 100
+  kwargs:
+    grid_size: 15

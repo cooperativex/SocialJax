@@ -1,0 +1,16 @@
+# Mushrooms Environment Configuration
+# A sequential social dilemma where agents collect different types of mushrooms
+# with varying reward structures
+
+environment:
+  name: "mushrooms"
+  num_agents: 7
+  max_steps: 1000
+  kwargs:
+    # Mushroom types and rewards
+    # Green mushrooms: shared reward among all agents
+    # Blue mushrooms: reward shared among other agents (not collector)
+    # Orange mushrooms: negative reward for collector
+    shared_rewards: true
+    cnn: true
+    jit: true

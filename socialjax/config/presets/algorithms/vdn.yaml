@@ -1,0 +1,26 @@
+# VDN (Value Decomposition Networks) Algorithm Configuration
+# VDN decomposes team Q-value as sum of individual Q-values: Q_tot = sum(Q_i)
+# Uses target networks and experience replay for stable off-policy learning
+
+algorithm:
+  name: "vdn"
+  parameter_sharing: true
+  # Target network update settings
+  target_update_freq: 200
+  target_update_tau: 1.0  # 1.0 = hard update, <1.0 = soft update
+  training:
+    learning_rate: 0.001
+    gamma: 0.99
+    max_grad_norm: 10.0
+    # Exploration settings (epsilon-greedy)
+    eps_start: 1.0
+    eps_finish: 0.05
+    eps_decay: 0.5  # Fraction of training to decay epsilon
+    # Experience replay
+    buffer_size: 5000
+    buffer_batch_size: 32
+    learning_starts: 1000  # Steps before learning begins
+  network:
+    architecture: "cnn_q_network"
+    hidden_size: 64
+    activation: "relu"

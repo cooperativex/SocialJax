@@ -1,0 +1,8 @@
+# PD Arena Environment Configuration
+# A sequential social dilemma based on Prisoner's Dilemma in a spatial grid
+
+environment:
+  name: "pd_arena"
+  num_agents: 4
+  max_steps: 500
+  kwargs: {}

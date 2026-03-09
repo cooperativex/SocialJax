@@ -1,0 +1,9 @@
+# IPPO Algorithm Configuration
+algorithm:
+  name: "ippo"
+  parameter_sharing: true
+  centralised_critic: false
+  training:
+    learning_rate: 0.00025
+    clip_eps: 0.2
+    ent_coef: 0.01

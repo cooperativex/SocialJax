@@ -1,0 +1,19 @@
+algorithm:
+  name: "irat"
+  parameter_sharing: true
+  centralised_critic: true
+  training:
+    learning_rate: 0.0005
+    clip_eps: 0.2
+    scale_clip_eps: true
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    gamma: 0.99
+    gae_lambda: 0.95
+    update_epochs: 2
+    num_minibatches: 4
+    num_steps: 1000
+    num_envs: 256
+    total_timesteps: 1000000000
+    anneal_lr: true

@@ -1,0 +1,31 @@
+# SocialJax Base Configuration
+# This defines the default values that can be overridden
+
+algorithm:
+  name: "ippo"
+  parameter_sharing: true
+  centralised_critic: false
+  network:
+    architecture: "cnn_actor_critic"
+    hidden_size: 64
+    activation: "relu"
+  training:
+    total_timesteps: 100000000
+    num_envs: 256
+    num_steps: 1000
+    update_epochs: 2
+    num_minibatches: 500
+    gamma: 0.99
+    gae_lambda: 0.95
+    learning_rate: 0.0005
+    clip_eps: 0.2
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    anneal_lr: true
+    seed: 42
+
+environment:
+  name: "coin_game"
+  num_agents: 2
+  max_steps: 100

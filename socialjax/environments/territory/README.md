@@ -1,0 +1,3 @@
+# Territory
+
+Territor is a competitive multi-agent game where players paint walls to capture territory and earn rewards. The players claim walls by painting them with their unique color, either by touching or flinging paint. The paint dries after 25 steps, brightens, and rewards are given. The more walls that are painted and dried, the greater the reward players can receive. Walls can be zapped twice to permanently destroy them, making them non-claimable and traversable. Players can also zap each other and a player is permanently removed after being hit twice. 
