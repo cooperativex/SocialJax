@@ -89,9 +89,9 @@
       "environment": "harvest_common_open",
       "num_agents": 7,
       "script": "scripts/train.py --algorithm ippo --env harvest_common_open --timesteps 100000000 --num-envs 1024",
-      "status": "pending",
-      "passes": false,
-      "notes": "NEEDS RE-RUN: previous run used wrong hyperparameters."
+      "status": "completed",
+      "passes": true,
+      "notes": "COMPLETED: 99.8M steps in 24.4 min (68.4K SPS). Final return: ~115. Log: agents/logs/T003_ippo_harvest_common_open_20260309_050704.log. Checkpoint: checkpoints/ippo_harvest_common_open/ippo_final. Note: Used 256 envs (default) instead of 1024 to avoid OOM on 24GB A30."
     },
     {
       "id": "T-004",
