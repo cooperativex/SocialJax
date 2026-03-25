@@ -265,14 +265,19 @@ class MAPPOActorCritic(nn.Module):
     hidden_size: int = 64
 
     @nn.compact
-    def __call__(self, x):
+    def __call__(self, x, num_envs=None, world_state=None):
         if self.activation == "relu":
             activation = nn.relu
         else:
             activation = nn.tanh
 
         # x shape: (batch_size, *obs_shape) where batch_size = num_agents * num_envs
-        # We need to extract local obs for actor and global state for critic
+        batch_size = x.shape[0]
+        num_agents = self.num_agents
+
+        # Infer num_envs if not provided
+        if num_envs is None:
+            num_envs = batch_size // num_agents
 
         # For actor: use local observation directly
         actor_embedding = MAPPOActorCNN(self.activation)(x)
@@ -287,11 +292,36 @@ class MAPPOActorCritic(nn.Module):
         )(actor_mean)
         pi = distrax.Categorical(logits=actor_mean)
 
-        # For critic: we need global state (concatenated obs from all agents)
-        # Since the trainer batches observations, we use the same local obs
-        # for simplicity (this is a fallback - ideally critic should see global state)
-        # Note: For proper MAPPO, the critic should see global state
-        critic_embedding = MAPPOCriticCNN(self.activation)(x)
+        # For critic: use provided world_state if available, otherwise construct it
+        if world_state is not None:
+            # Use the pre-computed world_state (for shuffled minibatches during update)
+            global_state_expanded = world_state
+        elif batch_size < num_agents or num_envs == 0:
+            # Fallback for initialization: construct dummy global state
+            # by replicating the single observation num_agents times
+            H, W, C = x.shape[1], x.shape[2], x.shape[3]
+            # Replicate single obs to create global state
+            global_state_expanded = jnp.tile(x, (1, 1, 1, num_agents))
+        else:
+            # Normal case: construct global state from all agents
+            # Reshape x from (num_agents * num_envs, H, W, C) to (num_agents, num_envs, H, W, C)
+            x_reshaped = x.reshape(num_agents, num_envs, *x.shape[1:])
+            # Transpose to (num_envs, num_agents, H, W, C)
+            x_reshaped = jnp.transpose(x_reshaped, (1, 0, 2, 3, 4))
+
+            # Use stacked observations as additional channels for global state
+            # Shape: (num_envs, H, W, num_agents * C)
+            H, W, C = x.shape[1], x.shape[2], x.shape[3]
+            global_state_image = x_reshaped.reshape(num_envs, H, W, num_agents * C)
+
+            # Broadcast global_state_image back to (num_agents * num_envs, H, W, num_agents * C)
+            # so each agent gets the same global value
+            global_state_expanded = jnp.broadcast_to(
+                global_state_image[jnp.newaxis, :, :, :, :],
+                (num_agents, num_envs, H, W, num_agents * C)
+            ).reshape(num_agents * num_envs, H, W, num_agents * C)
+
+        critic_embedding = MAPPOCriticCNN(self.activation)(global_state_expanded)
 
         # Critic head
         critic = nn.Dense(

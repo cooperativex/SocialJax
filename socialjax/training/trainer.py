@@ -36,6 +36,7 @@ class Transition(NamedTuple):
     log_prob: jnp.ndarray
     obs: jnp.ndarray
     info: Any
+    world_state: Optional[jnp.ndarray] = None  # For MAPPO: global state for critic
 
 
 # ---------------------------------------------------------------------------
@@ -56,6 +57,41 @@ def batchify_done(done, num_agents):
     """done dict -> (NUM_ACTORS,)"""
     agent_dones = jnp.stack([done[str(a)] for a in range(num_agents)])
     return agent_dones.reshape(-1)
+
+
+def construct_world_state(obs_batch, num_agents, num_envs):
+    """Construct world state (global state) from batchified observations.
+
+    For MAPPO centralized critic: combines observations from all agents
+    in the same environment into a single global state.
+
+    Args:
+        obs_batch: Shape (num_agents * num_envs, H, W, C) - agent-major order
+        num_agents: Number of agents per environment
+        num_envs: Number of parallel environments
+
+    Returns:
+        world_state: Shape (num_agents * num_envs, H, W, num_agents * C)
+        Each agent in the same environment sees the same global state.
+    """
+    H, W, C = obs_batch.shape[1], obs_batch.shape[2], obs_batch.shape[3]
+
+    # Reshape from (num_agents * num_envs, H, W, C) to (num_agents, num_envs, H, W, C)
+    x_reshaped = obs_batch.reshape(num_agents, num_envs, H, W, C)
+
+    # Transpose to (num_envs, num_agents, H, W, C)
+    x_reshaped = jnp.transpose(x_reshaped, (1, 0, 2, 3, 4))
+
+    # Stack observations as additional channels: (num_envs, H, W, num_agents * C)
+    global_state_image = x_reshaped.reshape(num_envs, H, W, num_agents * C)
+
+    # Broadcast to all agents so each agent gets the same global state
+    world_state = jnp.broadcast_to(
+        global_state_image[jnp.newaxis, :, :, :, :],
+        (num_agents, num_envs, H, W, num_agents * C)
+    ).reshape(num_agents * num_envs, H, W, num_agents * C)
+
+    return world_state
 
 
 # ---------------------------------------------------------------------------
@@ -116,6 +152,11 @@ class Trainer:
             num_agents=self.num_agents,
         )
         self._algo_name = algo_name
+
+        # Check if network supports world_state parameter (for MAPPO centralized critic)
+        import inspect
+        sig = inspect.signature(self.algorithm.network.__call__)
+        self._supports_world_state = 'world_state' in sig.parameters
 
         # Derived config
         num_envs = self.config.get("num_envs", 256)
@@ -186,6 +227,7 @@ class Trainer:
         num_envs = self.num_envs
         num_steps = self.num_steps
         num_actors = self.num_actors
+        supports_world_state = self._supports_world_state  # Capture for closure
 
         gamma = self.config.get("gamma", 0.99)
         gae_lambda = self.config.get("gae_lambda", 0.95)
@@ -228,6 +270,12 @@ class Trainer:
                     lambda x: x.reshape((num_actors,) + x.shape[2:]), info
                 )
 
+                # Construct world_state for MAPPO (global state for centralized critic)
+                if supports_world_state:
+                    world_state = construct_world_state(obs_batch, num_agents, num_envs)
+                else:
+                    world_state = None
+
                 transition = Transition(
                     done=last_done,
                     action=action,
@@ -236,6 +284,7 @@ class Trainer:
                     log_prob=log_prob,
                     obs=obs_batch,
                     info=info,
+                    world_state=world_state,
                 )
 
                 carry = (train_state, env_state, obsv, done_batch, rng)
@@ -251,7 +300,11 @@ class Trainer:
 
             # --- GAE ---
             last_obs_batch = batchify_obs(last_obs, num_agents, num_envs)
-            _, last_val = network.apply(train_state.params, last_obs_batch)
+            if supports_world_state:
+                last_world_state = construct_world_state(last_obs_batch, num_agents, num_envs)
+                _, last_val = network.apply(train_state.params, last_obs_batch, world_state=last_world_state)
+            else:
+                _, last_val = network.apply(train_state.params, last_obs_batch)
 
             def _gae_step(gae_next, transition_data):
                 gae, next_value = gae_next
@@ -275,7 +328,12 @@ class Trainer:
                     traj, adv, tgt = batch_info
 
                     def _loss_fn(params):
-                        pi, value = network.apply(params, traj.obs)
+                        # Use world_state for MAPPO centralized critic if supported
+                        if supports_world_state:
+                            world_state = traj.world_state
+                            pi, value = network.apply(params, traj.obs, world_state=world_state)
+                        else:
+                            pi, value = network.apply(params, traj.obs)
                         log_prob = pi.log_prob(traj.action)
                         entropy = pi.entropy().mean()
 

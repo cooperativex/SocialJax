@@ -177,6 +177,14 @@ class ConfigManager:
     def config_path(self) -> Path:
         return self._config_path
 
+    # Map env names to preset filenames (when they differ)
+    ENV_FILE_MAP = {
+        "harvest_common_open": "harvest_open",
+        "clean_up": "cleanup",
+        "territory_open": "territory_open",
+        "gift": "gift",
+    }
+
     def load(
         self,
         algorithm: str,
@@ -185,7 +193,8 @@ class ConfigManager:
     ) -> SocialJaxConfig:
         base_config = self._load_yaml(self._config_path / "base.yaml")
         algo_config = self._load_yaml(self._config_path / "algorithms" / f"{algorithm}.yaml")
-        env_config = self._load_yaml(self._config_path / "environments" / f"{environment}.yaml")
+        env_file = self.ENV_FILE_MAP.get(environment, environment)
+        env_config = self._load_yaml(self._config_path / "environments" / f"{env_file}.yaml")
 
         if OMEGACONF_AVAILABLE:
             merged = OmegaConf.merge(base_config, algo_config, env_config)
@@ -262,12 +271,31 @@ class ConfigManager:
 
 
 def create_default_config(algorithm: str = "ippo", environment: str = "coin_game", **kwargs) -> SocialJaxConfig:
+    manager = ConfigManager()
+    # Try loading from preset files (base + algorithm + environment YAMLs)
+    try:
+        config = manager.load(algorithm=algorithm, environment=environment, custom_config=kwargs if kwargs else None)
+        return config
+    except Exception:
+        pass
+    # Fallback: construct manually with correct env defaults
+    # Environment-specific default agent counts
+    ENV_NUM_AGENTS = {
+        "coin_game": 2,
+        "territory_open": 2,
+        "gift": 2,
+        "pd_arena": 4,
+        "coop_mining": 4,
+        "mushrooms": 5,
+        "harvest_common_open": 7,
+        "clean_up": 7,
+    }
+    num_agents = ENV_NUM_AGENTS.get(environment, 2)
     config = SocialJaxConfig(
         algorithm=AlgorithmConfig(name=algorithm),
-        environment=EnvironmentConfig(name=environment),
+        environment=EnvironmentConfig(name=environment, num_agents=num_agents),
     )
     if kwargs:
-        manager = ConfigManager()
         merged = manager._merge_dicts(config.to_dict(), kwargs)
         config = SocialJaxConfig.from_dict(merged)
     return config

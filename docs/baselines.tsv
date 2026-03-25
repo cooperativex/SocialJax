@@ -1,0 +1,22 @@
+# SocialJax Algorithm Baselines
+# Updated: 2026-03-24
+# All results with 128 envs, 128 steps, lr=5e-4, 4 epochs, 32 minibatches
+# MAPPO full training: 100M-150M steps
+
+env	algorithm	return	steps	seed	status
+coin_game	ippo	18.807	5M	42	baseline
+coin_game	mappo	0.684	150M	42	full_train
+harvest_common_open	ippo	115.153	5M	42	baseline
+harvest_common_open	mappo	67.631	100M	42	full_train
+clean_up	ippo	0.0	5M	42	baseline
+clean_up	mappo	191.362	100M	42	full_train
+pd_arena	ippo	15.550	5M	42	baseline
+pd_arena	mappo	2.155	150M	42	full_train
+coop_mining	ippo	185.812	5M	42	baseline
+coop_mining	mappo	15.449	150M	42	full_train
+territory_open	ippo	195.240	5M	42	baseline
+territory_open	mappo	3.575	150M	42	full_train
+mushrooms	ippo	224.079	5M	42	baseline
+mushrooms	mappo	30.579	100M	42	full_train
+gift	ippo	101.391	5M	42	baseline
+gift	mappo	7.385	150M	42	full_train
