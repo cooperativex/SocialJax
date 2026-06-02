@@ -5,12 +5,11 @@ defaults:
 # Environment-specific settings
 "ENV_NAME": "harvest_common_open"
 "GIF_NUM_FRAMES": 25
-"TUNE": True
 
 "ENV_KWARGS":
   "num_agents": 7
   "num_inner_steps": 1000
-  "shared_rewards": False
+  "shared_rewards": True
   "cnn": True
   "jit": True
   "map_ASCII": ["AAA    A  WW  A    AAA",
@@ -31,6 +30,6 @@ defaults:
              ]
 
 # Reward settings
-"REWARD": "individual"
+"REWARD": "common" # common; individual
 "WANDB_TAGS":
-  - INDIVIDUAL_REWARD
+  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD

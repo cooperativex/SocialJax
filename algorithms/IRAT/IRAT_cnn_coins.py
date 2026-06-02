@@ -30,39 +30,9 @@ from algorithms.utils import (
     unbatchify,
     save_params,
     load_params,
-    evaluate_mappo_style as evaluate
+    evaluate_mappo_style as evaluate,
+    IRATTransition as Transition,
 )
-
-class Transition(NamedTuple):
-    global_done: jnp.ndarray
-    done: jnp.ndarray
-    # Individual policy
-    ind_action: jnp.ndarray
-    ind_value: jnp.ndarray
-    ind_log_prob: jnp.ndarray
-    # Team policy
-    team_action: jnp.ndarray
-    team_value: jnp.ndarray
-    team_log_prob: jnp.ndarray
-    # Rewards
-    ind_reward: jnp.ndarray  # Individual reward
-    team_reward: jnp.ndarray  # Team reward
-    # Observations
-    obs: jnp.ndarray
-    world_state: jnp.ndarray
-    info: jnp.ndarray
-
-def batchify(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[str(a)] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-def batchify_numpy(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[:, a] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-def batchify_dict(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[str(a)] for a in agent_list])
-    return x.reshape((num_actors, -1))
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -229,7 +199,7 @@ def make_train(config):
                 )(rng_step, env_state, env_act)
 
                 info = jax.tree.map(lambda x: x.reshape((config["NUM_ACTORS"])), info)
-                done_batch = batchify(done, env.agents, config["NUM_ACTORS"]).squeeze()
+                done_batch = batchify_dict(done, env.agents, config["NUM_ACTORS"]).squeeze()
 
                 # IRAT: Compute individual and team rewards
                 # Individual rewards from environment (NUM_ACTORS,)

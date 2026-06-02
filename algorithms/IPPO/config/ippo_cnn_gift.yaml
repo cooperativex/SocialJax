@@ -8,11 +8,11 @@ defaults:
 "ENV_KWARGS":
   "num_agents": 2
   "num_inner_steps": 1000
-  "shared_rewards": False
+  "shared_rewards": True
   "cnn": True
   "jit": True
 
 # Reward settings
-"REWARD": "individual"
+"REWARD": "common" # common; individual
 "WANDB_TAGS":
-  - INDIVIDUAL_REWARD
+  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD

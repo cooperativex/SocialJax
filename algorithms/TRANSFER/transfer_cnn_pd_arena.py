@@ -30,58 +30,14 @@ from algorithms.utils import (
     unbatchify,
     save_params,
     load_params,
-    evaluate_ippo as evaluate
+    evaluate_ippo as evaluate,
+    Transition,
 )
 
 from PIL import Image
 from pathlib import Path
 
 # Import shared IO utilities
-
-
-
-
-class Transition(NamedTuple):
-    done: jnp.ndarray
-    action: jnp.ndarray
-    value: jnp.ndarray
-    reward: jnp.ndarray
-    log_prob: jnp.ndarray
-    obs: jnp.ndarray
-    info: jnp.ndarray
-
-def get_rollout(params, config):
-    env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
-
-    network = ActorCritic(env.action_space().n, activation=config["ACTIVATION"])
-    key = jax.random.PRNGKey(0)
-    key, key_r, key_a = jax.random.split(key, 3)
-
-    done = False
-
-    obs, state = env.reset(key_r)
-    state_seq = [state]
-    while not done:
-        key, key_a0, key_a1, key_s = jax.random.split(key, 4)
-
-        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *(env.observation_space()[0]).shape)
-
-        pi, value = network.apply(params, obs_batch)
-        action = pi.sample(seed=key_a0)
-        env_act = unbatchify(
-            action, env.agents, 1, env.num_agents
-        )
-
-        env_act = {k: v.squeeze() for k, v in env_act.items()}
-
-        # STEP ENV
-        obs, state, reward, done, info = env.step(key_s, state, env_act)
-        done = done["__all__"]
-
-        state_seq.append(state)
-
-    return state_seq
-
 
 def calculate_s_interest_schedule(n_agents=4):
     """Calculate s_interest values based on the given ratio formula.
@@ -435,11 +391,6 @@ def single_run(config):
     params = load_params(save_path)
 
     evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
-    # state_seq = get_rollout(train_state.params, config)
-    # viz = OvercookedVisualizer()
-    # agent_view_size is hardcoded as it determines the padding around the layout.
-    # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
-
 
 def tune(default_config):
     """

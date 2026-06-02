@@ -2,7 +2,6 @@
 Based on PureJaxRL & jaxmarl Implementation of PPO
 """
 import sys
-sys.path.append('/home/shuqing/SocialJax')
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -32,63 +31,9 @@ from algorithms.utils import (
     unbatchify,
     save_params,
     load_params,
-    evaluate_ippo as evaluate
+    evaluate_ippo as evaluate,
+    Transition,
 )
-
-def get_rollout(params, config):
-    env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
-    if config["PARAMETER_SHARING"]:
-        network = ActorCritic(env.action_space().n, activation=config["ACTIVATION"])
-    else:
-        network = [ActorCritic(env.action_space().n, activation=config["ACTIVATION"]) for _ in range(env.num_agents)]
-    key = jax.random.PRNGKey(0)
-    key, key_r, key_a = jax.random.split(key, 3)
-
-    done = False
-
-    obs, state = env.reset(key_r)
-    state_seq = [state]
-    for o in range(config["GIF_NUM_FRAMES"]):
-        print(o)
-        key, key_a0, key_a1, key_s = jax.random.split(key, 4)
-
-        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-        if config["PARAMETER_SHARING"]: 
-            pi, value = network.apply(params, obs_batch)
-            action = pi.sample(seed=key_a0)
-            env_act = unbatchify(
-                action, env.agents, 1, env.num_agents
-            )           
-        else:
-            env_act = {}
-            for i in range(env.num_agents):
-                pi, value = network[i].apply(params[i], obs_batch)
-                action = pi.sample(seed=key_a0)
-                env_act[env.agents[i]] = action
-
-        
-
-        env_act = {k: v.squeeze() for k, v in env_act.items()}
-
-        # STEP ENV
-        obs, state, reward, done, info = env.step(key_s, state, env_act)
-        done = done["__all__"]
-
-        state_seq.append(state)
-
-    return state_seq
-
-def batchify(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[:, a] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-def batchify_dict(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[str(a)] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
-    x = x.reshape((num_actors, num_envs, -1))
-    return {a: x[i] for i, a in enumerate(agent_list)}
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -478,12 +423,6 @@ def single_run(config):
             save_params(train_state[i], save_path)
             params.append(load_params(save_path))
     evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
-    # state_seq = get_rollout(train_state.params, config)
-    # viz = OvercookedVisualizer()
-    # agent_view_size is hardcoded as it determines the padding around the layout.
-    # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
-
-
 
 def tune(default_config):
     """

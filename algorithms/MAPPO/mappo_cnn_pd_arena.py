@@ -32,23 +32,12 @@ from algorithms.utils import (
     unbatchify,
     save_params,
     load_params,
-    evaluate_mappo_style as evaluate
+    evaluate_mappo_style as evaluate,
+    MAPPOTransition as Transition,
 )
 
 from PIL import Image
 from pathlib import Path
-
-class Transition(NamedTuple):
-    global_done: jnp.ndarray
-    done: jnp.ndarray
-    action: jnp.ndarray
-    value: jnp.ndarray
-    reward: jnp.ndarray
-    log_prob: jnp.ndarray
-    obs: jnp.ndarray
-    world_state: jnp.ndarray
-    info: jnp.ndarray
-
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -449,11 +438,6 @@ def single_run(config):
     params = load_params(save_path)
     print("** Evaluating Results **")
     evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
-    # state_seq = get_rollout(train_state.params, config)
-    # viz = OvercookedVisualizer()
-    # agent_view_size is hardcoded as it determines the padding around the layout.
-    # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
-
 
 def tune(default_config):
     """

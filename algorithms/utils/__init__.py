@@ -31,6 +31,12 @@ from algorithms.utils.eval_utils import (
     evaluate_mappo_style
 )
 
+from algorithms.utils.types import (
+    Transition,
+    MAPPOTransition,
+    IRATTransition,
+)
+
 __all__ = [
     # Network architectures
     "CNN",
@@ -52,5 +58,9 @@ __all__ = [
     "load_params",
     # Evaluation utilities
     "evaluate_ippo",
-    "evaluate_mappo_style"
+    "evaluate_mappo_style",
+    # Shared types
+    "Transition",
+    "MAPPOTransition",
+    "IRATTransition",
 ]

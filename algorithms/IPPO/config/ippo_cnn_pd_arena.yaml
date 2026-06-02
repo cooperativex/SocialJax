@@ -9,11 +9,11 @@ defaults:
 "ENV_KWARGS":
   "num_agents": 4
   "num_inner_steps": 1000
-  "shared_rewards": False
+  "shared_rewards": True
   "cnn": True
   "jit": True
 
-# Reward settings (only remark for wandb tags, as the reward type is already set in "shared_rewards")
-"REWARD": "individual"
+# Reward settings
+"REWARD": "common" # common; individual
 "WANDB_TAGS":
-  - INDIVIDUAL_REWARD
+  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD
