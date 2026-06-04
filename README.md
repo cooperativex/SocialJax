@@ -93,7 +93,7 @@ Option two: conda with requirements.txt
 
   3. Run code
        ```bash
-       python algothrims/IPPO/ippo_cnn_coins.py 
+       python algorithms/IPPO/ippo_cnn_coins.py 
        ```
 
 Option three: conda with environments.yml

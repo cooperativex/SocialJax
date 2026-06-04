@@ -204,7 +204,7 @@ def evaluate_mappo_style(params, env, save_path, config, use_actor_only=True):
 
     # Save GIF
     print(f"Saving Episode GIF")
-    pics = [Image.fromarray(img) for img in pics]
+    pics = [Image.fromarray(np.array(img)) for img in pics]
     pics[0].save(
         f"{root_dir}/state_outer_step_{o_t+1}.gif",
         format="GIF",

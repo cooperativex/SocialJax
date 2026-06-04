@@ -3,7 +3,7 @@ defaults:
   - svo_base
 
 # Environment-specific settings
-"ENV_NAME": "harvest_open"
+"ENV_NAME": "harvest_common_open"
 
 "ENV_KWARGS": 
   "num_agents": 7

@@ -1175,7 +1175,11 @@ class Gift(MultiAgentEnv):
                 }
             elif self.svo:
                 original_rewards = rewards * self.num_agents
-                rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
+                rewards, theta = self.get_svo_rewards(
+                    original_rewards.reshape(self.num_agents, 1),
+                    self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents,
+                )
+                rewards = rewards.squeeze()
                 info = {
                     "original_rewards": original_rewards.squeeze(),
                     "svo_theta": theta.squeeze(),

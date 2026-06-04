@@ -534,8 +534,13 @@ def create_base_item_tile_jax(item, tile_size, item_colors, base_tile_cache):
     """
     Return a jax array (tile_size, tile_size, 3) representing the base color or shape.
     """
-    key = (item, tile_size)
-    if key in base_tile_cache:
+    # Under jax.vmap `item` is a tracer and not hashable, so skip the cache when
+    # we can't materialize a Python int — mirrors the pattern in render_tile_jax.
+    try:
+        key = (int(item), tile_size)
+    except Exception:
+        key = None
+    if key is not None and key in base_tile_cache:
         return base_tile_cache[key]
 
     # Start with a blank tile
@@ -585,7 +590,8 @@ def create_base_item_tile_jax(item, tile_size, item_colors, base_tile_cache):
         operand=None
     )
 
-    base_tile_cache[key] = tile_out
+    if key is not None:
+        base_tile_cache[key] = tile_out
     return tile_out
 
 

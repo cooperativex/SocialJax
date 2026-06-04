@@ -712,13 +712,18 @@ class CoopMining(MultiAgentEnv):
                 "shaped_rewards": rewards.squeeze(),
             }
         elif self.svo:
-            final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
-            rewards, theta = self.get_svo_rewards(final_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
+            final_rewards = (rewards_iron + rewards_gold) * self.num_agents  # (N,)
+            rewards, theta = self.get_svo_rewards(
+                final_rewards.reshape(self.num_agents, 1),
+                self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents,
+            )
+            rewards = rewards.squeeze()
             info = {
                 "original_rewards": final_rewards.squeeze(),
                 "svo_theta": theta.squeeze(),
-                "shaped_rewards": rewards.squeeze(),
+                "shaped_rewards": rewards,
             }
+            final_rewards = rewards
         elif self.interest:
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
 
@@ -738,6 +743,7 @@ class CoopMining(MultiAgentEnv):
                 "shaped_rewards": rewards.squeeze(),
                 "s_interest": current_s_interest,
             }
+            final_rewards = rewards.squeeze()
         else:
             final_rewards = (rewards_iron + rewards_gold) * self.num_agents # (N,)
             info = {}

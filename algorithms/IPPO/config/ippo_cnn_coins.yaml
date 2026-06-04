@@ -4,7 +4,6 @@ defaults:
 
 # Environment-specific settings
 "ENV_NAME": "coin_game"
-"TOTAL_TIMESTEPS": 1e9
 
 "ENV_KWARGS":
   "num_agents": 2
