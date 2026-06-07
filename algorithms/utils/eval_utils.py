@@ -94,11 +94,6 @@ def evaluate_ippo(params, env, save_path, config):
         img = env.render(state)
         pics.append(img)
 
-        print('###################')
-        print(f'Actions: {env_act}')
-        print(f'Reward: {reward}')
-        print("###################")
-
     # Save GIF
     print(f"Saving Episode GIF")
     pics = [Image.fromarray(np.array(img)) for img in pics]
@@ -167,7 +162,6 @@ def evaluate_mappo_style(params, env, save_path, config, use_actor_only=True):
     path.mkdir(parents=True, exist_ok=True)
 
     for o_t in range(config["GIF_NUM_FRAMES"]):
-        print(o_t)
         obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
 
         # Use model to select actions
@@ -195,12 +189,6 @@ def evaluate_mappo_style(params, env, save_path, config, use_actor_only=True):
         # Render
         img = env.render(state)
         pics.append(img)
-
-        print('###################')
-        print(f'Actions: {env_act}')
-        print(f'Reward: {reward}')
-        print(f'State: {state.agent_locs}')
-        print("###################")
 
     # Save GIF
     print(f"Saving Episode GIF")

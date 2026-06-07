@@ -5,14 +5,10 @@ import os
 import copy
 import jax
 import jax.numpy as jnp
-import numpy as np
-from functools import partial
 from typing import Any
 
-import flax
 import chex
 import optax
-import flax.linen as nn
 from flax.training.train_state import TrainState
 import hydra
 from omegaconf import OmegaConf
@@ -23,8 +19,7 @@ import socialjax
 from socialjax.wrappers.baselines import LogWrapper, CTRolloutManager
 
 # Import shared VDN network architectures
-from algorithms.utils import CNN, QNetwork
-
+from algorithms.utils import QNetwork
 
 if not hasattr(jax, 'tree'):
     import types
@@ -439,117 +434,3 @@ def make_train(config, env):
         return {"runner_state": runner_state, "metrics": metrics}
 
     return train
-
-def env_from_config(config):
-    """Create SocialJax environment from config."""
-    env_name = config["ENV_NAME"]
-    # Create SocialJax environment
-    env = socialjax.make(env_name, **config["ENV_KWARGS"])
-    # Wrap with LogWrapper (replace_info=False to preserve shaped rewards)
-    env = LogWrapper(env, replace_info=False)
-    return env, env_name
-
-def single_run(config):
-
-    config = {**config, **config["alg"]}  # merge the alg config with the main config
-    print("Config:\n", OmegaConf.to_yaml(config))
-
-    alg_name = "vdn_cnn"
-    env, env_name = env_from_config(copy.deepcopy(config))
-
-    wandb.init(
-        entity=config["ENTITY"],
-        project=config["PROJECT"],
-        tags=[
-            alg_name.upper(),
-            env_name.upper(),
-            f"jax_{jax.__version__}",
-        ],
-        name=f"{alg_name}_{env_name}",
-        config=config,
-        mode=config["WANDB_MODE"],
-    )
-
-    rng = jax.random.PRNGKey(config["SEED"])
-
-    rngs = jax.random.split(rng, config["NUM_SEEDS"])
-    train_vjit = jax.jit(jax.vmap(make_train(config, env)))
-    outs = jax.block_until_ready(train_vjit(rngs))
-
-    # save params
-    if config.get("SAVE_PATH", None) is not None:
-        from socialjax.wrappers.baselines import save_params
-
-        model_state = outs["runner_state"][0]
-        save_dir = os.path.join(config["SAVE_PATH"], env_name)
-        os.makedirs(save_dir, exist_ok=True)
-        OmegaConf.save(
-            config,
-            os.path.join(
-                save_dir, f'{alg_name}_{env_name}_seed{config["SEED"]}_config.yaml'
-            ),
-        )
-
-        for i, rng in enumerate(rngs):
-            params = jax.tree.map(lambda x: x[i], model_state.params)
-            save_path = os.path.join(
-                save_dir,
-                f'{alg_name}_{env_name}_seed{config["SEED"]}_vmap{i}.safetensors',
-            )
-            save_params(params, save_path)
-
-def tune(default_config):
-    """Hyperparameter sweep with wandb."""
-
-    default_config = {
-        **default_config,
-        **default_config["alg"],
-    }  # merge the alg config with the main config
-    env_name = default_config["ENV_NAME"]
-    alg_name = "vdn_cnn"
-    env, env_name = env_from_config(default_config)
-
-    def wrapped_make_train():
-        wandb.init(project=default_config["PROJECT"])
-
-        # update the default params
-        config = copy.deepcopy(default_config)
-        for k, v in dict(wandb.config).items():
-            config[k] = v
-
-        print("running experiment with params:", config)
-
-        rng = jax.random.PRNGKey(config["SEED"])
-        rngs = jax.random.split(rng, config["NUM_SEEDS"])
-        train_vjit = jax.jit(jax.vmap(make_train(config, env)))
-        outs = jax.block_until_ready(train_vjit(rngs))
-
-    sweep_config = {
-        "name": f"{alg_name}_{env_name}",
-        "method": "bayes",
-        "metric": {
-            "name": "test_returned_episode_returns",
-            "goal": "maximize",
-        },
-        "parameters": {
-            "SEED": {"values": [42, 52, 62]},
-        },
-    }
-
-    wandb.login()
-    sweep_id = wandb.sweep(
-        sweep_config, entity=default_config["ENTITY"], project=default_config["PROJECT"]
-    )
-    wandb.agent(sweep_id, wrapped_make_train, count=300)
-
-@hydra.main(version_base=None, config_path="./config", config_name="vdn_cnn_gift")
-def main(config):
-    config = OmegaConf.to_container(config)
-    print("Config:\n", OmegaConf.to_yaml(config))
-    if config["HYP_TUNE"]:
-        tune(config)
-    else:
-        single_run(config)
-
-if __name__ == "__main__":
-    main()

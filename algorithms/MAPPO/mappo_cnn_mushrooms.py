@@ -5,28 +5,19 @@ Fixed bugs of jaxmarl
 
 import jax
 import jax.numpy as jnp
-import flax.linen as nn
-import numpy as np
 import optax
-from flax.linen.initializers import constant, orthogonal
-from typing import Sequence, NamedTuple, Any
 from flax.training.train_state import TrainState
-import distrax
-from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper
+from gymnax.wrappers.purerl import LogWrapper
 import socialjax
 from socialjax.wrappers.baselines import MAPPOWorldStateWrapper, LogWrapper
 import hydra
 from omegaconf import OmegaConf
 import wandb
 import copy
-import pickle
-import os
-import matplotlib.pyplot as plt
 # Import shared MAPPO small network architectures and utilities
 from algorithms.utils import (
     SmallActor as Actor,
     SmallCritic as Critic,
-    batchify,
     batchify_dict,
     batchify_numpy,
     unbatchify,
@@ -35,9 +26,6 @@ from algorithms.utils import (
     evaluate_mappo_style as evaluate,
     MAPPOTransition as Transition,
 )
-
-from PIL import Image
-from pathlib import Path
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -125,8 +113,6 @@ def make_train(config):
 
                 obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
                 # obs_batch = jnp.stack([last_obs[a] for a in env.agents]).reshape(-1, *env.observation_space().shape)
-
-                print("input_obs_shape", obs_batch.shape)
 
                 pi = actor_network.apply(train_states[0].params, obs_batch)
                 action = pi.sample(seed=_rng)
@@ -410,98 +396,6 @@ def make_train(config):
 
     return train
 
-def single_run(config):
-    config = OmegaConf.to_container(config)
-    wandb.init(
-        entity=config["ENTITY"],
-        project=config["PROJECT"],
-        tags=["MAPPO", "FF"],
-        config=config,
-        mode=config["WANDB_MODE"],
-        name=f'mappo_cnn_mushrooms'
-    )
-
-    rng = jax.random.PRNGKey(config["SEED"])
-    rngs = jax.random.split(rng, config["NUM_SEEDS"])
-    # train_jit = jax.jit(make_train(config))
-
-    train_jit = make_train(config)
-    
-    out = jax.vmap(train_jit)(rngs)
-
-    print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}_reward_{config["REWARD"]}'
-    train_state = jax.tree.map(lambda x: x[0], out["runner_state"][0][0][0])
-    save_path = f"./checkpoints/{filename}.pkl"
-    save_params(train_state, save_path)
-    params = load_params(save_path)
-    print("** Evaluating Results **")
-    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
-
-def tune(default_config):
-    """
-    Hyperparameter sweep with wandb, including logic to:
-    - Initialize wandb
-    - Train for each hyperparameter set
-    - Save checkpoint
-    - Evaluate and log GIF
-    """
-    import copy
-
-    default_config = OmegaConf.to_container(default_config)
-
-    sweep_config = {
-        "name": "mushrooms",
-        "method": "grid",
-        "metric": {
-            "name": "returned_episode_original_returns",
-            "goal": "maximize",
-        },
-        "parameters": {
-            "SEED": {"values": [42, 52, 62]},
-        },
-    }
-
-    def wrapped_make_train():
-
-        wandb.init(project=default_config["PROJECT"])
-        config = copy.deepcopy(default_config)
-        # only overwrite the single nested key we're sweeping
-        for k, v in dict(wandb.config).items():
-            if "." in k:
-                parent, child = k.split(".", 1)
-                config[parent][child] = v
-            else:
-                config[k] = v
-
-        # Rename the run for clarity
-        run_name = f"sweep_{config['ENV_NAME']}_seed{config['SEED']}"
-        wandb.run.name = run_name
-        print("Running experiment:", run_name)
-
-        rng = jax.random.PRNGKey(config["SEED"])
-        rngs = jax.random.split(rng, config["NUM_SEEDS"])
-        train_vjit = jax.jit(jax.vmap(make_train(config)))
-        outs = jax.block_until_ready(train_vjit(rngs))
-        train_state = jax.tree.map(lambda x: x[0], outs["runner_state"][0])
-
-        # Evaluate and log
-        # params = load_params(train_state.params)
-        # test_env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
-        # evaluate(params, test_env, config)
-
-    wandb.login()
-    sweep_id = wandb.sweep(
-        sweep_config, entity=default_config["ENTITY"], project=default_config["PROJECT"]
-    )
-    wandb.agent(sweep_id, wrapped_make_train, count=1000)
-
-@hydra.main(version_base=None, config_path="config", config_name="mappo_cnn_mushrooms")
-def main(config):
-    if config["TUNE"]:
-        tune(config)
-    else:
-        single_run(config)
-
-if __name__ == "__main__":
-    main()
+# Used by algorithms/train.py to dispatch through algorithms.MAPPO._runner.
+SINGLE_RUN_KWARGS = {"wandb_name": "mappo_cnn_mushrooms"}
+TUNE_KWARGS       = {"sweep_name": "mushrooms"}
