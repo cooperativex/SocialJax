@@ -65,7 +65,6 @@ Option one: Using poetry, make sure you have python 3.10
   2. Install requirements
        ```bash
        poetry install --no-root
-       poetry run pip install "jax[cuda12]==0.6.2"
        ```
        ```bash
        export PYTHONPATH=./socialjax:$PYTHONPATH
@@ -85,7 +84,6 @@ Option two: conda with requirements.txt
   2. Install requirements
        ```bash
        pip install -r requirements.txt
-       pip install "jax[cuda12]==0.6.2"
        ```
        ```bash
        export PYTHONPATH=./socialjax:$PYTHONPATH

@@ -54,7 +54,7 @@ hydra-core = "1.3.2"
 idna = "3.10"
 importlib-resources = "6.5.2"
 itsdangerous = "2.2.0"
-jax = "0.6.2"
+jax = {version = "0.6.2", extras = ["cuda12"]}
 jaxlib = "0.6.2"
 jaxmarl = "0.0.7"
 jaxopt = "0.8.3"
