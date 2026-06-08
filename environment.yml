@@ -4,14 +4,8 @@ channels:
 dependencies:
   - python=3.10
 
-  # framework
-  - cuda-version=11.8
-  - cudatoolkit=11.8
-  - jaxlib=0.4.23=*cuda*
-  - jax=0.4.23
-
-  # SocialJax deps
-  - flax==0.7.4
+  # SocialJax deps (conda-forge)
+  - flax==0.10.7
   - scipy==1.12.0
   - distrax==0.1.5
   - safetensors==0.5.2
@@ -20,4 +14,6 @@ dependencies:
 
   - pip
   - pip:
+    # JAX 0.6.2 with CUDA 12 wheels — bundles CUDA via pip; no cudatoolkit needed.
+    - "jax[cuda12]==0.6.2"
     - gymnax==0.0.8

@@ -55,24 +55,24 @@ cd SocialJax
 
 Second: Environment Setup.
 
-Option one: Using peotry, make sure you have python 3.10
-  1. Install Peotry
+Option one: Using poetry, make sure you have python 3.10
+  1. Install Poetry
        ```bash
        curl -sSL https://install.python-poetry.org | python3 -
        export PATH="$HOME/.local/bin:$PATH"
        ```
 
-  2. Install requirements     
+  2. Install requirements
        ```bash
        poetry install --no-root
-       poetry run pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+       poetry run pip install "jax[cuda12]==0.6.2"
        ```
        ```bash
        export PYTHONPATH=./socialjax:$PYTHONPATH
        ```
   3. Run code
        ```bash
-       poetry run python algothrims/IPPO/ippo_cnn_coins.py 
+       poetry run python algorithms/train.py --algo IPPO --env coins
        ```
 
 Option two: conda with requirements.txt
@@ -85,7 +85,7 @@ Option two: conda with requirements.txt
   2. Install requirements
        ```bash
        pip install -r requirements.txt
-       pip install jaxlib==0.4.23+cuda11.cudnn86 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+       pip install "jax[cuda12]==0.6.2"
        ```
        ```bash
        export PYTHONPATH=./socialjax:$PYTHONPATH
@@ -93,7 +93,7 @@ Option two: conda with requirements.txt
 
   3. Run code
        ```bash
-       python algorithms/IPPO/ippo_cnn_coins.py 
+       python algorithms/train.py --algo IPPO --env coins
        ```
 
 Option three: conda with environments.yml
@@ -108,8 +108,68 @@ Option three: conda with environments.yml
 
   2. Run code
        ```bash
-       python algothrims/IPPO/ippo_cnn_coins.py 
+       python algorithms/train.py --algo IPPO --env coins
        ```
+
+## Training
+
+All training is launched through a single entry point that dispatches by `--algo` and `--env`:
+
+```bash
+python algorithms/train.py --algo <ALGO> --env <ENV> [HYDRA_OVERRIDES...]
+```
+
+`--algo` selects the algorithm family; `--env` selects the per-env config (resolving to
+`algorithms/<ALGO>/config/<algo>_cnn_<env>.yaml`). Anything after these two flags is
+forwarded verbatim to Hydra as key=value overrides.
+
+### Supported algorithms
+
+| `--algo` | Description |
+|---|---|
+| `IPPO` | Independent PPO |
+| `SVO` | Social Value Orientation (PPO with SVO reward shaping) |
+| `MAPPO` | Multi-Agent PPO (centralised critic) |
+| `IRAT` | Individual–team Reward Aware Training (dual policy) |
+| `TRANSFER` | Self-interest schedule transfer |
+| `VDN` | Value Decomposition Networks (Q-learning) |
+
+### `--env` values
+
+Available per-env yamls live in `algorithms/<ALGO>/config/`. The env name passed to
+`--env` is the stem after `<algo>_cnn_`. Some families chose slightly different
+spellings:
+
+| Environment | IPPO / IRAT | SVO / TRANSFER | MAPPO | VDN |
+|---|---|---|---|---|
+| Coins | `coins` | `coin` | `coins` | `coins` |
+| Clean Up | `cleanup` | `cleanup` | `cleanup` | `cleanup` |
+| Coop Mining | `coop_mining` | `coop_mining` | `coop_mining` | `coop_mining` |
+| Gift | `gift` | `gift` | `gifts` | `gift` |
+| Mushrooms | `mushrooms` | `mushroom` (SVO) / `mushrooms` (TRANSFER) | `mushrooms` | `mushrooms` |
+| Harvest: Open | `harvest_common` | `harvest_open` | `harvest_common` | `harvest_open` |
+| Harvest: Closed | `harvest_common_closed` | `harvest_closed` | `harvest_common_closed` | `harvest_closed` |
+| Harvest: Partnership | `harvest_common_partnership` | `harvest_partnership` | `harvest_common_partnership` | `harvest_partnership` |
+| PD Arena | `pd_arena` | `pd_arena` | `pd_arena` | `pd_arena` |
+
+### Hydra overrides
+
+```bash
+# Override hyperparameters
+python algorithms/train.py --algo IPPO --env coins SEED=42 LR=1e-4 NUM_ENVS=128
+
+# Multi-seed grid (Hydra multirun)
+python algorithms/train.py --algo MAPPO --env cleanup -m SEED=42,52,62
+
+# Override nested ENV_KWARGS
+python algorithms/train.py --algo SVO --env coin ENV_KWARGS.svo_w=0.8
+
+# VDN's hyperparameters live under an `alg.*` namespace
+python algorithms/train.py --algo VDN --env coins alg.NUM_ENVS=32 alg.LR=1e-4
+
+# Turn off wandb (useful for local smoke testing)
+python algorithms/train.py --algo IPPO --env coins WANDB_MODE=disabled
+```
 
 ## Environments
 
