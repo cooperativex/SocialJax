@@ -9,6 +9,9 @@ checkpoints/
 evaluation/iql/outputs/
 evaluation/iql/wandb/
 
+# Generated evaluation GIFs (README assets in docs/images/ stay tracked)
+evaluation/**/*.gif
+
 # Claude Code generated files
 .claude/
 CLAUDE.md

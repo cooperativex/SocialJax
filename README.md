@@ -10,6 +10,8 @@
     <img src="https://github.com/cooperativex/SocialJax/actions/workflows/speet_example.yml/badge.svg" alt="Pylint Status"></a>
 </p>
 
+> 🎉 **SocialJax has been accepted at ICLR 2026!**
+
 *A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
 

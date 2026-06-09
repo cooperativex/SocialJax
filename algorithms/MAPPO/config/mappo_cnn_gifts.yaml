@@ -5,6 +5,7 @@ defaults:
 # Environment-specific settings
 "ENV_NAME": "gift"
 "NUM_ENVS": 4
+"NUM_STEPS": 100
 "TOTAL_TIMESTEPS": 3e8
 "NUM_MINIBATCHES": 4
 
