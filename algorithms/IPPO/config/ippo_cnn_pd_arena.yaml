@@ -6,7 +6,6 @@ defaults:
 
 # Environment-specific settings
 "ENV_NAME": "pd_arena"
-"NUM_STEPS": 500
 
 "ENV_KWARGS":
   "num_agents": 4

@@ -5,9 +5,9 @@ defaults:
 # Environment-specific settings
 "ENV_NAME": "harvest_common_open"
 "LR": 0.0005
+"NUM_ENVS": 5
 "NUM_MINIBATCHES": 4
 "TOTAL_TIMESTEPS": 3e8
-"PROJECT": "socialjax_mappo"
 
 "ENV_KWARGS": 
   "num_agents": 7

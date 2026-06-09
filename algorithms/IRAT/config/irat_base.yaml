@@ -39,5 +39,5 @@
 
 # WandB defaults
 "ENTITY": ""
-"PROJECT": "socialjax_irat"
+"PROJECT": "socialjax"
 "WANDB_MODE": "online"

@@ -8,7 +8,6 @@ defaults:
 "NUM_ENVS": 5
 "NUM_MINIBATCHES": 4
 "TOTAL_TIMESTEPS": 3e8
-"PROJECT": "socialjax_mappo"
 
 "ENV_KWARGS": 
   "num_agents": 7

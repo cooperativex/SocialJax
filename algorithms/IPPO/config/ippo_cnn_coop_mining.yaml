@@ -6,7 +6,6 @@ defaults:
 
 # Environment-specific settings
 "ENV_NAME": "coop_mining"
-"NUM_MINIBATCHES": 300
 
 "ENV_KWARGS":
   "num_agents": 4
