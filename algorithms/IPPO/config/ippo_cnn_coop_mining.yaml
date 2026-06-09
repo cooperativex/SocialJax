@@ -1,6 +1,8 @@
 # IPPO Configuration for Cooperative Mining
 defaults:
   - ippo_base
+  - _self_
+  - reward: common  # override on CLI: reward=individual
 
 # Environment-specific settings
 "ENV_NAME": "coop_mining"
@@ -9,11 +11,5 @@ defaults:
 "ENV_KWARGS":
   "num_agents": 4
   "num_inner_steps": 1000
-  "shared_rewards": True
   "cnn": True
   "jit": True
-
-# Reward settings
-"REWARD": "common" # common; individual
-"WANDB_TAGS":
-  - COMMON_REWARD # COMMON_REWARD; INDIVIDUAL_REWARD

@@ -509,5 +509,5 @@ def make_train(config):
     return train
 
 # Used by algorithms/train.py to dispatch through algorithms.IRAT._runner.
-SINGLE_RUN_KWARGS = {"wandb_name": "irat_cnn_harvest_common_partnership"}
+SINGLE_RUN_KWARGS = {"wandb_name": "irat_cnn_harvest_open"}
 TUNE_KWARGS       = {"sweep_name": "harvest"}

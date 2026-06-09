@@ -25,13 +25,19 @@ def single_run(config, make_train, *, wandb_name):
     """One training run, saving + evaluating at the end."""
     config = OmegaConf.to_container(config)
 
+    # Reward suffix lets common/individual runs of the same env coexist on disk
+    # and in wandb. Hidden behind .get() so the runner still works for any
+    # legacy yaml that doesn't define REWARD.
+    reward = config.get("REWARD")
+    suffix = f"_reward_{reward}" if reward else ""
+
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
         tags=["IPPO", "FF"],
         config=config,
         mode=config["WANDB_MODE"],
-        name=wandb_name,
+        name=f"{wandb_name}{suffix}",
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -40,7 +46,7 @@ def single_run(config, make_train, *, wandb_name):
     out = jax.vmap(train_jit)(rngs)
 
     print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}'
+    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}{suffix}'
     train_state = jax.tree.map(lambda x: x[0], out["runner_state"][0])
     save_path = f"./checkpoints/individual/{filename}.pkl"
     if config["PARAMETER_SHARING"]:

@@ -2128,16 +2128,19 @@ class PD_Arena(MultiAgentEnv):
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
                 rewards_output = jnp.array([0]* self.num_agents)
                 rewards = rewards.squeeze()
-                common_reward = rewards.mean()
+                # Match cleanup/coop_mining scaling: broadcast the SUM (not mean) of
+                # per-agent rewards so the magnitude is consistent across envs.
+                common_reward = rewards.mean() * self.num_agents
                 rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
-                rewards = rewards_output    
+                rewards = rewards_output
 
                 # rewards = jnp.array([common_reward] * self.num_agents)
                 info = {}
             
             elif self.svo:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
-                original_rewards =  rewards
+                # Scale per-agent reward by num_agents to match other envs' convention.
+                original_rewards = rewards * self.num_agents
                 rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
                 info = {
                     "original_rewards": original_rewards.squeeze(),
@@ -2147,7 +2150,8 @@ class PD_Arena(MultiAgentEnv):
 
             elif self.interest:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
-                original_rewards = rewards
+                # Scale per-agent reward by num_agents to match other envs' convention.
+                original_rewards = rewards * self.num_agents
 
                 # Calculate current s_interest based on timestep
                 current_s_interest = get_current_s_interest(timestep)
@@ -2168,13 +2172,15 @@ class PD_Arena(MultiAgentEnv):
 
             else:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
+                # Scale per-agent reward by num_agents to match other envs' convention.
+                rewards = rewards * self.num_agents
                 # rewards_output = jnp.array([0]* self.num_agents)
                 # rewards = rewards.squeeze()
                 # common_reward = rewards.mean()
                 # ind_reward = rewards[:3].mean()
                 # rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
                 # rewards_output = rewards_output.at[0].set(ind_reward)
-                # rewards = rewards_output    
+                # rewards = rewards_output
 
                 # rewards = jnp.array([common_reward] * self.num_agents)
                 # info = {

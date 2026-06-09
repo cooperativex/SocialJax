@@ -134,21 +134,29 @@ forwarded verbatim to Hydra as key=value overrides.
 
 ### `--env` values
 
-Available per-env yamls live in `algorithms/<ALGO>/config/`. The env name passed to
-`--env` is the stem after `<algo>_cnn_`. Some families chose slightly different
-spellings:
+Env names are unified across all algorithms (the per-env yamls live in
+`algorithms/<ALGO>/config/<algo>_cnn_<env>.yaml`):
 
-| Environment | IPPO / IRAT | SVO / TRANSFER | MAPPO | VDN |
-|---|---|---|---|---|
-| Coins | `coins` | `coin` | `coins` | `coins` |
-| Clean Up | `cleanup` | `cleanup` | `cleanup` | `cleanup` |
-| Coop Mining | `coop_mining` | `coop_mining` | `coop_mining` | `coop_mining` |
-| Gift | `gift` | `gift` | `gifts` | `gift` |
-| Mushrooms | `mushrooms` | `mushroom` (SVO) / `mushrooms` (TRANSFER) | `mushrooms` | `mushrooms` |
-| Harvest: Open | `harvest_common` | `harvest_open` | `harvest_common` | `harvest_open` |
-| Harvest: Closed | `harvest_common_closed` | `harvest_closed` | `harvest_common_closed` | `harvest_closed` |
-| Harvest: Partnership | `harvest_common_partnership` | `harvest_partnership` | `harvest_common_partnership` | `harvest_partnership` |
-| PD Arena | `pd_arena` | `pd_arena` | `pd_arena` | `pd_arena` |
+| Environment | `--env` |
+|---|---|
+| Coins | `coins` |
+| Clean Up | `cleanup` |
+| Coop Mining | `coop_mining` |
+| Gift | `gift` |
+| Mushrooms | `mushrooms` |
+| Harvest: Open | `harvest_open` |
+| Harvest: Closed | `harvest_closed` |
+| Harvest: Partnership | `harvest_partnership` |
+| PD Arena | `pd_arena` |
+
+### IPPO — common vs individual reward
+
+IPPO supports two reward modes: **common** (all agents share one summed reward) and **individual** (each agent gets its own reward — selfish baseline). Pick via the `reward` Hydra group; checkpoint and wandb name automatically get a `_reward_<mode>` suffix so both variants coexist.
+
+```bash
+python algorithms/train.py --algo IPPO --env coins reward=common
+python algorithms/train.py --algo IPPO --env coins reward=individual
+```
 
 ### Hydra overrides
 
@@ -173,14 +181,18 @@ python algorithms/train.py --algo IPPO --env coins WANDB_MODE=disabled
 
 We introduce the environments and use Schelling diagrams to demonstrate whether the environments are social dilemmas. 
 
-| Environment                | Description                                                                                      | Schelling Diagrams Proof |
-|----------------------------|--------------------------------------------------------------------------------------------------|:------------------------:|
-| Coins                      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coins)         |&check;                   |
-| Commons Harvest: Open      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
-| Commons Harvest: Closed    | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
-| Clean Up                   | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/cleanup)       |&check;                   |
-| Territory                  | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/territory)     |&cross;                   |
-| Coop Mining                | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coop_mining)   |&check;                   |
+| Environment                  | Description                                                                                      | Schelling Diagrams Proof |
+|------------------------------|--------------------------------------------------------------------------------------------------|:------------------------:|
+| Coins                        | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coins)         |&check;                   |
+| Commons Harvest: Open        | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
+| Commons Harvest: Closed      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
+| Commons Harvest: partnership | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
+| Clean Up                     | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/cleanup)       |&check;                   |
+| Territory                    | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/territory)     |&cross;                   |
+| Coop Mining                  | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coop_mining)   |&check;                   |
+| Mushrooms                    | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/mushrooms)     |&check;                   |
+| Gift Refinement              | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/gift)          |&check;                   |
+| Prisoners Dilemma: Arena     | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/pd_arena)      |&check;                   |
 
 #### Important Notes:
 - *Due to algorithmic limitations, agents may not always learn the optimal actions. As a result, Schelling diagrams can prove that the environment is social dilemmas, but they cannot definitively prove that the environment is not social dilemmas.*
@@ -230,6 +242,20 @@ for t in range(100):
 ### Speed test
 
 You can test the speed of our environments by running [speed_test_random.py](https://github.com/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.py) or using the [colab](https://colab.research.google.com/github/cooperativex/SocialJax/blob/main/speed_test/speed_test_random.ipynb).
+
+
+## Citation
+
+If you use SocialJax in your research, please cite:
+
+```bibtex
+@inproceedings{guo2025socialjax,
+  title={{SocialJax}: An Evaluation Suite for Multi-agent Reinforcement Learning in Sequential Social Dilemmas},
+  author={Guo, Zihao and Shi, Shuqing and Willis, Richard and Tomilin, Tristan and Leibo, Joel Z. and Du, Yali},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2026},
+}
+```
 
 
 ## See Also

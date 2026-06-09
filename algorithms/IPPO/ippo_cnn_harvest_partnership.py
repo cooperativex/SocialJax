@@ -375,5 +375,5 @@ def make_train(config):
     return train
 
 # Used by algorithms/train.py to dispatch through algorithms.IPPO._runner.
-SINGLE_RUN_KWARGS = {"wandb_name": "ippo_cnn_harvest_common_closed"}
-TUNE_KWARGS       = {"sweep_name": "harvest_closed"}
+SINGLE_RUN_KWARGS = {"wandb_name": "ippo_cnn_harvest_partnership"}
+TUNE_KWARGS       = {"sweep_name": "harvest_partnership"}

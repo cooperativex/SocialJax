@@ -1,0 +1,7 @@
+# @package _global_
+# Common-reward variant: all agents share a single, summed reward.
+ENV_KWARGS:
+  shared_rewards: True
+REWARD: common
+WANDB_TAGS:
+  - COMMON_REWARD

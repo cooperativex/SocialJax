@@ -352,5 +352,5 @@ def make_train(config):
     return train
 
 # Used by algorithms/train.py to dispatch through algorithms.TRANSFER._runner.
-SINGLE_RUN_KWARGS = {"wandb_name": "transfer_cnn_coin", "group_name": "coin"}
-TUNE_KWARGS       = {"sweep_name": "coin_angle"}
+SINGLE_RUN_KWARGS = {"wandb_name": "transfer_cnn_coins", "group_name": "coins"}
+TUNE_KWARGS       = {"sweep_name": "coins_angle"}

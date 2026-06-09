@@ -295,7 +295,7 @@ def make_train(config):
             metric["update_step"] = update_step
             metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
             metric["advantages"] = advantages.mean()
-            metric["eat_own_coins"] = metric["eat_own_coins"] * config["ENV_KWARGS"]["num_inner_steps"]
+            metric["eat_blue_mushrooms"] = metric["eat_blue_mushrooms"] * config["ENV_KWARGS"]["num_inner_steps"]
 
             # metric["original_rewards"] = metric["original_rewards"].mean() * config["NUM_STEPS"] 
             # metric["shaped_rewards"] = metric["shaped_rewards"].mean() * config["NUM_STEPS"] 
@@ -314,5 +314,5 @@ def make_train(config):
     return train
 
 # Used by algorithms/train.py to dispatch through algorithms.SVO._runner.
-SINGLE_RUN_KWARGS = {"wandb_name": "svo_cnn_coin", "group_name": "coin"}
-TUNE_KWARGS       = {"sweep_name": "coin_angle"}
+SINGLE_RUN_KWARGS = {"wandb_name": "svo_cnn_mushrooms", "group_name": "mushrooms"}
+TUNE_KWARGS       = {"sweep_name": "mushrooms_angle"}
