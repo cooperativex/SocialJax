@@ -372,7 +372,7 @@ def make_train(config):
             metric = jax.tree.map(lambda x: x.mean(), metric)
 
             
-            # metric["eat_blue_mushrooms"] = metric["eat_blue_mushrooms"] * config["ENV_KWARGS"]["num_inner_steps"]    
+            # metric["eat_blue_mushrooms"] = metric["eat_blue_mushrooms"] * config["ENV_KWARGS"]["num_inner_steps"]
             metric["update_steps"] = update_steps
             metric["env_step"] = update_steps * config["NUM_STEPS"] * config["NUM_ENVS"]
 

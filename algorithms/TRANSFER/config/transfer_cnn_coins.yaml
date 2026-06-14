@@ -15,7 +15,11 @@ defaults:
   "svo_w": 0.5
   "svo_ideal_angle_degrees": 90
   "interest": True
-  "s_interest_change_every": 30000000
+  # n_agents = 2  =>  s = 1 / (1 + ratio * (n - 1))
+  #   ratio = 1/4  ->  s = 4/5  = 0.8000
+  #   ratio = 1/2  ->  s = 2/3  ~ 0.6667   (default below)
+  #   ratio = 3/4  ->  s = 4/7  ~ 0.5714
+  "s_interest": 0.6667
 
 "REWARD": "individual"
 "WANDB_TAGS": 

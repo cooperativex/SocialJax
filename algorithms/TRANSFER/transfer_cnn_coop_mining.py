@@ -26,20 +26,6 @@ from algorithms.utils import (
 
 # Import shared IO utilities
 
-def calculate_s_interest_schedule(n_agents=6):
-    """Calculate s_interest values based on the given ratio formula.
-
-    Args:
-        n_agents: Number of agents in the environment
-
-    Returns:
-        List of s_interest values to cycle through
-    """
-    ratio = [20, 10, 5, 3, 5/2, 2, 5/3, 4/3, 1]
-    s = [1] + [r / (n_agents + r - 1) for r in ratio]
-    s = [2 / (n_agents + 1)] * (len(ratio) + 1)
-
-    return s
 
 def group_and_distribute_sum(array):
     """
@@ -59,13 +45,6 @@ def group_and_distribute_sum(array):
     return group_sums[group_indices]
 
 def make_train(config):
-    # Calculate and add s_interest schedule to environment config
-    if config["ENV_KWARGS"].get("interest", False):
-        s_interest_schedule = calculate_s_interest_schedule(config["ENV_KWARGS"]["num_agents"])
-        config["ENV_KWARGS"]["s_interest_schedule"] = s_interest_schedule
-        config["ENV_KWARGS"]["s_interest_change_every"] = config.get("S_INTEREST_CHANGE_EVERY", 30000000)
-        print(f"Using s_interest schedule: {s_interest_schedule}")
-        print(f"Changing every {config['ENV_KWARGS']['s_interest_change_every']} timesteps")
 
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
 

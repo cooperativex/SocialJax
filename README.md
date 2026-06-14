@@ -8,6 +8,8 @@
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0 License"></a>
   <a href="https://github.com/cooperativex/SocialJax/actions/workflows/speet_example.yml">
     <img src="https://github.com/cooperativex/SocialJax/actions/workflows/speet_example.yml/badge.svg" alt="Pylint Status"></a>
+  <a href="https://iclr.cc/virtual/2026/poster/10009567">
+    <img src="https://img.shields.io/badge/ICLR-2026-8A2BE2.svg" alt="ICLR 2026"></a>
 </p>
 
 > 🎉 **SocialJax has been accepted at ICLR 2026!**

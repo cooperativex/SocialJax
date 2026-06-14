@@ -37,6 +37,10 @@ from algorithms.utils.types import (
     IRATTransition,
 )
 
+from algorithms.utils.transfer_utils import (
+    s_from_ratio,
+)
+
 __all__ = [
     # Network architectures
     "CNN",
@@ -63,4 +67,6 @@ __all__ = [
     "Transition",
     "MAPPOTransition",
     "IRATTransition",
+    # TRANSFER utilities
+    "s_from_ratio",
 ]

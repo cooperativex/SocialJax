@@ -2128,15 +2128,15 @@ class PD_Arena(MultiAgentEnv):
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
                 rewards_output = jnp.array([0]* self.num_agents)
                 rewards = rewards.squeeze()
-                # Match cleanup/coop_mining scaling: broadcast the SUM (not mean) of
-                # per-agent rewards so the magnitude is consistent across envs.
+                # Scale per-agent mean by num_agents (== sum-over-agents) to match
+                # cleanup/coop_mining and to give MAPPO/PPO enough gradient signal.
                 common_reward = rewards.mean() * self.num_agents
                 rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
                 rewards = rewards_output
 
                 # rewards = jnp.array([common_reward] * self.num_agents)
                 info = {}
-            
+
             elif self.svo:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
                 # Scale per-agent reward by num_agents to match other envs' convention.

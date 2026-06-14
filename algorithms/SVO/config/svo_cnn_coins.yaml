@@ -2,8 +2,9 @@
 defaults:
   - svo_base
 
-"ENV_NAME": "coin_game"
+"TOTAL_TIMESTEPS": 1e9
 
+"ENV_NAME": "coin_game"
 "ENV_KWARGS":
   "num_agents": 2
   "num_inner_steps": 1000

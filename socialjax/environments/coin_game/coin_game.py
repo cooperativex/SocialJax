@@ -975,10 +975,10 @@ class CoinGame(MultiAgentEnv):
                 rewards = jnp.zeros((2, 1))
                 rewards = rewards.at[0, 0].set(red_reward[0])
                 rewards = rewards.at[1, 0].set(green_reward[0])
-                rewards = rewards * self.num_agents
-                rewards, theta = self.get_svo_rewards(rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
+                original_rewards = rewards * self.num_agents
+                rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
                 info = {
-                    "original_rewards": rewards.squeeze(),
+                    "original_rewards": original_rewards.squeeze(),
                     "svo_theta": theta.squeeze(),
                     "shaped_rewards": rewards.squeeze(),
                 }

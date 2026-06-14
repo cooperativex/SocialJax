@@ -113,6 +113,9 @@ def make_train(config):
                 obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
                 # obs_batch = jnp.stack([last_obs[a] for a in env.agents]).reshape(-1, *env.observation_space().shape)
 
+                # Removed print statement for JIT performance
+                # print("input_obs_shape", obs_batch.shape)
+
                 pi = actor_network.apply(train_states[0].params, obs_batch)
                 action = pi.sample(seed=_rng)
                 log_prob = pi.log_prob(action)
@@ -336,7 +339,7 @@ def make_train(config):
                     shuffled_batch,
                 )
 
-                train_states, loss_info = jax.lax.scan(
+                train_states, _ = jax.lax.scan(
                     _update_minbatch, train_states, minibatches
                 )
                 update_state = (
@@ -346,7 +349,8 @@ def make_train(config):
                     targets,
                     rng,
                 )
-                return update_state, loss_info
+                # Return empty dict to avoid accumulating loss_info across epochs
+                return update_state, {}
 
             update_state = (
                 train_states,
@@ -355,14 +359,12 @@ def make_train(config):
                 targets,
                 rng,
             )
-            update_state, loss_info = jax.lax.scan(
+            update_state, _ = jax.lax.scan(
                 _update_epoch, update_state, None, config["UPDATE_EPOCHS"]
             )
             train_states = update_state[0]
             metric = traj_batch.info
-            # loss_info["ratio_0"] = loss_info["ratio"].at[0,0].get()
-            # loss_info = jax.tree.map(lambda x: x.mean(), loss_info)
-            # metric["loss"] = loss_info
+            # loss_info is not accumulated to save memory
             rng = update_state[-1]
 
             def callback(metric):
@@ -375,9 +377,9 @@ def make_train(config):
             # jax.experimental.io_callback(callback, None, metric)
 
             jax.debug.callback(callback, metric)
-
             runner_state = (train_states, env_state, last_obs, last_done, rng)
-            return (runner_state, update_steps), metric
+            # Return empty dict instead of metric to avoid memory accumulation in scan
+            return (runner_state, update_steps), {}
 
         rng, _rng = jax.random.split(rng)
         runner_state = (
@@ -387,13 +389,14 @@ def make_train(config):
             jnp.zeros((config["NUM_ACTORS"]), dtype=bool),
             _rng,
         )
-        runner_state, metric = jax.lax.scan(
+        runner_state, _ = jax.lax.scan(
             _update_step, (runner_state, 0), None, config["NUM_UPDATES"]
         )
+        # Don't accumulate metrics - they're already logged via wandb callback during each update
         return {"runner_state": runner_state}
 
     return train
 
 # Used by algorithms/train.py to dispatch through algorithms.MAPPO._runner.
-SINGLE_RUN_KWARGS = {"wandb_name": "mappo_cnn_harvest_common_closed"}
-TUNE_KWARGS       = {"sweep_name": "harvest_closed"}
+SINGLE_RUN_KWARGS = {"wandb_name": "mappo_cnn_harvest_open"}
+TUNE_KWARGS       = {"sweep_name": "harvest_open"}

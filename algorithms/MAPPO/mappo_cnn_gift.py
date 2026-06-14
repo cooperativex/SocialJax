@@ -1,5 +1,6 @@
 """ 
 Based on PureJaxRL & jaxmarl Implementation of PPO
+Fixed bugs of jaxmarl
 """
 
 import jax
@@ -372,6 +373,8 @@ def make_train(config):
             metric["update_steps"] = update_steps
             metric["env_step"] = update_steps * config["NUM_STEPS"] * config["NUM_ENVS"]
 
+            metric["give_actions"] = metric["give_actions"] * config["ENV_KWARGS"]["num_inner_steps"]
+
             # jax.experimental.io_callback(callback, None, metric)
 
             jax.debug.callback(callback, metric)
@@ -394,5 +397,5 @@ def make_train(config):
     return train
 
 # Used by algorithms/train.py to dispatch through algorithms.MAPPO._runner.
-SINGLE_RUN_KWARGS = {"wandb_name": "mappo_cnn_harvest_common_partnership"}
-TUNE_KWARGS       = {"sweep_name": "harvest_partnership"}
+SINGLE_RUN_KWARGS = {"wandb_name": "mappo_cnn_gift"}
+TUNE_KWARGS       = {"sweep_name": "gift"}
