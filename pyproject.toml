@@ -3,10 +3,10 @@ name = "socialjaxproject"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "",email = ""}
+    {name = "SocialJax"}
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "requests (>=2.32.3,<3.0.0)"
 ]
