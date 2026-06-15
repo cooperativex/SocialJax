@@ -10,10 +10,13 @@ dependencies:
   - distrax==0.1.5
   - safetensors==0.5.2
   - hydra-core==1.3.2
-  - wandb==0.18.5
 
   - pip
   - pip:
     # JAX 0.6.2 with CUDA 12 wheels — bundles CUDA via pip; no cudatoolkit needed.
     - "jax[cuda12]==0.6.2"
     - gymnax==0.0.8
+    # wandb 0.27.2 requires click>=8.2.0; pip-installed to match requirements.txt
+    - wandb==0.27.2
+    - flashbax==0.1.3   # used by VDN
+    - pillow==11.1.0    # used by algorithms.utils.eval_utils (gif rendering)

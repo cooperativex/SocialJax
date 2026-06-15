@@ -71,7 +71,7 @@ Option one: Using poetry, make sure you have python 3.10
        poetry install --no-root
        ```
        ```bash
-       export PYTHONPATH=./socialjax:$PYTHONPATH
+       export PYTHONPATH=$PWD:$PYTHONPATH
        ```
   3. Run code
        ```bash
@@ -90,7 +90,7 @@ Option two: conda with requirements.txt
        pip install -r requirements.txt
        ```
        ```bash
-       export PYTHONPATH=./socialjax:$PYTHONPATH
+       export PYTHONPATH=$PWD:$PYTHONPATH
        ```
 
   3. Run code
@@ -98,14 +98,14 @@ Option two: conda with requirements.txt
        python algorithms/train.py --algo IPPO --env coins
        ```
 
-Option three: conda with environments.yml
+Option three: conda with environment.yml
 
   1. Install requirements
        ```bash
        conda env create -f environment.yml
        ```
        ```bash
-       export PYTHONPATH=./socialjax:$PYTHONPATH
+       export PYTHONPATH=$PWD:$PYTHONPATH
        ```
 
   2. Run code
