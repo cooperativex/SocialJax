@@ -130,9 +130,9 @@ forwarded verbatim to Hydra as key=value overrides.
 | `--algo` | Description |
 |---|---|
 | `IPPO` | Independent PPO |
-| `SVO` | Social Value Orientation (PPO with SVO reward shaping) |
+| `SVO` | [Social Value Orientation (PPO with SVO reward shaping)](algorithms/SVO/README.md) |
 | `MAPPO` | Multi-Agent PPO (centralised critic) |
-| `TRANSFER` | Self-interest schedule transfer |
+| `TRANSFER` | [Self-interest reward exchange](algorithms/TRANSFER/README.md) |
 | `VDN` | Value Decomposition Networks (Q-learning) |
 
 ### `--env` values
@@ -161,7 +161,7 @@ python algorithms/train.py --algo IPPO --env coins reward=common
 python algorithms/train.py --algo IPPO --env coins reward=individual
 ```
 
-### SVO — Social Value Orientation
+### [SVO — Social Value Orientation](algorithms/SVO/README.md)
 
 SVO trains on individual rewards but shapes them toward a target orientation. The
 strength (`svo_w`) and ideal angle (`svo_ideal_angle_degrees`) live under `ENV_KWARGS`:
@@ -171,7 +171,7 @@ python algorithms/train.py --algo SVO --env coins
 python algorithms/train.py --algo SVO --env coins ENV_KWARGS.svo_w=0.5 ENV_KWARGS.svo_ideal_angle_degrees=45
 ```
 
-### TRANSFER — self-interest schedule transfer
+### [TRANSFER — self-interest schedule transfer](algorithms/TRANSFER/README.md)
 
 TRANSFER mixes individual rewards by a self-interest weight `s_interest` (fixed per env
 in `transfer_cnn_<env>.yaml`, optionally scheduled over training). Override it inline via
