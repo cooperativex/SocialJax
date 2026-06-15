@@ -1,0 +1,11 @@
+# VDN Configuration for Coin Game
+defaults:
+  - vdn_base
+
+"ENV_NAME": "coin_game"
+"ENV_KWARGS":
+  "num_agents": 2
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True

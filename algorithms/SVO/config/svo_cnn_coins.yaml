@@ -1,0 +1,21 @@
+# SVO Configuration for Coin Game
+defaults:
+  - svo_base
+
+"TOTAL_TIMESTEPS": 1e9
+
+"ENV_NAME": "coin_game"
+"ENV_KWARGS":
+  "num_agents": 2
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+  "svo": True
+  "svo_target_agents": [0, 1]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+
+"REWARD": "individual"
+"WANDB_TAGS":
+  - INDIVIDUAL_REWARD

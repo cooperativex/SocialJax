@@ -1,0 +1,19 @@
+# IRAT Configuration for Cooperative Mining
+defaults:
+  - irat_base
+
+# Environment-specific settings
+"ENV_NAME": "coop_mining"
+
+"ENV_KWARGS": 
+  "num_agents": 6
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+
+# IRAT-specific settings
+"REWARD": "IRAT"  # IRAT uses both individual and team rewards
+"WANDB_TAGS": 
+  - IRAT
+  - INDIVIDUAL_REWARD

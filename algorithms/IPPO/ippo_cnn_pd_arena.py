@@ -1,172 +1,30 @@
 """ 
 Based on PureJaxRL & jaxmarl Implementation of PPO
 """
-import sys
-sys.path.append('/home/shuqing/SocialJax')
 import jax
 import jax.numpy as jnp
-import flax.linen as nn
-import numpy as np
 import optax
-from flax.linen.initializers import constant, orthogonal
-from typing import Sequence, NamedTuple, Any
 from flax.training.train_state import TrainState
 # from flax.training import checkpoints
-import distrax
-from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper
+from gymnax.wrappers.purerl import LogWrapper
 import socialjax
-from socialjax.wrappers.baselines import LogWrapper, SVOLogWrapper
+from socialjax.wrappers.baselines import LogWrapper
 import hydra
 from omegaconf import OmegaConf
 import wandb
 import copy
-import pickle
-import os
-import matplotlib.pyplot as plt
-from PIL import Image
-from pathlib import Path
 
-class CNN(nn.Module):
-    activation: str = "relu"
-
-    @nn.compact
-    def __call__(self, x):
-        if self.activation == "relu":
-            activation = nn.relu
-        else:
-            activation = nn.tanh
-        x = nn.Conv(
-            features=32,
-            kernel_size=(5, 5),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
-        x = nn.Conv(
-            features=32,
-            kernel_size=(3, 3),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
-        x = nn.Conv(
-            features=32,
-            kernel_size=(3, 3),
-            kernel_init=orthogonal(np.sqrt(2)),
-            bias_init=constant(0.0),
-        )(x)
-        x = activation(x)
-        x = x.reshape((x.shape[0], -1))  # Flatten
-
-        x = nn.Dense(
-            features=64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(x)
-        x = activation(x)
-
-        return x
-
-
-class ActorCritic(nn.Module):
-    action_dim: Sequence[int]
-    activation: str = "relu"
-
-    @nn.compact
-    def __call__(self, x):
-        if self.activation == "relu":
-            activation = nn.relu
-        else:
-            activation = nn.tanh
-
-        embedding = CNN(self.activation)(x)
-
-        actor_mean = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(embedding)
-        actor_mean = activation(actor_mean)
-        actor_mean = nn.Dense(
-            self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0)
-        )(actor_mean)
-        pi = distrax.Categorical(logits=actor_mean)
-
-        critic = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(embedding)
-        critic = activation(critic)
-        critic = nn.Dense(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0))(
-            critic
-        )
-
-        return pi, jnp.squeeze(critic, axis=-1)
-
-
-class Transition(NamedTuple):
-    done: jnp.ndarray
-    action: jnp.ndarray
-    value: jnp.ndarray
-    reward: jnp.ndarray
-    log_prob: jnp.ndarray
-    obs: jnp.ndarray
-    info: jnp.ndarray
-
-
-def get_rollout(params, config):
-    env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
-    if config["PARAMETER_SHARING"]:
-        network = ActorCritic(env.action_space().n, activation=config["ACTIVATION"])
-    else:
-        network = [ActorCritic(env.action_space().n, activation=config["ACTIVATION"]) for _ in range(env.num_agents)]
-    key = jax.random.PRNGKey(0)
-    key, key_r, key_a = jax.random.split(key, 3)
-
-    done = False
-
-    obs, state = env.reset(key_r)
-    state_seq = [state]
-    for o in range(config["GIF_NUM_FRAMES"]):
-        print(o)
-        key, key_a0, key_a1, key_s = jax.random.split(key, 4)
-
-        obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-        if config["PARAMETER_SHARING"]: 
-            pi, value = network.apply(params, obs_batch)
-            action = pi.sample(seed=key_a0)
-            env_act = unbatchify(
-                action, env.agents, 1, env.num_agents
-            )           
-        else:
-            env_act = {}
-            for i in range(env.num_agents):
-                pi, value = network[i].apply(params[i], obs_batch)
-                action = pi.sample(seed=key_a0)
-                env_act[env.agents[i]] = action
-
-
-        
-
-        env_act = {k: v.squeeze() for k, v in env_act.items()}
-
-        # STEP ENV
-        obs, state, reward, done, info = env.step(key_s, state, env_act)
-        done = done["__all__"]
-
-        state_seq.append(state)
-
-    return state_seq
-
-
-def batchify(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[:, a] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-def batchify_dict(x: dict, agent_list, num_actors):
-    x = jnp.stack([x[str(a)] for a in agent_list])
-    return x.reshape((num_actors, -1))
-
-
-def unbatchify(x: jnp.ndarray, agent_list, num_envs, num_actors):
-    x = x.reshape((num_actors, num_envs, -1))
-    return {a: x[i] for i, a in enumerate(agent_list)}
-
+# Import shared network architectures
+from algorithms.utils import (
+    ActorCritic,
+    batchify,
+    batchify_dict,
+    unbatchify,
+    save_params,
+    load_params,
+    evaluate_ippo as evaluate,
+    Transition,
+)
 
 def make_train(config):
     env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
@@ -256,13 +114,11 @@ def make_train(config):
                 # SELECT ACTION
                 rng, _rng = jax.random.split(rng)
 
-
                 
                 # obs_batch = jnp.stack([last_obs[a] for a in env.agents]).reshape(-1, *env.observation_space().shape)
                 
                 if config["PARAMETER_SHARING"]:
                     obs_batch = jnp.transpose(last_obs,(1,0,2,3,4)).reshape(-1, *(env.observation_space()[0]).shape)
-                    print("input_obs_shape", obs_batch.shape)
                     pi, value = network.apply(train_state.params, obs_batch)
                     action = pi.sample(seed=_rng)
                     log_prob = pi.log_prob(action)
@@ -275,14 +131,11 @@ def make_train(config):
                     log_prob = []
                     value = []
                     for i in range(env.num_agents):
-                        print("input_obs_shape", obs_batch[i].shape)
                         pi, value_i = network[i].apply(train_state[i].params, obs_batch[i])
                         action = pi.sample(seed=_rng)
                         log_prob.append(pi.log_prob(action))
                         env_act[env.agents[i]] = action
                         value.append(value_i)
-
-
 
                 # env_act = {k: v.flatten() for k, v in env_act.items()}
                 env_act = [v for v in env_act.values()]
@@ -297,11 +150,11 @@ def make_train(config):
 
                 # current_timestep = update_step*config["NUM_STEPS"]*config["NUM_ENVS"]
                 # shaped_reward = compute_grouped_rewards(reward)
-                # reward = jax.tree_map(lambda x,y: x*rew_shaping_anneal_org(current_timestep)+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
+                # reward = jax.tree.map(lambda x,y: x*rew_shaping_anneal_org(current_timestep)+y*rew_shaping_anneal(current_timestep), reward, shaped_reward)
 
                 
                 if config["PARAMETER_SHARING"]:
-                    info = jax.tree_map(lambda x: x.reshape((config["NUM_ACTORS"])), info)
+                    info = jax.tree.map(lambda x: x.reshape((config["NUM_ACTORS"])), info)
                     transition = Transition(
                         batchify_dict(done, env.agents, config["NUM_ACTORS"]).squeeze(),
                         action,
@@ -315,7 +168,7 @@ def make_train(config):
                     transition = []
                     done = [v for v in done.values()]
                     for i in range(env.num_agents):
-                        info_i = {key: jax.tree_map(lambda x: x.reshape((config["NUM_ACTORS"]),1), value[:,i]) for key, value in info.items()}
+                        info_i = {key: jax.tree.map(lambda x: x.reshape((config["NUM_ACTORS"]),1), value[:,i]) for key, value in info.items()}
                         transition.append(Transition(
                             done[i],
                             env_act[i],
@@ -424,7 +277,6 @@ def make_train(config):
                         )
                         return total_loss, (value_loss, loss_actor, entropy)
 
-
                     grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
                     total_loss, grads = grad_fn(
                             train_state.params, traj_batch, advantages, targets, network_used
@@ -498,7 +350,7 @@ def make_train(config):
                 wandb.log(metric)
 
             update_step = update_step + 1
-            metric = jax.tree_map(lambda x: x.mean(), metric)
+            metric = jax.tree.map(lambda x: x.mean(), metric)
             if config["PARAMETER_SHARING"]:
                 metric["update_step"] = update_step
                 metric["env_step"] = update_step * config["NUM_STEPS"] * config["NUM_ENVS"]
@@ -522,212 +374,6 @@ def make_train(config):
 
     return train
 
-def single_run(config):
-    config = OmegaConf.to_container(config)
-    # layout_name = copy.deepcopy(config["ENV_KWARGS"]["layout"])
-    # config["ENV_KWARGS"]["layout"] = overcooked_layouts[layout_name]
-
-    wandb.init(
-        entity=config["ENTITY"],
-        project=config["PROJECT"],
-        tags=["IPPO", "FF"],
-        config=config,
-        mode=config["WANDB_MODE"],
-        name=f'ippo_cnn_pd_arena'
-    )
-
-    rng = jax.random.PRNGKey(config["SEED"])
-    rngs = jax.random.split(rng, config["NUM_SEEDS"])
-    train_jit = jax.jit(make_train(config))
-    out = jax.vmap(train_jit)(rngs)
-
-    print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}'
-    train_state = jax.tree_map(lambda x: x[0], out["runner_state"][0])
-    save_path = f"./checkpoints/individual/{filename}.pkl"
-    if config["PARAMETER_SHARING"]:
-        save_path = f"./checkpoints/indvidual/{filename}.pkl"
-        save_params(train_state, save_path)
-        params = load_params(save_path)
-    else:
-        params = []
-        for i in range(config['ENV_KWARGS']['num_agents']):
-            save_path = f"./checkpoints/individual/{filename}_{i}.pkl"
-            save_params(train_state[i], save_path)
-            params.append(load_params(save_path))
-    evaluate(params, socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"]), save_path, config)
-    # state_seq = get_rollout(train_state.params, config)
-    # viz = OvercookedVisualizer()
-    # agent_view_size is hardcoded as it determines the padding around the layout.
-    # viz.animate(state_seq, agent_view_size=5, filename=f"{filename}.gif")
-
-def save_params(train_state, save_path):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    params = jax.tree_util.tree_map(lambda x: np.array(x), train_state.params)
-
-    with open(save_path, 'wb') as f:
-        pickle.dump(params, f)
-
-def load_params(load_path):
-    with open(load_path, 'rb') as f:
-        params = pickle.load(f)
-    return jax.tree_util.tree_map(lambda x: jnp.array(x), params)
-
-def evaluate(params, env, save_path, config):
-    rng = jax.random.PRNGKey(0)
-    
-    rng, _rng = jax.random.split(rng)
-    obs, state = env.reset(_rng)
-    done = False
-    
-    pics = []
-    img = env.render(state)
-    pics.append(img)
-    root_dir = f"evaluation/pd_arena"
-    path = Path(root_dir + "/state_pics")
-    path.mkdir(parents=True, exist_ok=True)
-
-    for o_t in range(config["GIF_NUM_FRAMES"]):
-        # 获取所有智能体的观察
-        # print(o_t)
-        # 使用模型选择动作
-        if config["PARAMETER_SHARING"]:
-            obs_batch = jnp.stack([obs[a] for a in env.agents]).reshape(-1, *env.observation_space()[0].shape)
-            network = ActorCritic(action_dim=env.action_space().n, activation="relu")  # 使用与训练时相同的参数
-            pi, _ = network.apply(params, obs_batch)
-            rng, _rng = jax.random.split(rng)
-            actions = pi.sample(seed=_rng)
-            # 转换动作格式
-            env_act = {k: v.squeeze() for k, v in unbatchify(
-                actions, env.agents, 1, env.num_agents
-            ).items()}
-        else:
-            obs_batch = jnp.stack([obs[a] for a in env.agents])
-            env_act = {}
-            network = [ActorCritic(action_dim=env.action_space().n, activation="relu") for _ in range(env.num_agents)]
-            for i in range(env.num_agents):
-                obs = jnp.expand_dims(obs_batch[i],axis=0)
-                pi, _ = network[i].apply(params[i], obs)
-                rng, _rng = jax.random.split(rng)
-                single_action = pi.sample(seed=_rng)
-                env_act[env.agents[i]] = single_action
-
-        
-        # 执行动作
-        rng, _rng = jax.random.split(rng)
-        obs, state, reward, done, info = env.step(_rng, state, [v.item() for v in env_act.values()])
-        done = done["__all__"]
-        
-        # 记录结果
-        # episode_reward += sum(reward.values())
-        
-        # 渲染
-        img = env.render(state)
-        pics.append(img)
-        
-        print('###################')
-        print(f'Actions: {env_act}')
-        print(f'Reward: {reward}')
-        # print(f'State: {state.agent_locs}')
-        # print(f'State: {state.claimed_indicator_time_matrix}')
-        print("###################")
-    
-    # 保存GIF
-    print(f"Saving Episode GIF")
-    pics = [Image.fromarray(np.array(img)) for img in pics]
-    n_agents = len(env.agents)
-    gif_path = f"{root_dir}/{n_agents}-agents_seed-{config['SEED']}_frames-{o_t + 1}.gif"
-    pics[0].save(
-        gif_path,
-        format="GIF",
-        save_all=True,
-        optimize=False,
-        append_images=pics[1:],
-        duration=200,
-        loop=0,
-    )
-
-    # Log the GIF to WandB
-    print("Logging GIF to WandB")
-    wandb.log({"Episode GIF": wandb.Video(gif_path, caption="Evaluation Episode", format="gif")})
-        
-        # print(f"Episode {episode} total reward: {episode_reward}")
-def tune(default_config):
-    """
-    Hyperparameter sweep with wandb, including logic to:
-    - Initialize wandb
-    - Train for each hyperparameter set
-    - Save checkpoint
-    - Evaluate and log GIF
-    """
-    import copy
-
-    default_config = OmegaConf.to_container(default_config)
-
-    sweep_config = {
-        "name": "pd_arena",
-        "method": "grid",
-        "metric": {
-            "name": "returned_episode_returns",
-            "goal": "maximize",
-        },
-        "parameters": {
-            # "LR": {"values": [0.001, 0.0005, 0.0001, 0.00005]},
-            # "ACTIVATION": {"values": ["relu", "tanh"]},
-            # "UPDATE_EPOCHS": {"values": [2, 4, 8]},
-            # "NUM_MINIBATCHES": {"values": [4, 8, 16, 32]},
-            # "CLIP_EPS": {"values": [0.1, 0.2, 0.3]},
-            # "ENT_COEF": {"values": [0.001, 0.01, 0.1]},
-            # "NUM_STEPS": {"values": [64, 128, 256]},
-            # "ENV_KWARGS.svo_w": {"values": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]},
-            # "ENV_KWARGS.svo_ideal_angle_degrees": {"values": [0, 45, 90]},
-            "SEED": {"values": [42, 52, 62]},
-
-        },
-    }
-
-    def wrapped_make_train():
-
-
-        wandb.init(project=default_config["PROJECT"])
-        config = copy.deepcopy(default_config)
-        # only overwrite the single nested key we're sweeping
-        for k, v in dict(wandb.config).items():
-            if "." in k:
-                parent, child = k.split(".", 1)
-                config[parent][child] = v
-            else:
-                config[k] = v
-
-
-        # Rename the run for clarity
-        run_name = f"sweep_{config['ENV_NAME']}_seed{config['SEED']}"
-        wandb.run.name = run_name
-        print("Running experiment:", run_name)
-
-        rng = jax.random.PRNGKey(config["SEED"])
-        rngs = jax.random.split(rng, config["NUM_SEEDS"])
-        train_vjit = jax.jit(jax.vmap(make_train(config)))
-        outs = jax.block_until_ready(train_vjit(rngs))
-        train_state = jax.tree_map(lambda x: x[0], outs["runner_state"][0])
-
-        # Evaluate and log
-        # params = load_params(train_state.params)
-        # test_env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
-        # evaluate(params, test_env, config)
-
-    wandb.login()
-    sweep_id = wandb.sweep(
-        sweep_config, entity=default_config["ENTITY"], project=default_config["PROJECT"]
-    )
-    wandb.agent(sweep_id, wrapped_make_train, count=1000)
-
-
-@hydra.main(version_base=None, config_path="config", config_name="ippo_cnn_pd_arena")
-def main(config):
-    if config["TUNE"]:
-        tune(config)
-    else:
-        single_run(config)
-if __name__ == "__main__":
-    main()
+# Used by algorithms/train.py to dispatch through algorithms.IPPO._runner.
+SINGLE_RUN_KWARGS = {"wandb_name": "ippo_cnn_pd_arena"}
+TUNE_KWARGS       = {"sweep_name": "pd_arena"}

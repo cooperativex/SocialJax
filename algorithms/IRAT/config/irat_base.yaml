@@ -1,0 +1,43 @@
+# Base IRAT Configuration
+# Common hyperparameters shared across all IRAT experiments
+# Individual configs can override these defaults
+
+# IRAT-specific training hyperparameters
+"LR": 0.0005
+"NUM_ENVS": 5
+"NUM_STEPS": 100
+"TOTAL_TIMESTEPS": 3e8
+"UPDATE_EPOCHS": 2
+"NUM_MINIBATCHES": 4
+"GAMMA": 0.99
+"GAE_LAMBDA": 0.95
+"CLIP_EPS": 0.2
+"ENT_COEF": 0.01
+"VF_COEF": 0.5
+"MAX_GRAD_NORM": 0.5
+"SCALE_CLIP_EPS": True
+"ACTIVATION": "relu"
+
+# Reward shaping
+"REW_SHAPING_HORIZON": 2.5e6
+
+# Environment defaults (common settings)
+"ENV_KWARGS":
+  "num_inner_steps": 1000
+  "shared_rewards": False  # IRAT: Use individual rewards, sum them in algorithm for team reward
+  "cnn": True
+  "jit": True
+
+# Training settings
+"ANNEAL_LR": True
+"TUNE": False
+
+# Seed and evaluation
+"SEED": 30
+"NUM_SEEDS": 1
+"GIF_NUM_FRAMES": 250
+
+# WandB defaults
+"ENTITY": ""
+"PROJECT": "socialjax"
+"WANDB_MODE": "online"

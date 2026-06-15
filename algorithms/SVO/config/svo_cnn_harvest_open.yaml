@@ -1,0 +1,22 @@
+# SVO Configuration for Harvest Common (Open)
+defaults:
+  - svo_base
+
+# Environment-specific settings
+"ENV_NAME": "harvest_common_open"
+
+"ENV_KWARGS": 
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+  "svo": True
+  "svo_target_agents": [0, 1, 2, 3, 4, 5, 6]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+
+# Reward settings
+"REWARD": "individual"
+"WANDB_TAGS": 
+  - INDIVIDUAL_REWARD

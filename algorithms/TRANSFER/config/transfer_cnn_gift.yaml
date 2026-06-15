@@ -1,0 +1,29 @@
+# TRANSFER Configuration for Gift
+defaults:
+  - transfer_base
+
+"ENV_NAME": "gift"
+"NUM_ENVS": 250
+
+"ENV_KWARGS": 
+  "num_agents": 5
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+  "svo": False
+  "svo_target_agents": [0, 1, 2, 3, 4]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+  "interest": True
+  # n_agents = 5  =>  s = 1 / (1 + ratio * (n - 1))
+  #   ratio = 1/4  ->  s = 1/2   = 0.5000
+  #   ratio = 1/2  ->  s = 1/3   ~ 0.3333   (default below)
+  #   ratio = 3/4  ->  s = 1/4   = 0.2500
+  "s_interest": 0.3333
+
+"REWARD": "individual"
+"WANDB_TAGS": 
+  - INDIVIDUAL_REWARD
+
+"PROJECT": "transfer_fixed_socialjax"

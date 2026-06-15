@@ -1,0 +1,31 @@
+# IPPO Configuration for Harvest Common (Partnership)
+defaults:
+  - ippo_base
+  - _self_
+  - reward: common  # override on CLI: reward=individual
+
+# Environment-specific settings
+"ENV_NAME": "harvest_common_open"
+"GIF_NUM_FRAMES": 25
+
+"ENV_KWARGS":
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "cnn": True
+  "jit": True
+  "map_ASCII": ["AAA    A      A    AAA",
+              "AA    AAA    AAA    AA",
+              "A    AAAAA  AAAAA    A",
+              "      AAA    AAA      ",
+              "       A      A       ",
+              "  A                A  ",
+              " AAA  Q   WW   Q  AAA ",
+              "AAAAA            AAAAA",
+              " AAA  WWWWWWWWWW  AAA ",
+              "  A       WW       A  ",
+              "WWWWWWWWW WW WWWWWWWWW",
+              "          WW          ",
+              "  WWWWWWWWWWWWWWWWWW  ",
+              "  P P P P P P P P P   ",
+              " P P P P P P P P P P  ",
+             ]

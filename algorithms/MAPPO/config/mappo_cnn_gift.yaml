@@ -1,0 +1,22 @@
+# MAPPO Configuration for Gift
+defaults:
+  - mappo_base
+
+# Environment-specific settings
+"ENV_NAME": "gift"
+"NUM_ENVS": 4
+"NUM_STEPS": 100
+"TOTAL_TIMESTEPS": 3e8
+"NUM_MINIBATCHES": 4
+
+"ENV_KWARGS": 
+  "num_agents": 5
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True
+
+# Reward settings
+"REWARD": "MAPPO"
+"WANDB_TAGS": 
+  - COMMON_REWARD

@@ -1,0 +1,27 @@
+# VDN Configuration for Harvest Common Partnership
+defaults:
+  - vdn_base
+
+"ENV_NAME": "harvest_common_open"
+"ENV_KWARGS":
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True
+  "map_ASCII": ["AAA    A      A    AAA",
+              "AA    AAA    AAA    AA",
+              "A    AAAAA  AAAAA    A",
+              "      AAA    AAA      ",
+              "       A      A       ",
+              "  A                A  ",
+              " AAA  Q   WW   Q  AAA ",
+              "AAAAA          AAAAA",
+              " AAA  WWWWWWWWWW  AAA ",
+              "  A       WW       A  ",
+              "WWWWWWWWW WW WWWWWWWWW",
+              "          WW          ",
+              "  WWWWWWWWWWWWWWWWWW  ",
+              "  P P P P P P P P P   ",
+              " P P P P P P P P P P  ",
+             ]

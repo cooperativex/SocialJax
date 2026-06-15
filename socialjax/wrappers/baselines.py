@@ -141,9 +141,11 @@ class SVOLogWrapper(JaxMARLWrapper):
         key: chex.PRNGKey,
         state: SVOLogEnvState,
         action: Union[int, float],
+        *args,
+        **kwargs,
     ) -> Tuple[chex.Array, SVOLogEnvState, float, bool, dict]:
         obs, env_state, reward, done, info = self._env.step(
-            key, state.env_state, action
+            key, state.env_state, action, *args, **kwargs
         )
         ep_done = done["__all__"]
         new_episode_return = state.episode_returns + self._batchify_floats(reward)
@@ -216,7 +218,7 @@ class MPELogWrapper(LogWrapper):
         obs, env_state, reward, done, info = self._env.step(
             key, state.env_state, action
         )
-        rewardlog = jax.tree_map(lambda x: x*self._env.num_agents, reward)  # As per on-policy codebase
+        rewardlog = jax.tree.map(lambda x: x*self._env.num_agents, reward)  # As per on-policy codebase
         ep_done = done["__all__"]
         new_episode_return = state.episode_returns + self._batchify_floats(rewardlog)
         new_episode_length = state.episode_lengths + 1
@@ -307,9 +309,12 @@ def get_space_dim(space):
     if isinstance(space, (DiscreteGymnax, Discrete)):
         return space.n
     elif isinstance(space, (BoxGymnax, Box, MultiDiscrete)):
-        return np.prod(space.shape)
+        return int(np.prod(space.shape))
+    elif hasattr(space, 'shape'):
+        # Fallback for any space-like object with shape attribute
+        return int(np.prod(space.shape))
     else:
-        print(space)
+        print(f"Unknown space type: {type(space)}, space: {space}")
         raise NotImplementedError('Current wrapper works only with Discrete/MultiDiscrete/Box action and obs spaces')
 
 
@@ -338,13 +343,21 @@ class CTRolloutManager(JaxMARLWrapper):
         self.preprocess_obs = preprocess_obs  
 
         # TOREMOVE: this is because overcooked doesn't follow other envs conventions
-        if len(env.observation_spaces) == 0:
-            self.observation_spaces = {agent:self.observation_space() for agent in self.agents}
-        if len(env.action_spaces) == 0:
-            self.action_spaces = {agent:env.action_space() for agent in self.agents}
+        # SocialJax returns tuple (space, shape) for observation_space()
+        if not hasattr(env, 'observation_spaces') or len(env.observation_spaces) == 0:
+            obs_space_tuple = env.observation_space()
+            # SocialJax observation_space() returns (Box, shape)
+            if isinstance(obs_space_tuple, tuple):
+                obs_space = obs_space_tuple[0]  # Get the Box object
+            else:
+                obs_space = obs_space_tuple
+            # All agents share the same observation space in SocialJax
+            self.observation_spaces = {agent: obs_space for agent in self.agents}
+        if not hasattr(env, 'action_spaces') or len(env.action_spaces) == 0:
+            self.action_spaces = {agent: env.action_space() for agent in self.agents}
         
-        # batched action sampling
-        self.batch_samplers = {agent: jax.jit(jax.vmap(self.action_space(agent).sample, in_axes=0)) for agent in self.agents}
+        # batched action sampling - use string keys
+        self.batch_samplers = {str(agent): jax.jit(jax.vmap(self.action_space(agent).sample, in_axes=0)) for agent in self.agents}
 
         # assumes the observations are flattened vectors
         self.max_obs_length = max(list(map(lambda x: get_space_dim(x), self.observation_spaces.values())))
@@ -353,11 +366,11 @@ class CTRolloutManager(JaxMARLWrapper):
         if self.preprocess_obs:
             self.obs_size += len(self.agents)
 
-        # agents ids
-        self.agents_one_hot = {a:oh for a, oh in zip(self.agents, jnp.eye(len(self.agents)))}
-        # valid actions
-        self.valid_actions = {a:jnp.arange(u.n) for a, u in self.action_spaces.items()}
-        self.valid_actions_oh ={a:jnp.concatenate((jnp.ones(u.n), jnp.zeros(self.max_action_space - u.n))) for a, u in self.action_spaces.items()}
+        # agents ids - use string keys to match observation/action dicts
+        self.agents_one_hot = {str(a):oh for a, oh in zip(self.agents, jnp.eye(len(self.agents)))}
+        # valid actions - use string keys to match observation/action dicts
+        self.valid_actions = {str(a):jnp.arange(u.n) for a, u in self.action_spaces.items()}
+        self.valid_actions_oh ={str(a):jnp.concatenate((jnp.ones(u.n), jnp.zeros(self.max_action_space - u.n))) for a, u in self.action_spaces.items()}
 
         # custom global state and rewards for specific envs
         if 'smax' in env.name.lower():
@@ -385,35 +398,83 @@ class CTRolloutManager(JaxMARLWrapper):
     @partial(jax.jit, static_argnums=0)
     def wrapped_reset(self, key):
         obs_, state = self._env.reset(key)
-        if self.preprocess_obs:
-            obs = jax.tree_util.tree_map(self._preprocess_obs, {agent:obs_[agent] for agent in self.agents}, self.agents_one_hot)
+        # SocialJax returns array (num_agents, ...), need to convert to dict
+        # Convert integer agent keys to strings to be compatible with "__all__" key
+        if not isinstance(obs_, dict):
+            obs_dict = {str(agent): obs_[i] for i, agent in enumerate(self.agents)}
         else:
-            obs = obs_
-        obs["__all__"] = self.global_state(obs_, state)
-        return obs, state
+            obs_dict = {str(k): v for k, v in obs_.items()}
+
+        if self.preprocess_obs:
+            # agents_one_hot already has string keys
+            obs = jax.tree_util.tree_map(self._preprocess_obs, obs_dict, self.agents_one_hot)
+        else:
+            obs = obs_dict
+        obs_with_global = {**obs, "__all__": self.global_state(obs_, state)}  # Add global state
+        return obs_with_global, state
 
     @partial(jax.jit, static_argnums=0)
     def wrapped_step(self, key, state, actions):
-        obs_, state, reward, done, infos = self._env.step(key, state, actions)
-        if self.preprocess_obs:
-            obs = jax.tree_util.tree_map(self._preprocess_obs, {agent:obs_[agent] for agent in self.agents}, self.agents_one_hot)
-            obs = jax.tree_util.tree_map(lambda d, o: jnp.where(d, 0., o), {agent:done[agent] for agent in self.agents}, obs) # ensure that the obs are 0s for done agents
+        # Convert dict actions to list/array for SocialJax environments
+        if isinstance(actions, dict):
+            # IQL passes actions as dict, need to convert to list
+            # Try both string and int keys to handle different sources
+            actions_list = []
+            for agent in self.agents:
+                if str(agent) in actions:
+                    actions_list.append(actions[str(agent)])
+                else:
+                    actions_list.append(actions[agent])
         else:
-            obs = obs_
-        obs["__all__"] = self.global_state(obs_, state)
-        reward["__all__"] = self.global_reward(reward)
-        return obs, state, reward, done, infos
+            actions_list = actions
+
+        obs_, state, reward, done, infos = self._env.step(key, state, actions_list)
+        # SocialJax returns array (num_agents, ...), need to convert to dict
+        # Convert integer agent keys to strings to be compatible with "__all__" key
+        if not isinstance(obs_, dict):
+            obs_dict = {str(agent): obs_[i] for i, agent in enumerate(self.agents)}
+        else:
+            obs_dict = {str(k): v for k, v in obs_.items()}
+
+        if not isinstance(reward, dict):
+            reward_dict = {str(agent): reward[i] for i, agent in enumerate(self.agents)}
+        else:
+            reward_dict = {str(k): v for k, v in reward.items()}
+
+        if self.preprocess_obs:
+            # agents_one_hot already has string keys
+            obs = jax.tree_util.tree_map(self._preprocess_obs, obs_dict, self.agents_one_hot)
+            # Convert done keys to strings
+            done_str = {str(k): v for k, v in done.items()}
+            obs = jax.tree_util.tree_map(lambda d, o: jnp.where(d, 0., o), done_str, obs) # ensure that the obs are 0s for done agents
+        else:
+            obs = obs_dict
+        obs_with_global = {**obs, "__all__": self.global_state(obs_, state)}  # Add global state
+        reward_with_global = {**reward_dict, "__all__": self.global_reward(reward_dict)}  # Add global reward
+        return obs_with_global, state, reward_with_global, done, infos
 
     @partial(jax.jit, static_argnums=0)
     def global_state(self, obs, state):
-        return jnp.concatenate([obs[agent] for agent in self.agents], axis=-1)
+        # Handle both dict and array observations
+        if isinstance(obs, dict):
+            return jnp.concatenate([obs[str(agent)] for agent in self.agents], axis=-1)
+        else:
+            # obs is array (num_agents, ...)
+            return jnp.concatenate([obs[i] for i in range(len(self.agents))], axis=-1)
     
     @partial(jax.jit, static_argnums=0)
     def global_reward(self, reward):
-        return jnp.stack([reward[agent] for agent in self.training_agents]).sum(axis=0) 
+        # Handle both dict and array rewards
+        if isinstance(reward, dict):
+            return jnp.stack([reward[str(agent)] for agent in self.training_agents]).sum(axis=0)
+        else:
+            # reward is array (num_agents,)
+            return jnp.stack([reward[i] for i in range(len(self.training_agents))]).sum(axis=0) 
     
     def batch_sample(self, key, agent):
-        return self.batch_samplers[agent](jax.random.split(key, self.batch_size)).astype(int)
+        # Handle both string and int agent keys
+        agent_key = str(agent) if str(agent) in self.batch_samplers else agent
+        return self.batch_samplers[agent_key](jax.random.split(key, self.batch_size)).astype(int)
     
     @partial(jax.jit, static_argnums=0)
     def get_valid_actions(self, state):

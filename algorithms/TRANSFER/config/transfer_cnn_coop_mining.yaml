@@ -1,0 +1,39 @@
+# TRANSFER Configuration for Cooperative Mining
+defaults:
+  - transfer_base
+
+"ENV_NAME": "coop_mining"
+"NUM_ENVS": 200
+"NUM_MINIBATCHES": 300
+
+"ENV_KWARGS": 
+  "num_agents": 6
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "num_outer_steps": 1
+  "max_miners": 4
+  "min_gold_miners": 2
+  "mining_range": 3
+  "reward_iron": 1.0
+  "reward_gold": 8.0
+  "gold_mining_window": 3
+  "regrowth_prob_iron": 0.0004
+  "regrowth_prob_gold": 0.00016
+  "cnn": True
+  "jit": True
+  "svo": False
+  "svo_target_agents": [0, 1, 2, 3, 4, 5]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+  "interest": True
+  # n_agents = 6  =>  s = 1 / (1 + ratio * (n - 1))
+  #   ratio = 1/4  ->  s = 4/9   ~ 0.4444
+  #   ratio = 1/2  ->  s = 2/7   ~ 0.2857   (default below)
+  #   ratio = 3/4  ->  s = 4/19  ~ 0.2105
+  "s_interest": 0.2857
+
+"REWARD": "individual"
+"WANDB_TAGS": 
+  - INDIVIDUAL_REWARD
+
+"PROJECT": "transfer_fixed_socialjax"

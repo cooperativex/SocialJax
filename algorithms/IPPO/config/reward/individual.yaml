@@ -1,0 +1,7 @@
+# @package _global_
+# Individual-reward variant: each agent gets its own reward (selfish baseline).
+ENV_KWARGS:
+  shared_rewards: False
+REWARD: individual
+WANDB_TAGS:
+  - INDIVIDUAL_REWARD

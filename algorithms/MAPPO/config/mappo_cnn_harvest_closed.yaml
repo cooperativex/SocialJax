@@ -1,0 +1,39 @@
+# MAPPO Configuration for Harvest Common (Closed)
+defaults:
+  - mappo_base
+
+# Environment-specific settings
+"ENV_NAME": "harvest_common_open"
+"LR": 0.0005
+"NUM_ENVS": 5
+"NUM_STEPS": 100
+"NUM_MINIBATCHES": 4
+"TOTAL_TIMESTEPS": 3e8
+
+"ENV_KWARGS": 
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True
+  "map_ASCII": ["AAA    A  WW  A    AAA",
+              "AA    AAA WW AAA    AA",
+              "A    AAAAAWWAAAAA    A",
+              "      AAA WW AAA      ",
+              "       A  WW  A       ",
+              "  A       WW       A  ",
+              " AAA  Q   WW   Q  AAA ",
+              "AAAAA     WW     AAAAA",
+              " AAA  WWWWWWWWWW  AAA ",
+              "  A       WW       A  ",
+              "WWWWWWWWW WW WWWWWWWWW",
+              "          WW          ",
+              "  WWWWWWWWWWWWWWWWWW  ",
+              "  P P P P P P P P P   ",
+              " P P P P P P P P P P  ",
+             ]
+
+# Reward settings
+"REWARD": "MAPPO"
+"WANDB_TAGS": 
+  - COMMON_REWARD

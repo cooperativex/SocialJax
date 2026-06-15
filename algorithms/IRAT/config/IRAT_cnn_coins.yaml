@@ -1,0 +1,19 @@
+# IRAT Configuration for Coin Game
+defaults:
+  - irat_base
+
+# Environment-specific settings
+"ENV_NAME": "coin_game"
+
+"ENV_KWARGS": 
+  "num_agents": 2
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+
+# IRAT-specific settings
+"REWARD": "IRAT"  # IRAT uses both individual and team rewards
+"WANDB_TAGS": 
+  - IRAT
+  - INDIVIDUAL_REWARD

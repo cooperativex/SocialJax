@@ -1,0 +1,14 @@
+# IPPO Configuration for Harvest Common (Open)
+defaults:
+  - ippo_base
+  - _self_
+  - reward: common  # override on CLI: reward=individual
+
+# Environment-specific settings
+"ENV_NAME": "harvest_common_open"
+
+"ENV_KWARGS":
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "cnn": True
+  "jit": True

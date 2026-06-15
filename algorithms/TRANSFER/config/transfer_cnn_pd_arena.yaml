@@ -1,0 +1,29 @@
+# TRANSFER Configuration for PD Arena
+defaults:
+  - transfer_base
+
+"ENV_NAME": "pd_arena"
+"NUM_ENVS": 250
+
+"ENV_KWARGS": 
+  "num_agents": 4
+  "num_inner_steps": 1000
+  "shared_rewards": False
+  "cnn": True
+  "jit": True
+  "svo": False
+  "svo_target_agents": [0, 1, 2, 3]
+  "svo_w": 0.5
+  "svo_ideal_angle_degrees": 90
+  "interest": True
+  # n_agents = 4  =>  s = 1 / (1 + ratio * (n - 1))
+  #   ratio = 1/4  ->  s = 4/7   ~ 0.5714
+  #   ratio = 1/2  ->  s = 2/5   = 0.4000   (default below)
+  #   ratio = 3/4  ->  s = 4/13  ~ 0.3077
+  "s_interest": 0.4
+
+"REWARD": "individual"
+"WANDB_TAGS": 
+  - INDIVIDUAL_REWARD
+
+"PROJECT": "transfer_fixed_socialjax"

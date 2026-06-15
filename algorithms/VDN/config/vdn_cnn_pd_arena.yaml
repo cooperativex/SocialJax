@@ -1,0 +1,11 @@
+# VDN Configuration for PD Arena
+defaults:
+  - vdn_base
+
+"ENV_NAME": "pd_arena"
+"ENV_KWARGS":
+  "num_agents": 4
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True

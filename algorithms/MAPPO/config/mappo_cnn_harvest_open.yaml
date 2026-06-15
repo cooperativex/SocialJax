@@ -1,0 +1,23 @@
+# MAPPO Configuration for Harvest Common (Open)
+defaults:
+  - mappo_base
+
+# Environment-specific settings
+"ENV_NAME": "harvest_common_open"
+"LR": 0.0005
+"NUM_ENVS": 256
+"NUM_STEPS": 100
+"NUM_MINIBATCHES": 4
+"TOTAL_TIMESTEPS": 3e8
+
+"ENV_KWARGS": 
+  "num_agents": 7
+  "num_inner_steps": 1000
+  "shared_rewards": True
+  "cnn": True
+  "jit": True
+
+# Reward settings
+"REWARD": "MAPPO"
+"WANDB_TAGS": 
+  - COMMON_REWARD

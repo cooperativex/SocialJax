@@ -183,6 +183,10 @@ class PD_Arena(MultiAgentEnv):
         svo_target_agents=None,
         svo_w=0.5,
         svo_ideal_angle_degrees=45,
+        interest=False,
+        s_interest=0.5,
+        s_interest_schedule=None,
+        s_interest_change_every=30000000,
 
         jit=True,
         grid_size=(24,25),
@@ -261,6 +265,14 @@ class PD_Arena(MultiAgentEnv):
         self.svo_w = svo_w
         self.svo_ideal_angle_degrees = svo_ideal_angle_degrees
         self.smooth_rewards = enable_smooth_rewards
+        self.interest = interest
+        self.s_interest = s_interest
+        # Convert schedule to JAX array for JIT compatibility
+        if s_interest_schedule is not None:
+            self.s_interest_schedule = jnp.array(s_interest_schedule)
+        else:
+            self.s_interest_schedule = None
+        self.s_interest_change_every = s_interest_change_every
 
         self.PLAYER_COLOURS = generate_agent_colors(num_agents)
         self.GRID_SIZE_ROW = grid_size[0]
@@ -1891,10 +1903,21 @@ class PD_Arena(MultiAgentEnv):
 
             return reward, state, reborn_players
         
+        def get_current_s_interest(timestep):
+            """Calculate current s_interest based on timestep and schedule."""
+            if self.s_interest_schedule is None:
+                return self.s_interest
+
+            # Calculate which phase we're in using JAX operations
+            phase = timestep // self.s_interest_change_every
+            phase_idx = phase % self.s_interest_schedule.shape[0]
+            return self.s_interest_schedule[phase_idx]
+
         def _step(
             key: chex.PRNGKey,
             state: State,
-            actions: jnp.ndarray
+            actions: jnp.ndarray,
+            timestep: int = 0
         ):
             """Step the environment."""
             actions = jnp.array(actions)
@@ -2105,16 +2128,19 @@ class PD_Arena(MultiAgentEnv):
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
                 rewards_output = jnp.array([0]* self.num_agents)
                 rewards = rewards.squeeze()
-                common_reward = rewards.mean()
+                # Scale per-agent mean by num_agents (== sum-over-agents) to match
+                # cleanup/coop_mining and to give MAPPO/PPO enough gradient signal.
+                common_reward = rewards.mean() * self.num_agents
                 rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
-                rewards = rewards_output    
+                rewards = rewards_output
 
                 # rewards = jnp.array([common_reward] * self.num_agents)
                 info = {}
-            
+
             elif self.svo:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
-                original_rewards =  rewards
+                # Scale per-agent reward by num_agents to match other envs' convention.
+                original_rewards = rewards * self.num_agents
                 rewards, theta = self.get_svo_rewards(original_rewards, self.svo_w, self.svo_ideal_angle_degrees, self.svo_target_agents)
                 info = {
                     "original_rewards": original_rewards.squeeze(),
@@ -2122,15 +2148,39 @@ class PD_Arena(MultiAgentEnv):
                     "shaped_rewards": rewards.squeeze(),
                 }
 
+            elif self.interest:
+                rewards, state, reborn_players = _interact_pd(key, state, actions)
+                # Scale per-agent reward by num_agents to match other envs' convention.
+                original_rewards = rewards * self.num_agents
+
+                # Calculate current s_interest based on timestep
+                current_s_interest = get_current_s_interest(timestep)
+                original_flat = original_rewards.squeeze()
+
+                # Each agent gets s * their_reward + (1-s)/(n-1) * sum_of_others
+                total_reward = jnp.sum(original_flat)
+                others_reward = total_reward - original_flat  # sum of all other agents' rewards
+
+                rewards = (current_s_interest * original_flat +
+                        (1 - current_s_interest) / (self.num_agents - 1) * others_reward)
+
+                info = {
+                    "original_rewards": original_rewards.squeeze(),
+                    "shaped_rewards": rewards.squeeze(),
+                    "s_interest": current_s_interest,
+                }
+
             else:
                 rewards, state, reborn_players = _interact_pd(key, state, actions)
+                # Scale per-agent reward by num_agents to match other envs' convention.
+                rewards = rewards * self.num_agents
                 # rewards_output = jnp.array([0]* self.num_agents)
                 # rewards = rewards.squeeze()
                 # common_reward = rewards.mean()
                 # ind_reward = rewards[:3].mean()
                 # rewards_output = jnp.array([common_reward] * self.num_agents).squeeze()
                 # rewards_output = rewards_output.at[0].set(ind_reward)
-                # rewards = rewards_output    
+                # rewards = rewards_output
 
                 # rewards = jnp.array([common_reward] * self.num_agents)
                 # info = {
@@ -2220,7 +2270,7 @@ class PD_Arena(MultiAgentEnv):
             state_re = _reset_state(key)
 
             state_re = state_re.replace(outer_t=outer_t + 1)
-            state = jax.tree_map(
+            state = jax.tree.map(
                 lambda x, y: jnp.where(reset_inner, x, y),
                 state_re,
                 state_nxt,
