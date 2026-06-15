@@ -3,6 +3,11 @@ defaults:
   - transfer_base
 
 "ENV_NAME": "harvest_common_open"
+"NUM_ENVS": 200
+"GIF_NUM_FRAMES": 25
+"SHAPING_BEGIN": 1e6
+"PARAMETER_SHARING": True
+"ANNEAL_LR": True
 
 "ENV_KWARGS": 
   "num_agents": 7
@@ -40,3 +45,5 @@ defaults:
 "REWARD": "individual"
 "WANDB_TAGS": 
   - INDIVIDUAL_REWARD
+
+"PROJECT": "transfer_fixed_partnership"

@@ -36,5 +36,5 @@
 
 # WandB Params
 "ENTITY": ""
-"PROJECT": "socialjax"
+"PROJECT": "transfer_fixed_socialjax"
 "WANDB_MODE": "online"

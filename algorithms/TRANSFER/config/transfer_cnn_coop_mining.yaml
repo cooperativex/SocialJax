@@ -3,7 +3,7 @@ defaults:
   - transfer_base
 
 "ENV_NAME": "coop_mining"
-"NUM_ENVS": 256
+"NUM_ENVS": 200
 "NUM_MINIBATCHES": 300
 
 "ENV_KWARGS": 
@@ -35,3 +35,5 @@ defaults:
 "REWARD": "individual"
 "WANDB_TAGS": 
   - INDIVIDUAL_REWARD
+
+"PROJECT": "transfer_fixed_socialjax"

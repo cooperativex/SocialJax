@@ -3,6 +3,7 @@ defaults:
   - transfer_base
 
 "ENV_NAME": "pd_arena"
+"NUM_ENVS": 250
 
 "ENV_KWARGS": 
   "num_agents": 4
@@ -24,3 +25,5 @@ defaults:
 "REWARD": "individual"
 "WANDB_TAGS": 
   - INDIVIDUAL_REWARD
+
+"PROJECT": "transfer_fixed_socialjax"

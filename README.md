@@ -132,7 +132,6 @@ forwarded verbatim to Hydra as key=value overrides.
 | `IPPO` | Independent PPO |
 | `SVO` | Social Value Orientation (PPO with SVO reward shaping) |
 | `MAPPO` | Multi-Agent PPO (centralised critic) |
-| `IRAT` | Individual–team Reward Aware Training (dual policy) |
 | `TRANSFER` | Self-interest schedule transfer |
 | `VDN` | Value Decomposition Networks (Q-learning) |
 
@@ -162,6 +161,27 @@ python algorithms/train.py --algo IPPO --env coins reward=common
 python algorithms/train.py --algo IPPO --env coins reward=individual
 ```
 
+### SVO — Social Value Orientation
+
+SVO trains on individual rewards but shapes them toward a target orientation. The
+strength (`svo_w`) and ideal angle (`svo_ideal_angle_degrees`) live under `ENV_KWARGS`:
+
+```bash
+python algorithms/train.py --algo SVO --env coins
+python algorithms/train.py --algo SVO --env coins ENV_KWARGS.svo_w=0.5 ENV_KWARGS.svo_ideal_angle_degrees=45
+```
+
+### TRANSFER — self-interest schedule transfer
+
+TRANSFER mixes individual rewards by a self-interest weight `s_interest` (fixed per env
+in `transfer_cnn_<env>.yaml`, optionally scheduled over training). Override it inline via
+`ENV_KWARGS`:
+
+```bash
+python algorithms/train.py --algo TRANSFER --env coins
+python algorithms/train.py --algo TRANSFER --env pd_arena ENV_KWARGS.s_interest=0.4
+```
+
 ### Hydra overrides
 
 ```bash
@@ -172,7 +192,7 @@ python algorithms/train.py --algo IPPO --env coins SEED=42 LR=1e-4 NUM_ENVS=128
 python algorithms/train.py --algo MAPPO --env cleanup -m SEED=42,52,62
 
 # Override nested ENV_KWARGS
-python algorithms/train.py --algo SVO --env coin ENV_KWARGS.svo_w=0.8
+python algorithms/train.py --algo SVO --env coins ENV_KWARGS.svo_w=0.8
 
 # VDN's hyperparameters live under an `alg.*` namespace
 python algorithms/train.py --algo VDN --env coins alg.NUM_ENVS=32 alg.LR=1e-4
