@@ -698,7 +698,7 @@ class CoopMining(MultiAgentEnv):
             if self.smooth_rewards:
                 should_smooth = (state.inner_t % 1) == 0
                 new_smooth_rewards = 0.99 * 0.99 * state.smooth_rewards + final_rewards
-                rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(new_smooth_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
+                rewards, disadvantageous, advantageous = self.get_inequity_aversion_rewards_immediate(new_smooth_rewards, state.inner_t, self.inequity_aversion_target_agents, self.inequity_aversion_alpha, self.inequity_aversion_beta)
                 state = state.replace(smooth_rewards=new_smooth_rewards)
                 info = {
                 "original_rewards": final_rewards.squeeze(),
@@ -706,7 +706,7 @@ class CoopMining(MultiAgentEnv):
                 "shaped_rewards": rewards.squeeze(),
             }
             else:
-                rewards,disadvantageous,advantageous = self.get_inequity_aversion_rewards_immediate(final_rewards, self.inequity_aversion_target_agents, state.inner_t, self.inequity_aversion_alpha, self.inequity_aversion_beta)
+                rewards, disadvantageous, advantageous = self.get_inequity_aversion_rewards_immediate(final_rewards, state.inner_t, self.inequity_aversion_target_agents, self.inequity_aversion_alpha, self.inequity_aversion_beta)
                 info = {
                 "original_rewards": final_rewards.squeeze(),
                 "shaped_rewards": rewards.squeeze(),
