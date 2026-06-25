@@ -207,7 +207,7 @@ We introduce the environments and use Schelling diagrams to demonstrate whether 
 
 | Environment                  | Description                                                                                      | Schelling Diagrams Proof |
 |------------------------------|--------------------------------------------------------------------------------------------------|:------------------------:|
-| Coins                        | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coins)         |&check;                   |
+| Coins                        | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/coin_game)     |&check;                   |
 | Commons Harvest: Open        | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
 | Commons Harvest: Closed      | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
 | Commons Harvest: partnership | [Link](https://github.com/cooperativex/SocialJax/tree/main/socialjax/environments/common_harvest)|&check;                   |
