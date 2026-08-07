@@ -863,6 +863,14 @@ class CoopMining(MultiAgentEnv):
             revert = (distinct_count > self.min_gold_miners) & mining_gold
             partial = (distinct_count > 0) & (distinct_count < self.min_gold_miners) & mining_gold
 
+            # Clear the miner registry once a cell resolves (finalize or revert), so a
+            # future regrowth doesn't inherit stale miner IDs from this round.
+            new_miners = jnp.where(
+                finalize | revert,
+                -1 * jnp.ones_like(new_miners),
+                new_miners
+            )
+
             # Update item
             gold_item = jnp.where(partial, Items.gold_partial, new_item_if_iron)
             gold_item = jnp.where(finalize, Items.ore_wait, gold_item)
@@ -924,6 +932,17 @@ class CoopMining(MultiAgentEnv):
 
         # Decrement partial gold timer
         final_partial_cd = jnp.maximum(final_partial_cd - 1, 0)
+
+        # Expire the coordination window: a cell sitting in gold_partial whose
+        # countdown has run out reverts to a fresh gold_ore and its miner
+        # registry is cleared, so late/solo miners can't finalize off stale IDs.
+        expired = (final_grid == Items.gold_partial) & (final_partial_cd == 0)
+        final_grid = jnp.where(expired, Items.gold_ore, final_grid)
+        final_ore_miners = jnp.where(
+            expired[..., None],
+            -1 * jnp.ones_like(final_ore_miners),
+            final_ore_miners
+        )
 
         return (final_positions,
                 final_iron_rewards,
