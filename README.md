@@ -14,7 +14,7 @@
 
 > 🎉 **SocialJax has been accepted at ICLR 2026!**
 
-> 📌 **Reproducing the paper:** the training curves in the paper correspond to the [`socialjax_v1.1.1-paper`](https://github.com/cooperativex/SocialJax/releases/tag/socialjax_v1.1.1-paper) release. Later versions fix an agent-overlap bug via a shared movement resolver, which intentionally changes environment dynamics, so curves trained on `main` will differ from the paper's baselines.
+> 📌 To reproduce the paper's training curves, use the [`socialjax_v1.1.1-paper`](https://github.com/cooperativex/SocialJax/releases/tag/socialjax_v1.1.1-paper) release; later versions fix an agent-overlap bug that changes environment dynamics.
 
 *A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
