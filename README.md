@@ -46,7 +46,7 @@ SocialJax leverages JAX's high-performance GPU capabilities to accelerate multi-
 Our [blog](https://sites.google.com/view/socialjax/home) presents more details and analysis on agents' policy and performance.
 
 
-
+> 📌 To reproduce the paper's training curves, use the [`SocialJax v1.1.0`](https://github.com/cooperativex/SocialJax/releases/tag/socialjax_v1.1.0) release; later versions fix an agent-overlap bug that might change environment dynamics.
 
 ## Installation
 
