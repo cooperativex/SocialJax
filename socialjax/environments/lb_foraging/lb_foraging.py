@@ -8,6 +8,7 @@ import numpy as onp
 from flax.struct import dataclass
 
 from socialjax.environments import spaces
+from socialjax.environments.movement import resolve_movement
 from socialjax.environments.multi_agent_env import MultiAgentEnv
 
 # ------------------------------------------------------------------------
@@ -104,27 +105,6 @@ def generate_agent_colors(num_agents):
         r, g, b = colorsys.hsv_to_rgb(hue, 0.8, 0.8)
         colors.append((int(r * 255), int(g * 255), int(b * 255)))
     return colors
-
-
-def check_collision_lbf(new_positions: jnp.ndarray) -> jnp.ndarray:
-    """
-    Check for agent-agent collisions. In LBF, if multiple agents try to move
-    to the same cell, ALL of them fail to move.
-
-    Returns: (num_agents,) bool array where True = agent has collision
-    """
-    # For each agent, check if any OTHER agent has the same position
-    pos1 = new_positions[:, None, :]  # (N, 1, 2)
-    pos2 = new_positions[None, :, :]  # (1, N, 2)
-    same_pos = jnp.all(pos1 == pos2, axis=-1)  # (N, N)
-
-    # Exclude self-comparison
-    mask = ~jnp.eye(new_positions.shape[0], dtype=bool)
-    collisions = same_pos & mask  # (N, N)
-
-    # Agent has collision if ANY other agent is at same position
-    has_collision = jnp.any(collisions, axis=1)  # (N,)
-    return has_collision
 
 
 # ------------------- MAIN ENV -------------------------------------------
@@ -385,9 +365,10 @@ class LevelBasedForaging(MultiAgentEnv):
         food_mask = (state.food_grid[new_positions[:, 0], new_positions[:, 1]] > 0)
         new_positions = jnp.where(food_mask[:, None], old_positions, new_positions)
 
-        # 5. Check agent-agent collisions
-        collision_mask = check_collision_lbf(new_positions)
-        final_positions = jnp.where(collision_mask[:, None], old_positions, new_positions)
+        # 5. Resolve agent-agent conflicts (same-target random winner, swaps
+        # blocked, trains allowed; guarantees unique final cells)
+        key, move_key = jax.random.split(key)
+        final_positions = resolve_movement(move_key, old_positions, new_positions)
 
         # 6. Process LOAD actions (food collection)
         rewards, new_food_grid = self._process_load_actions(

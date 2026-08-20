@@ -10,6 +10,7 @@ from flax.struct import dataclass
 from socialjax.environments import spaces
 from socialjax.environments.coop_mining.rendering import (
     render_tile, render_time, render_jax, render_time_jax, )
+from socialjax.environments.movement import resolve_movement
 from socialjax.environments.multi_agent_env import MultiAgentEnv
 
 # ------------------------------------------------------------------------
@@ -286,19 +287,6 @@ def generate_agent_colors(num_agents):
         r, g, b = colorsys.hsv_to_rgb(hue, 0.8, 0.8)
         colors.append((int(r * 255), int(g * 255), int(b * 255)))
     return colors
-
-
-def check_collision(new_agent_locs: jnp.ndarray) -> jnp.ndarray:
-    """
-    Checks pairwise collisions among agents based on row and column positions.
-    Returns a (num_agents, num_agents) boolean matrix where True indicates a collision.
-    """
-    pos = new_agent_locs[:, :2]  # (N, 2)
-    pos1 = pos[:, None, :]  # (N, 1, 2)
-    pos2 = pos[None, :, :]  # (1, N, 2)
-    collisions = jnp.all(pos1 == pos2, axis=-1)  # (N, N)
-    mask = ~jnp.eye(new_agent_locs.shape[0], dtype=bool)
-    return collisions & mask
 
 
 def local_to_global(ar, ac, direction, lr, lc, view_cfg):
@@ -653,10 +641,10 @@ class CoopMining(MultiAgentEnv):
         wall_mask = (state.grid[new_rc[:, 0], new_rc[:, 1]] == Items.wall)  # (N,)
         final_rc = jnp.where(wall_mask[:, None], old_rc, new_rc)  # Revert positions where walls are
 
-        # 5. Handle collisions
-        collision_matrix = check_collision(final_rc)  # (N, N)
-        collided = jnp.any(collision_matrix, axis=1)  # (N,)
-        final_rc = jnp.where(collided[:, None], old_rc, final_rc)  # Revert positions where collisions occur
+        # 5. Handle collisions (same-target random winner, swaps blocked,
+        # trains allowed; guarantees unique final cells)
+        key, move_key = jax.random.split(key)
+        final_rc = resolve_movement(move_key, old_rc, final_rc)
 
         # 6. Update agent locations
         new_locs = jnp.concatenate([final_rc, new_orients[:, None]], axis=-1)  # (N, 3)

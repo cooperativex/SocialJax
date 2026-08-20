@@ -10,6 +10,7 @@ import numpy as onp
 from flax.struct import dataclass
 import colorsys
 
+from socialjax.environments.movement import resolve_movement
 from socialjax.environments.multi_agent_env import MultiAgentEnv
 from socialjax.environments import spaces
 
@@ -255,173 +256,7 @@ class CoinGame(MultiAgentEnv):
         self.SPAWNS_PLAYERS = find_positions(nums_map, 4)
 
 
-        # first attempt at func - needs improvement
-        # inefficient due to double-checking collisions
-        def check_collision(
-                new_agent_locs: jnp.ndarray
-            ) -> jnp.ndarray:
-            '''
-            Function to check agent collisions.
-            
-            Args:
-                - new_agent_locs: jnp.ndarray, the agent locations at the 
-                current time step.
-                
-            Returns:
-                - jnp.ndarray matrix of bool of agents in collision.
-            '''
-            matcher = jax.vmap(
-                lambda x,y: jnp.all(x[:2] == y[:2]),
-                in_axes=(0, None)
-            )
-
-            collisions = jax.vmap(
-                matcher,
-                in_axes=(None, 0)
-            )(new_agent_locs, new_agent_locs)
-
-            return collisions
         
-        def fix_collisions(
-            key: jnp.ndarray,
-            collided_moved: jnp.ndarray,
-            collision_matrix: jnp.ndarray,
-            agent_locs: jnp.ndarray,
-            new_agent_locs: jnp.ndarray
-        ) -> jnp.ndarray:
-            """
-            Function defining multi-collision logic.
-
-            Args:
-                - key: jax key for randomisation
-                - collided_moved: jnp.ndarray, the agents which moved in the
-                last time step and caused collisions.
-                - collision_matrix: jnp.ndarray, the agents currently in
-                collisions
-                - agent_locs: jnp.ndarray, the agent locations at the previous
-                time step.
-                - new_agent_locs: jnp.ndarray, the agent locations at the
-                current time step.
-
-            Returns:
-                - jnp.ndarray of the final positions after collisions are
-                managed.
-            """
-            def scan_fn(
-                    state,
-                    idx
-            ):
-                key, collided_moved, collision_matrix, agent_locs, new_agent_locs = state
-
-                return jax.lax.cond(
-                    collided_moved[idx] > 0,
-                    lambda: _fix_collisions(
-                        key,
-                        collided_moved,
-                        collision_matrix,
-                        agent_locs,
-                        new_agent_locs
-                    ),
-                    lambda: (state, new_agent_locs)
-                )
-
-            _, ys = jax.lax.scan(
-                scan_fn,
-                (key, collided_moved, collision_matrix, agent_locs, new_agent_locs),
-                jnp.arange(self.num_agents)
-            )
-
-            final_locs = ys[-1]
-
-            return final_locs
-
-        def _fix_collisions(
-            key: jnp.ndarray,
-            collided_moved: jnp.ndarray,
-            collision_matrix: jnp.ndarray,
-            agent_locs: jnp.ndarray,
-            new_agent_locs: jnp.ndarray
-        ) -> Tuple[Tuple, jnp.ndarray]:
-            def select_random_true_index(key, array):
-                # Calculate the cumulative sum of True values
-                cumsum_array = jnp.cumsum(array)
-
-                # Count the number of True values
-                true_count = cumsum_array[-1]
-
-                # Generate a random index in the range of the number of True
-                # values
-                rand_index = jax.random.randint(
-                    key,
-                    (1,),
-                    0,
-                    true_count
-                )
-
-                # Find the position of the random index within the cumulative
-                # sum
-                chosen_index = jnp.argmax(cumsum_array > rand_index)
-
-                return chosen_index
-            # Pick one from all who collided & moved
-            colliders_idx = jnp.argmax(collided_moved)
-
-            collisions = collision_matrix[colliders_idx]
-
-            # Check whether any of collision participants didn't move
-            collision_subjects = jnp.where(
-                collisions,
-                collided_moved,
-                collisions
-            )
-            collision_mask = collisions == collision_subjects
-            stayed = jnp.all(collision_mask)
-            stayed_mask = jnp.logical_and(~stayed, ~collision_mask)
-            stayed_idx = jnp.where(
-                jnp.max(stayed_mask) > 0,
-                jnp.argmax(stayed_mask),
-                0
-            )
-
-            # Prepare random agent selection
-            k1, k2 = jax.random.split(key, 2)
-            rand_idx = select_random_true_index(k1, collisions)
-            collisions_rand = collisions.at[rand_idx].set(False) # <<<< PROBLEM LINE        
-            new_locs_rand = jax.vmap(
-                lambda p, l, n: jnp.where(p, l, n)
-            )(
-                collisions_rand,
-                agent_locs,
-                new_agent_locs
-            )
-
-            collisions_stayed = jax.lax.select(
-                jnp.max(stayed_mask) > 0,
-                collisions.at[stayed_idx].set(False),
-                collisions_rand
-            )
-            new_locs_stayed = jax.vmap(
-                lambda p, l, n: jnp.where(p, l, n)
-            )(
-                collisions_stayed,
-                agent_locs,
-                new_agent_locs
-            )
-
-            # Choose between the two scenarios - revert positions if
-            # non-mover exists, otherwise choose random agent if all moved
-            new_agent_locs = jnp.where(
-                stayed,
-                new_locs_rand,
-                new_locs_stayed
-            )
-
-            # Update move bools to reflect the post-collision positions
-            collided_moved = jnp.clip(collided_moved - collisions, 0, 1)
-            collision_matrix = collision_matrix.at[colliders_idx].set(
-                [False] * collisions.shape[0]
-            )
-            return ((k2, collided_moved, collision_matrix, agent_locs, new_agent_locs), new_agent_locs)
        
         def combine_channels(
                 grid: jnp.ndarray,
@@ -806,39 +641,12 @@ class CoinGame(MultiAgentEnv):
                 ),
             ).squeeze()
 
-            # if you bounced back to your original space,
-            # change your move to stay (for collision logic)
-            agents_move = jax.vmap(lambda n, p: jnp.any(n[:2] != p[:2]))(n=all_new_locs, p=state.agent_locs)
-
-            # generate bool mask for agents colliding
-            collision_matrix = check_collision(all_new_locs)
-
-            # sum & subtract "self-collisions"
-            collisions = jnp.sum(
-                collision_matrix,
-                axis=-1,
-                dtype=jnp.int8
-            ) - 1
-            collisions = jnp.minimum(collisions, 1)
-
-            # identify which of those agents made wrong moves
-            collided_moved = jnp.maximum(
-                collisions - ~agents_move,
-                0
-            )
-
-            # fix collisions at the correct indices
-            new_locs = jax.lax.cond(
-                jnp.max(collided_moved) > 0,
-                lambda: fix_collisions(
-                    key,
-                    collided_moved,
-                    collision_matrix,
-                    state.agent_locs,
-                    all_new_locs
-                ),
-                lambda: all_new_locs
-            )
+            # Resolve agent-agent movement conflicts via the shared
+            # resolver: same-target conflicts (non-mover priority, else
+            # random winner), swaps blocked, trains allowed, cascades
+            # reverted to a fixed point. Final (row, col) unique.
+            key, move_key = jax.random.split(key)
+            new_locs = resolve_movement(move_key, state.agent_locs, all_new_locs)
 
             # update inventories
             def red_matcher(p: jnp.ndarray) -> jnp.ndarray:
