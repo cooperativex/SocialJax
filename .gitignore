@@ -22,3 +22,6 @@ test_lbf_simple.py
 
 # Editor / IDE configs
 .vscode/
+# Local training/eval logs and cluster launch script
+logs/
+run_socialjax.sh
