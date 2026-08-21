@@ -8,7 +8,7 @@ defaults:
 "ENV_NAME": "coop_mining"
 
 "ENV_KWARGS":
-  "num_agents": 4
+  "num_agents": 6
   "num_inner_steps": 1000
   "cnn": True
   "jit": True
