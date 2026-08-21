@@ -8,7 +8,7 @@ defaults:
 "ENV_NAME": "gift"
 
 "ENV_KWARGS":
-  "num_agents": 2
+  "num_agents": 5
   "num_inner_steps": 1000
   "cnn": True
   "jit": True
