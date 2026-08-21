@@ -42,8 +42,10 @@ def evaluate_ippo(params, env, save_path, config):
     img = env.render(state)
     pics.append(img)
 
-    # Extract environment name for root_dir
-    env_name = config["ENV_NAME"]
+    # Extract environment name for root_dir. ENV_LABEL disambiguates variants
+    # that share an ENV_NAME (the three harvest maps), so their GIFs don't
+    # overwrite each other.
+    env_name = config.get("ENV_LABEL") or config["ENV_NAME"]
     # Map environment names to evaluation directories
     env_dir_mapping = {
         "clean_up": "cleanup",
@@ -51,6 +53,9 @@ def evaluate_ippo(params, env, save_path, config):
         "coop_mining": "coop_mining",
         "gift": "gift",
         "harvest_common_open": "harvest_common",
+        "harvest_open": "harvest_common",
+        "harvest_closed": "harvest_closed",
+        "harvest_partnership": "harvest_partnership",
         "harvest_common_closed": "harvest_closed",
         "harvest_common_partnership": "harvest_partnership",
         "mushrooms": "mushrooms",
@@ -98,7 +103,11 @@ def evaluate_ippo(params, env, save_path, config):
     print(f"Saving Episode GIF")
     pics = [Image.fromarray(np.array(img)) for img in pics]
     n_agents = len(env.agents)
-    gif_path = f"{root_dir}/{n_agents}-agents_seed-{config['SEED']}_frames-{o_t + 1}.gif"
+    # Reward suffix keeps common/individual GIFs of the same env from
+    # overwriting each other.
+    reward = config.get("REWARD")
+    reward_suffix = f"_reward-{reward}" if reward else ""
+    gif_path = f"{root_dir}/{n_agents}-agents_seed-{config['SEED']}{reward_suffix}_frames-{o_t + 1}.gif"
     pics[0].save(
         gif_path,
         format="GIF",
@@ -138,8 +147,10 @@ def evaluate_mappo_style(params, env, save_path, config, use_actor_only=True):
     img = env.render(state)
     pics.append(img)
 
-    # Extract environment name for root_dir
-    env_name = config["ENV_NAME"]
+    # Extract environment name for root_dir. ENV_LABEL disambiguates variants
+    # that share an ENV_NAME (the three harvest maps), so their GIFs don't
+    # overwrite each other.
+    env_name = config.get("ENV_LABEL") or config["ENV_NAME"]
     # Map environment names to evaluation directories
     env_dir_mapping = {
         "clean_up": "cleanup",
@@ -152,7 +163,7 @@ def evaluate_mappo_style(params, env, save_path, config, use_actor_only=True):
         "mushrooms": "mushrooms",
         "pd_arena": "pd_arena",
         "territory_open": "territory_open",
-        "harvest_open": "harvest_open",
+        "harvest_open": "harvest_common",
         "harvest_closed": "harvest_closed",
         "harvest_partnership": "harvest_partnership",
     }
@@ -193,8 +204,10 @@ def evaluate_mappo_style(params, env, save_path, config, use_actor_only=True):
     # Save GIF
     print(f"Saving Episode GIF")
     pics = [Image.fromarray(np.array(img)) for img in pics]
+    reward = config.get("REWARD")
+    reward_suffix = f"_reward-{reward}" if reward else ""
     pics[0].save(
-        f"{root_dir}/state_outer_step_{o_t+1}.gif",
+        f"{root_dir}/state_outer_step_{o_t+1}{reward_suffix}.gif",
         format="GIF",
         save_all=True,
         optimize=False,

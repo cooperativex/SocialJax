@@ -46,7 +46,11 @@ def single_run(config, make_train, *, wandb_name):
     out = jax.vmap(train_jit)(rngs)
 
     print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}{suffix}'
+    # ENV_LABEL disambiguates variants that share an ENV_NAME (the three
+    # harvest maps are all "harvest_common_open"); without it they overwrite
+    # each other's checkpoints and evaluation GIFs.
+    env_label = config.get("ENV_LABEL") or config["ENV_NAME"]
+    filename = f'{env_label}_seed{config["SEED"]}{suffix}'
     train_state = jax.tree.map(lambda x: x[0], out["runner_state"][0])
     save_path = f"./checkpoints/individual/{filename}.pkl"
     if config["PARAMETER_SHARING"]:

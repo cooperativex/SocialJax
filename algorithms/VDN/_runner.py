@@ -24,9 +24,11 @@ ALG_NAME = "vdn_cnn"
 
 def env_from_config(config):
     """Create SocialJax environment from config."""
-    env_name = config["ENV_NAME"]
-    env = socialjax.make(env_name, **config["ENV_KWARGS"])
+    env = socialjax.make(config["ENV_NAME"], **config["ENV_KWARGS"])
     env = LogWrapper(env, replace_info=False)
+    # ENV_LABEL disambiguates variants sharing an ENV_NAME (harvest maps),
+    # so their checkpoints and wandb runs don't collide.
+    env_name = config.get("ENV_LABEL") or config["ENV_NAME"]
     return env, env_name
 
 

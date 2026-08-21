@@ -4,6 +4,7 @@ defaults:
 
 # Environment-specific settings
 "ENV_NAME": "harvest_common_open"
+"ENV_LABEL": "harvest_closed"
 "LR": 0.0005
 "NUM_ENVS": 5
 "NUM_STEPS": 100

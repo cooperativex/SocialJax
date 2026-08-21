@@ -35,7 +35,8 @@ def single_run(config, make_train, *, wandb_name):
     out = jax.vmap(train_jit)(rngs)
 
     print("** Saving Results **")
-    filename = f'{config["ENV_NAME"]}_seed{config["SEED"]}_reward_{config["REWARD"]}'
+    env_label = config.get("ENV_LABEL") or config["ENV_NAME"]
+    filename = f'{env_label}_seed{config["SEED"]}_reward_{config["REWARD"]}'
     # IRAT: save team_actor (index 2) for evaluation
     team_actor_train_state = jax.tree.map(lambda x: x[0], out["runner_state"][0][0][2])
     save_path = f"./checkpoints/{filename}.pkl"

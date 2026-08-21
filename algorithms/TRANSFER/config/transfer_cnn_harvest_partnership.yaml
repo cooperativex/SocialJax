@@ -3,6 +3,7 @@ defaults:
   - transfer_base
 
 "ENV_NAME": "harvest_common_open"
+"ENV_LABEL": "harvest_partnership"
 "NUM_ENVS": 200
 "GIF_NUM_FRAMES": 25
 "SHAPING_BEGIN": 1e6
