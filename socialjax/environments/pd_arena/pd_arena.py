@@ -847,9 +847,10 @@ class PD_Arena(MultiAgentEnv):
                 #     jnp.int8(0)
                 # )
 
-                # check coop_resources and defect_resources
-                coop_resources = state.coop_resources
-                defect_resources = state.defect_resources
+                # check coop_resources and defect_resources, rotated so that
+                # entry 0 is always the observing agent (egocentric order)
+                coop_resources = jnp.roll(state.coop_resources, -(agent - len(Items)))
+                defect_resources = jnp.roll(state.defect_resources, -(agent - len(Items)))
                     
 
                 # build extension
