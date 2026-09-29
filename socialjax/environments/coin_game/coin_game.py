@@ -373,9 +373,20 @@ class CoinGame(MultiAgentEnv):
                     axis=-1
                 )
 
+                # egocentric coin colours: the red_apple channel always holds
+                # the observer's own coins (agent 0 owns red, agent 1 owns
+                # green) and the green_apple channel the other agent's coins
+                items = x[:len(Items)-1]
+                red, green = Items.red_apple - 1, Items.green_apple - 1
+                items = jnp.where(
+                    agent - len(Items) == 0,
+                    items,
+                    items.at[red].set(items[green]).at[green].set(items[red]),
+                )
+
                 # build final feature vector
                 final_vec = jnp.concatenate(
-                    [x[:len(Items)-1], extension],
+                    [items, extension],
                     axis=-1
                 )
 
