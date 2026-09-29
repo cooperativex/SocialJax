@@ -766,7 +766,7 @@ class Territory_open(MultiAgentEnv):
                 ) -> jnp.ndarray:
 
                 # get agent's one-hot
-                agent_element = jnp.array([jnp.int8(x[agent])])
+                agent_element = jnp.array([jnp.int8(x[agent - 1])])
 
                 # mask to check if any other agent exists there
                 mask = x[len(Items)-1:] > 0
@@ -792,11 +792,11 @@ class Territory_open(MultiAgentEnv):
                         state.freeze[
                             agent-len(Items)
                         ].max(axis=-1) > 0,
-                        item_idx >= len(Items)
+                        item_idx >= len(Items) - 1
                 )
 
                 show_inv_idxs = jnp.where(
-                    state.freeze[agent],
+                    state.freeze[agent - len(Items)],
                     size=12, # since, in a setting where simultaneous interac-
                     fill_value=-1 # -tions can happen, only a max of 12 can
                 )[0] # happen at once (zap logic), regardless of pop size
@@ -805,11 +805,11 @@ class Territory_open(MultiAgentEnv):
                     jnp.logical_or(
                         jnp.logical_and(
                             show_inv_bool,
-                            jnp.isin(item_idx-len(Items), show_inv_idxs),
+                            jnp.isin(item_idx-len(Items)+1, show_inv_idxs),
                         ),
                         agent_element
                     ),
-                    state.agent_invs[item_idx - len(Items)],
+                    state.agent_invs[item_idx - len(Items) + 1],
                     jnp.array([0, 0], dtype=jnp.int8)
                 )[0]
 
@@ -818,7 +818,7 @@ class Territory_open(MultiAgentEnv):
                 frozen = jnp.where(
                     other_agent,
                     state.freeze[
-                        item_idx-len(Items)
+                        item_idx-len(Items)+1
                     ].max(axis=-1) > 0,
                     0
                 )
