@@ -16,7 +16,7 @@
 
 *A suite of sequential social dilemma environments for multi-agent reinforcement learning in JAX*
 
-
+We've also released [OpenSocialJax](https://github.com/cooperativex/OpenSocialJax), an open-ended extension of Clean Up and Commons Harvest that tests whether LLM agents can discover hidden environment rules while adapting to other agents.
 
 <p align="center">
   <img src="docs/images/step_150_reward_common_coins.gif" alt="coins_common" width="19.2%">
