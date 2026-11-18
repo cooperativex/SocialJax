@@ -103,7 +103,7 @@ def resolve_movement(key, old_locs, proposed_locs):
     return jnp.where(reverted[:, None], old_locs, proposed_locs)
 
 
-def resolve_respawn(key, agent_locs, reborn_mask, spawn_points, dir_maxval=3):
+def resolve_respawn(key, agent_locs, reborn_mask, spawn_points, dir_maxval=4):
     """Occupancy-aware respawn: reborn agents land on unoccupied spawn cells.
 
     Args:
@@ -112,8 +112,7 @@ def resolve_respawn(key, agent_locs, reborn_mask, spawn_points, dir_maxval=3):
       reborn_mask: (N,) bool, True for agents to respawn this step.
       spawn_points: (S, 2) static spawn cells, S >= N, pairwise distinct.
       dir_maxval: exclusive upper bound for the random spawn heading.
-        Defaults to 3 to preserve the existing environments' quirk of never
-        respawning with heading 3.
+        Defaults to 4: headings 0-3, the four directions agents turn through.
 
     Returns:
       (N, 3) array, same dtype as ``agent_locs``. Survivors keep their rows
