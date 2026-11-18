@@ -186,6 +186,7 @@ def test_respawn():
     # Survivors 0 and 2 sit on spawn cells; agents 1 and 3 respawn.
     agent_locs = locs([0, 0, 1], [9, 9, 0], [3, 3, 2], [9, 8, 0])
     reborn = jnp.array([False, True, False, True])
+    headings = set()
     for i in range(200):
         out = resolve_respawn(jax.random.PRNGKey(i), agent_locs, reborn, spawns)
         assert jnp.array_equal(out[0], agent_locs[0])
@@ -197,7 +198,9 @@ def test_respawn():
             assert bool(on_spawn), "reborn agent must land on a spawn cell"
             assert not bool(jnp.all(cell == agent_locs[0, :2]))
             assert not bool(jnp.all(cell == agent_locs[2, :2]))
-            assert 0 <= int(out[j, 2]) < 3
+            assert 0 <= int(out[j, 2]) < 4
+            headings.add(int(out[j, 2]))
+    assert headings == {0, 1, 2, 3}, f"respawn headings seen: {sorted(headings)}"
 
     # Edge case S == N with N-1 survivors parked on spawn cells: the single
     # reborn agent must take the one free spawn cell.
