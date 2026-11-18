@@ -264,6 +264,14 @@ class Clean_up(MultiAgentEnv):
         self.cnn = cnn
         self.num_inner_steps = num_inner_steps
         self.num_outer_steps = num_outer_steps
+        if cf:
+            # The cf branch of the step calls get_cf_rewards with cf_w,
+            # cf_ideal_angle_degrees and cf_target_agents, none of which exist,
+            # so it used to fail with an AttributeError on the first step.
+            raise NotImplementedError(
+                "Clean_up(cf=True) is not implemented: the step's counterfactual "
+                "reward (get_cf_rewards) does not exist yet. get_cf_regret_from_state "
+                "can still be called directly.")
         self.cf = cf
         self.cf_alpha = cf_alpha
         self.agents = list(range(num_agents))#, dtype=jnp.int16)
@@ -1033,6 +1041,11 @@ class Clean_up(MultiAgentEnv):
         ):
             """Step the environment."""
 
+            # Separate keys for apple regrowth, picking the dirt cell and the
+            # dirt spawn draw: drawing all three from the same key made them
+            # share random numbers.
+            key, apple_key, dirt_cell_key, dirt_spawn_key = jax.random.split(key, 4)
+
             # regrowth of apply
             grid_apple = state.grid
             dirtCount = jnp.sum(state.potential_dirt_and_dirt_label == Items.dirt)
@@ -1048,7 +1061,7 @@ class Clean_up(MultiAgentEnv):
                                        | ((grid_apple[apple_locs[0], apple_locs[1]] == Items.apple))),  
                                       Items.apple, Items.empty)
                 return new_apple
-            prob = jax.random.uniform(key, shape=(len(self.POTENTIAL_APPLE),))
+            prob = jax.random.uniform(apple_key, shape=(len(self.POTENTIAL_APPLE),))
             new_apple = jax.vmap(regrow_apple)(self.POTENTIAL_APPLE, prob)
 
             new_apple_grid = grid_apple.at[self.POTENTIAL_APPLE[:, 0], self.POTENTIAL_APPLE[:, 1]].set(new_apple)
@@ -1057,7 +1070,7 @@ class Clean_up(MultiAgentEnv):
             # DirtSpawning update the grid and potential_dirt_and_dirt_label
             grid_dirt = state.grid
 
-            noise = jax.random.uniform(key, shape=(len(state.potential_dirt_and_dirt_label),)) * 1e-4
+            noise = jax.random.uniform(dirt_cell_key, shape=(len(state.potential_dirt_and_dirt_label),)) * 1e-4
             label_with_noise = state.potential_dirt_and_dirt_label + noise
 
             label_with_noise_rank = jnp.sort(label_with_noise)
@@ -1065,7 +1078,7 @@ class Clean_up(MultiAgentEnv):
 
             unstable_sorted_locs = state.potential_dirt_and_dirt_locs[unstable_indices]
             
-            p = jax.random.uniform(key, shape=(1,)) 
+            p = jax.random.uniform(dirt_spawn_key, shape=(1,))
             one_piece_dirt = jnp.where(((grid_dirt[unstable_sorted_locs[0, 0], unstable_sorted_locs[0, 1]] == Items.potential_dirt) 
                                        & (p < self.dirtSpawnProbability) & (state.inner_t>self.delayStartOfDirtSpawning)),  
                         Items.dirt, label_with_noise_rank[0])
@@ -1314,15 +1327,17 @@ class Clean_up(MultiAgentEnv):
         def _reset_state(
             key: jnp.ndarray
         ) -> State:
-            key, subkey = jax.random.split(key)
+            # One key per draw: reusing one subkey tied the two shuffles and
+            # the starting directions together.
+            key, inside_key, pos_key, dir_key = jax.random.split(key, 4)
 
             # Find the free spaces in the grid
             grid = jnp.zeros((self.GRID_SIZE_ROW, self.GRID_SIZE_COL), jnp.int16)
 
 
-            inside_players_pos = jax.random.permutation(subkey, self.SPAWNS_PLAYER_IN)
+            inside_players_pos = jax.random.permutation(inside_key, self.SPAWNS_PLAYER_IN)
             player_positions = jnp.concatenate((inside_players_pos, self.SPAWNS_PLAYERS))
-            agent_pos = jax.random.permutation(subkey, player_positions)[:num_agents]
+            agent_pos = jax.random.permutation(pos_key, player_positions)[:num_agents]
             wall_pos = self.SPAWNS_WALL
             apple_pos = self.POTENTIAL_APPLE
 
@@ -1361,7 +1376,7 @@ class Clean_up(MultiAgentEnv):
 
 
             player_dir = jax.random.randint(
-                subkey, shape=(
+                dir_key, shape=(
                     num_agents,
                     ), minval=0, maxval=3, dtype=jnp.int8
             )
@@ -1514,7 +1529,6 @@ class Clean_up(MultiAgentEnv):
 
         elif obj == Items.clean_beam:
             fill_coords(img, point_in_rect(0, 1, 0, 1), (170, 220, 255))
-            print(Items.clean_beam)
 
         elif obj == 99:
             fill_coords(img, point_in_rect(0, 1, 0, 1), (44.0, 160.0, 44.0))
