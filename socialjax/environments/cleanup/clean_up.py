@@ -1378,7 +1378,7 @@ class Clean_up(MultiAgentEnv):
             player_dir = jax.random.randint(
                 dir_key, shape=(
                     num_agents,
-                    ), minval=0, maxval=3, dtype=jnp.int8
+                    ), minval=0, maxval=4, dtype=jnp.int8
             )
 
             agent_locs = jnp.array(
